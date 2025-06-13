@@ -23,4 +23,4 @@ jobs:
         if: env.SSH_PRIVATE_KEY
         with:
           source-repo: "git@github.com:${{ github.repository }}.git"
-          destination-repo: "git@git.pysio.online:z0z0r4/mcim.git"
+          destination-repo: "git@git.pysio.online:z0z0r4/mcim-rust-api.git"

@@ -10,12 +10,17 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Install just
+      uses: extractions/setup-just@v2
+      
+    - name: Start MongoDB
+      uses: supercharge/mongodb-github-action@1.12.0
 
     - name: Install dependencies
       run: |
@@ -25,12 +30,18 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
 
-    - name: Build
-      run: |
-        cargo build --release --verbose
+  build:
+    runs-on: ubuntu-latest
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifact
-        path: target/release/mcim-rust-api.exe
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: build
+        run: |
+          cargo build --release --verbose --bin mcim-rust-api
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: target/release/mcim-rust-api
