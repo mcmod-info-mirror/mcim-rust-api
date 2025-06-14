@@ -1,10 +1,13 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::models::deserialize_bson_datetime_flexible;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct File {
     #[serde(rename = "_id")]
     pub id: i32,
+    #[serde(rename = "gameId")]
     pub game_id: i32,
     #[serde(rename = "modId")]
     pub mod_id: i32,
@@ -19,7 +22,7 @@ pub struct File {
     #[serde(rename = "fileStatus")]
     pub file_status: Option<i32>,
     pub hashes: Option<Vec<Hash>>,
-    #[serde(rename = "fileDate")]
+    #[serde(rename = "fileDate", deserialize_with = "deserialize_bson_datetime_flexible")]
     pub file_date: Option<DateTime<Utc>>,
     #[serde(rename = "fileLength")]
     pub file_length: Option<i64>,
@@ -46,7 +49,7 @@ pub struct File {
     pub server_pack_file_id: Option<i32>,
     #[serde(rename = "isEarlyAccessContent")]
     pub is_early_access_content: Option<bool>,
-    #[serde(rename = "earlyAccessEndDate")]
+    #[serde(rename = "earlyAccessEndDate", deserialize_with = "deserialize_bson_datetime_flexible")]
     pub early_access_end_date: Option<DateTime<Utc>>,
     #[serde(rename = "fileFingerprint")]
     pub file_fingerprint: Option<i64>,
@@ -85,11 +88,11 @@ pub struct Mod {
     pub latest_files: Option<Vec<FileInfo>>,
     #[serde(rename = "latestFilesIndexes")]
     pub latest_files_indexes: Option<Vec<FileIndex>>,
-    #[serde(rename = "dateCreated")]
+    #[serde(rename = "dateCreated", deserialize_with = "deserialize_bson_datetime_flexible")]
     pub date_created: Option<DateTime<Utc>>,
-    #[serde(rename = "dateModified")]
+    #[serde(rename = "dateModified", deserialize_with = "deserialize_bson_datetime_flexible")]
     pub date_modified: Option<DateTime<Utc>>,
-    #[serde(rename = "dateReleased")]
+    #[serde(rename = "dateReleased", deserialize_with = "deserialize_bson_datetime_flexible")]
     pub date_released: Option<DateTime<Utc>>,
     #[serde(rename = "allowModDistribution")]
     pub allow_mod_distribution: Option<bool>,
@@ -101,6 +104,7 @@ pub struct Mod {
     pub thumbs_up_count: Option<i32>,
     pub rating: Option<i32>,
 
+    #[serde(deserialize_with = "deserialize_bson_datetime_flexible")]
     pub sync_at: DateTime<Utc>,
 }
 
@@ -112,6 +116,7 @@ pub struct Fingerprint {
     #[serde(rename = "latestFiles")]
     pub latest_files: Vec<FileInfo>,
 
+    #[serde(deserialize_with = "deserialize_bson_datetime_flexible")]
     pub sync_at: DateTime<Utc>,
 }
 
@@ -137,6 +142,7 @@ pub struct Category {
     #[serde(rename = "displayIndex")]
     pub display_index: i32,
 
+    #[serde(deserialize_with = "deserialize_bson_datetime_flexible")]
     pub sync_at: DateTime<Utc>,
 }
 
@@ -156,7 +162,7 @@ pub struct FileSortableGameVersions {
     pub game_version_padded: Option<String>,
     #[serde(rename = "gameVersion")]
     pub game_version: Option<String>,
-    #[serde(rename = "gameVersionReleaseDate")]
+    #[serde(rename = "gameVersionReleaseDate", deserialize_with = "deserialize_bson_datetime_flexible")]
     pub game_version_release_date: Option<DateTime<Utc>>,
     #[serde(rename = "gameVersionTypeId")]
     pub game_version_type_id: Option<i32>,
@@ -197,7 +203,7 @@ pub struct CategoryInfo {
     pub url: Option<String>,
     #[serde(rename = "iconUrl")]
     pub icon_url: Option<String>,
-    #[serde(rename = "dateModified")]
+    #[serde(rename = "dateModified", deserialize_with = "deserialize_bson_datetime_flexible")]
     pub date_modified: Option<DateTime<Utc>>,
     #[serde(rename = "isClass")]
     pub is_class: Option<bool>,
@@ -272,7 +278,7 @@ pub struct FileInfo {
     #[serde(rename = "fileStatus")]
     pub file_status: Option<i32>,
     pub hashes: Option<Vec<Hash>>,
-    #[serde(rename = "fileDate")]
+    #[serde(rename = "fileDate", deserialize_with = "deserialize_bson_datetime_flexible")]
     pub file_date: Option<DateTime<Utc>>,
     #[serde(rename = "fileLength")]
     pub file_length: Option<i64>,
@@ -299,7 +305,7 @@ pub struct FileInfo {
     pub server_pack_file_id: Option<i32>,
     #[serde(rename = "isEarlyAccessContent")]
     pub is_early_access_content: Option<bool>,
-    #[serde(rename = "earlyAccessEndDate")]
+    #[serde(rename = "earlyAccessEndDate", deserialize_with = "deserialize_bson_datetime_flexible")]
     pub early_access_end_date: Option<DateTime<Utc>>,
     #[serde(rename = "fileFingerprint")]
     pub file_fingerprint: Option<i64>,

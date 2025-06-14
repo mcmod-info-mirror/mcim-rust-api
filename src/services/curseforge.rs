@@ -3,7 +3,7 @@ use futures::stream::TryStreamExt;
 use mongodb::{bson::Document, Client};
 
 use crate::config::database::get_database_name;
-use crate::models::curseforge::entities::{File, Fingerprint, Mod};
+use crate::models::curseforge::entities::{Category, File, Fingerprint, Mod};
 use crate::models::curseforge::responses::*;
 
 use crate::services::ServiceError;
@@ -17,7 +17,7 @@ impl CurseforgeService {
         Self { db }
     }
 
-    pub async fn get_mod(&self, mod_id: &i32) -> Result<Option<ModResponse>, ServiceError> {
+    pub async fn get_mod(&self, mod_id: i32) -> Result<Option<ModResponse>, ServiceError> {
         if mod_id.is_negative() {
             return Err(ServiceError::LogicalError(String::from(
                 "Mod ID cannot be negative",
@@ -94,7 +94,7 @@ impl CurseforgeService {
         }
     }
 
-    pub async fn get_file(&self, file_id: &i32) -> Result<Option<FileResponse>, ServiceError> {
+    pub async fn get_file(&self, file_id: i32) -> Result<Option<FileResponse>, ServiceError> {
         if file_id.is_negative() {
             return Err(ServiceError::LogicalError(String::from(
                 "File ID cannot be negative",
@@ -148,7 +148,7 @@ impl CurseforgeService {
 
     pub async fn get_mod_files(
         &self,
-        mod_id: &i32,
+        mod_id: i32,
         game_version: Option<String>,
         mod_loader_type: Option<i32>,
         index: Option<i32>,
@@ -266,9 +266,31 @@ impl CurseforgeService {
         })
     }
 
+    pub async fn get_file_download_url(
+        &self,
+        mod_id: i32,
+        file_id: i32,
+    ) -> Result<DownloadUrlResponse, ServiceError> {
+        if mod_id.is_negative() || file_id.is_negative() {
+            return Err(ServiceError::LogicalError(String::from(
+                "Mod ID and File ID cannot be negative",
+            )));
+        }
+
+        let file: FileResponse = self
+            .get_file(file_id)
+            .await?
+            .ok_or_else(|| ServiceError::LogicalError(String::from("File not found")))?;
+
+        Ok(DownloadUrlResponse{
+            data: file.data.download_url.unwrap()
+        })
+    }
+
     pub async fn get_fingerprints(
         &self,
         fingerprints: Vec<i32>,
+        game_id: Option<i32>,
     ) -> Result<FingerprintResponse, ServiceError> {
         if fingerprints.is_empty() {
             return Err(ServiceError::LogicalError(String::from(
@@ -281,12 +303,14 @@ impl CurseforgeService {
             .database(get_database_name().as_str())
             .collection::<Document>("curseforge_fingerprints");
 
-        let mut cursor = collection
-            .find(doc! { "_id": { "$in": fingerprints.clone() } }, None)
-            .await?;
-        let mut fingerprint_results = Vec::new();
+        // 可选 game_id 参数用于过滤
+        let mut filter = doc! { "_id": { "$in": &fingerprints } };
+        if let Some(game_id) = game_id {
+            filter.insert("gameId", game_id);
+        }
 
-        // 可能返回为 空则 Err
+        let mut cursor = collection.find(filter, None).await?;
+        let mut fingerprint_results = Vec::new();
 
         while let Ok(Some(doc)) = cursor.try_next().await {
             if let Ok(fingerprint) = bson::from_document::<Fingerprint>(doc) {
@@ -316,5 +340,38 @@ impl CurseforgeService {
         };
 
         Ok(response)
+    }
+
+    pub async fn get_categories(
+        &self,
+        game_id: i32,
+        class_id: Option<i32>,
+        class_only: Option<bool>,
+    ) -> Result<Vec<Category>, ServiceError> {
+        let collection = self
+            .db
+            .database(get_database_name().as_str())
+            .collection::<Document>("curseforge_categories");
+
+        // 构建查询过滤器
+        let mut filter = doc! { "gameId": game_id };
+
+        if class_id.is_some() {
+            filter.insert("classId", class_id);
+        } else if class_only.unwrap_or(false) {
+            filter.insert("isClass", true);
+        }
+
+        let mut cursor = collection.find(filter, None).await?;
+
+        let mut categories = Vec::new();
+        while let Ok(Some(doc)) = cursor.try_next().await {
+            let category: Category = bson::from_document(doc).map_err(|e| {
+                ServiceError::LogicalError(format!("Failed to deserialize Category: {}", e))
+            })?;
+            categories.push(category);
+        }
+
+        Ok(categories)
     }
 }
