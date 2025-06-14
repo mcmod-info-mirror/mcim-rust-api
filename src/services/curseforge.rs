@@ -257,6 +257,7 @@ impl CurseforgeService {
             doc! {
                 "$facet": {
                     "data": [
+                        doc! { "$sort": { "fileDate": -1 } },
                         doc! { "$skip": index },
                         doc! { "$limit": page_size }
                     ],
