@@ -1,20 +1,22 @@
-pub mod modrinth;
-pub mod curseforge;
-pub mod translate;
 pub mod common;
+pub mod curseforge;
+pub mod modrinth;
+pub mod translate;
 
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 pub fn deserialize_bson_datetime_flexible<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
     T: From<DateTimeWrapper>,
-{   
+{
     let value = serde_value::Value::deserialize(deserializer)?;
 
     if let Ok(bson_datetime) = bson::DateTime::deserialize(value.clone()) {
-        return Ok(T::from(DateTimeWrapper::from(Some(bson_datetime.to_chrono()))));
+        return Ok(T::from(DateTimeWrapper::from(Some(
+            bson_datetime.to_chrono(),
+        ))));
     }
 
     if let Ok(s) = String::deserialize(value) {
@@ -46,4 +48,12 @@ impl From<DateTimeWrapper> for Option<DateTime<Utc>> {
     fn from(wrapper: DateTimeWrapper) -> Self {
         wrapper.0
     }
+}
+
+#[derive(Serialize)]
+pub struct ErrorResponse {
+    pub error: String,
+    pub code: u16,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
 }

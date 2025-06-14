@@ -3,6 +3,7 @@ use actix_web::{get, web, HttpResponse, Responder};
 use crate::config::AppState;
 use crate::services::common::get_statistics_info;
 use crate::models::common::requests::StatisticsQuery;
+use crate::errors::{ApiError};
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(root)
@@ -18,7 +19,7 @@ async fn root() -> impl Responder {
 async fn get_statistics(
     query: web::Query<StatisticsQuery>,
     data: web::Data<AppState>,
-) -> impl Responder {
+) -> Result<impl Responder, ApiError> {
     match get_statistics_info(
         query.curseforge.unwrap_or(true),
         query.modrinth.unwrap_or(true),
@@ -27,10 +28,7 @@ async fn get_statistics(
     )
     .await
     {
-        Ok(stats) => HttpResponse::Ok().json(stats),
-        Err(err) => {
-            eprintln!("Error fetching statistics: {:?}", err);
-            HttpResponse::InternalServerError().body("Failed to fetch statistics")
-        }
+        Ok(stats) => Ok(web::Json(stats)),
+        Err(e) => Err(e.into())
     }
 }

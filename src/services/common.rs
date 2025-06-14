@@ -1,16 +1,21 @@
 use crate::config::database::get_database_name;
 
-async fn get_collection_count(db: &mongodb::Client, collection_name: &str) -> Result<u64, mongodb::error::Error> {
+use crate::errors::ServiceError;
+
+async fn get_collection_count(db: &mongodb::Client, collection_name: &str) -> Result<u64, ServiceError> {
     let collection = db.database(get_database_name().as_str()).collection::<mongodb::bson::Document>(collection_name);
 
     // 如果 $collStats 失败，回退到 estimated_document_count
-    let count = collection.estimated_document_count(None).await?;
+    let count = collection.estimated_document_count(None).await.map_err(|e| {
+            ServiceError::Database {
+                message: format!("Failed to get collection count for {}: {}", collection_name, e), source: Some(e.into()),
+            }
+    })?;
     Ok(count)
 }
 
-pub async fn get_statistics_info(modrinth: bool, curseforge: bool, translate: bool, db: &mongodb::Client) -> Result<serde_json::Value, mongodb::error::Error> {
+pub async fn get_statistics_info(modrinth: bool, curseforge: bool, translate: bool, db: &mongodb::Client) -> Result<serde_json::Value, ServiceError> {
     let mut statistics = serde_json::Map::new();
-
     if modrinth {
         let modrinth_projects_count = get_collection_count(db, "modrinth_projects").await?;
         statistics.insert("modrinth_projects".to_string(), serde_json::Value::from(modrinth_projects_count));

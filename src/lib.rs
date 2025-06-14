@@ -2,6 +2,7 @@ pub mod config;
 pub mod models;
 pub mod routes;
 pub mod services;
+pub mod errors;
 
 pub mod test_utils {
     use actix_web::{web, App};

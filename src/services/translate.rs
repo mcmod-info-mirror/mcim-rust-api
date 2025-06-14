@@ -5,10 +5,10 @@ use mongodb::{bson::Document, Client};
 use crate::config::database::get_database_name;
 use crate::models::translate::responses::{CurseForgeTranslationResponse, ModrinthTranslationResponse};
 
-use crate::services::ServiceError;
+use crate::errors::ServiceError;
 
 pub struct ModrinthService {
-    db: Client,
+    pub db: Client,
 }
 
 impl ModrinthService {
@@ -21,7 +21,10 @@ impl ModrinthService {
         project_id: &str,
     ) -> Result<Option<ModrinthTranslationResponse>, ServiceError> {
         if project_id.trim().is_empty() {
-            return Err(ServiceError::LogicalError(String::from("Project ID cannot be empty")));
+            return Err(ServiceError::InvalidInput {
+                field: String::from("project_id"),
+                reason: String::from("Project ID cannot be empty"),
+            });
         }
 
         let collection = self
@@ -46,7 +49,10 @@ impl ModrinthService {
         project_ids: Vec<String>,
     ) -> Result<Vec<ModrinthTranslationResponse>, ServiceError> {
         if project_ids.is_empty() {
-            return Err(ServiceError::LogicalError(String::from("Project IDs cannot be empty")));
+            return Err(ServiceError::InvalidInput  {
+                field: String::from("project_ids"),
+                reason: String::from("Project IDs cannot be empty"),
+            });
         }
 
         let collection = self
@@ -64,10 +70,13 @@ impl ModrinthService {
                     if let Ok(response) = self.convert_document_to_response(doc) {
                         results.push(response);
                     } else {
-                        return Err(ServiceError::InvalidData(String::from("Failed to convert document")));
+                        return Err(ServiceError::UnexpectedError(String::from("Failed to convert document")));
                     }
                 }
-                Err(e) => return Err(ServiceError::Database(e)),
+                Err(e) => return Err(ServiceError::Database {
+                    message: e.to_string(),
+                    source: Some(e),
+                }),
             }
         }
 
@@ -80,12 +89,12 @@ impl ModrinthService {
     ) -> Result<ModrinthTranslationResponse, ServiceError> {
         let translated = doc
             .get_str("translated")
-            .map_err(|_| ServiceError::InvalidData(String::from("Missing translated field")))?
+            .map_err(|_| ServiceError::UnexpectedError(String::from("Missing translated field")))?
             .to_string();
 
         let original = doc
             .get_str("original")
-            .map_err(|_| ServiceError::InvalidData(String::from("Missing original field")))?
+            .map_err(|_| ServiceError::UnexpectedError(String::from("Missing original field")))?
             .to_string();
 
         let translated_at = match doc.get_datetime("translated_at") {
@@ -93,12 +102,12 @@ impl ModrinthService {
                 let chrono_dt = bson_dt.to_chrono();
                 chrono_dt.format("%Y-%m-%d %H:%M:%S").to_string()
             }
-            Err(_) => return Err(ServiceError::InvalidData(String::from("Invalid translated_at field"))),
+            Err(_) => return Err(ServiceError::UnexpectedError(String::from("Invalid translated_at field"))),
         };
 
         let project_id = doc
             .get_str("_id")
-            .map_err(|_| ServiceError::InvalidData(String::from("Missing project_id field")))?;
+            .map_err(|_| ServiceError::UnexpectedError(String::from("Missing project_id field")))?;
 
         Ok(ModrinthTranslationResponse {
             project_id: project_id.to_string(),
@@ -110,7 +119,7 @@ impl ModrinthService {
 }
 
 pub struct CurseForgeService {
-    db: Client,
+    pub db: Client,
 }
 
 impl CurseForgeService {
@@ -123,7 +132,7 @@ impl CurseForgeService {
         mod_id: i32,
     ) -> Result<Option<CurseForgeTranslationResponse>, ServiceError> {
         if mod_id <= 0 {
-            return Err(ServiceError::LogicalError(String::from("Mod ID must be positive")));
+            return Err(ServiceError::InvalidInput { field: String::from("mod_id"), reason: String::from("Mod ID must be a positive integer") });
         }
 
         let collection = self
@@ -145,7 +154,10 @@ impl CurseForgeService {
         mod_ids: Vec<i32>,
     ) -> Result<Vec<CurseForgeTranslationResponse>, ServiceError> {
         if mod_ids.is_empty() {
-            return Err(ServiceError::LogicalError(String::from("Mod IDs cannot be empty")));
+            return Err(ServiceError::InvalidInput {
+                field: String::from("mod_ids"),
+                reason: String::from("Mod IDs cannot be empty"),
+            });
         }
 
         let collection = self
@@ -163,10 +175,13 @@ impl CurseForgeService {
                     if let Ok(response) = self.convert_document_to_response(doc) {
                         results.push(response);
                     } else {
-                        return Err(ServiceError::InvalidData(String::from("Failed to convert document")));
+                        return Err(ServiceError::UnexpectedError(String::from("Failed to convert document")));
                     }
                 }
-                Err(e) => return Err(ServiceError::Database(e)),
+                Err(e) => return Err(ServiceError::Database {
+                    message: e.to_string(),
+                    source: Some(e),
+                }),
             }
         }
 
@@ -179,12 +194,12 @@ impl CurseForgeService {
     ) -> Result<CurseForgeTranslationResponse, ServiceError> {
         let translated = doc
             .get_str("translated")
-            .map_err(|_| ServiceError::InvalidData(String::from("Missing translated field")))?
+            .map_err(|_| ServiceError::UnexpectedError(String::from("Missing translated field")))?
             .to_string();
 
         let original = doc
             .get_str("original")
-            .map_err(|_| ServiceError::InvalidData(String::from("Missing original field")))?
+            .map_err(|_| ServiceError::UnexpectedError(String::from("Missing original field")))?
             .to_string();
 
         let translated_at = match doc.get_datetime("translated_at") {
@@ -192,12 +207,12 @@ impl CurseForgeService {
                 let chrono_dt = bson_dt.to_chrono();
                 chrono_dt.format("%Y-%m-%d %H:%M:%S").to_string()
             }
-            Err(_) => return Err(ServiceError::InvalidData(String::from("Invalid translated_at field"))),
+            Err(_) => return Err(ServiceError::UnexpectedError(String::from("Invalid translated_at field"))),
         };
 
         let mod_id = doc
             .get_i32("_id")
-            .map_err(|_| ServiceError::InvalidData(String::from("Missing mod_id field")))?;
+            .map_err(|_| ServiceError::UnexpectedError(String::from("Missing mod_id field")))?;
 
         Ok(CurseForgeTranslationResponse {
             modid: mod_id,

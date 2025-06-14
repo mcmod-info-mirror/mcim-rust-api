@@ -3,6 +3,7 @@ use actix_web::{get, post, web, HttpResponse, Responder};
 use crate::config::AppState;
 use crate::services::curseforge::CurseforgeService;
 use crate::models::curseforge::requests::*;
+use crate::errors::{ApiError, ServiceError};
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
@@ -23,19 +24,19 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 async fn get_mod(
     path: web::Path<i32>,
     data: web::Data<AppState>,
-)
--> impl Responder {
+) -> Result<impl Responder, ApiError> {
     let mod_id = path.into_inner();
-    if mod_id <= 0 {
-        return HttpResponse::BadRequest().body("Mod ID must be a positive integer");
-    }
 
     let service = CurseforgeService::new(data.db.clone());
 
     match service.get_mod(mod_id).await {
-        Ok(Some(mod_data)) => HttpResponse::Ok().json(mod_data),
-        Ok(None) => HttpResponse::NotFound().body("Mod not found"),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(Some(mod_data)) => Ok(web::Json(mod_data)),
+        Ok(None) => Err(ServiceError::NotFound {
+            resource: "Mod".to_string(),
+            detail: Some(mod_id.to_string()),
+        }
+        .into()),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -43,14 +44,12 @@ async fn get_mod(
 async fn get_mods(
     body: web::Json<ModsBody>,
     data: web::Data<AppState>,
-)
--> impl Responder {
+) -> Result<impl Responder, ApiError> {
     let service = CurseforgeService::new(data.db.clone());
 
     match service.get_mods(body.mod_ids.clone()).await {
-        Ok(mods) if mods.data.is_empty() => HttpResponse::NotFound().body("No mods found"),
-        Ok(mods) => HttpResponse::Ok().json(mods),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(mods) => Ok(web::Json(mods)),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -61,7 +60,7 @@ async fn get_mod_files(
     query: web::Query<ModFilesQuery>,
     data: web::Data<AppState>,
 )
--> impl Responder {
+-> Result<impl Responder, ApiError> {
     let mod_id = path.into_inner();
     let service = CurseforgeService::new(data.db.clone());
 
@@ -72,8 +71,8 @@ async fn get_mod_files(
         query.index,
         query.page_size,
     ).await {
-        Ok(files) => HttpResponse::Ok().json(files),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(files) => Ok(web::Json(files)),
+        Err(e) => Err(e.into())
     }
 }
 
@@ -83,17 +82,14 @@ async fn get_file_download_url(
     path: web::Path<(i32, i32)>,
     data: web::Data<AppState>,
 )
--> impl Responder {
+-> Result<impl Responder, ApiError> {
     let (mod_id, file_id) = path.into_inner();
-    if mod_id <= 0 || file_id <= 0 {
-        return HttpResponse::BadRequest().body("Mod ID and File ID must be positive integers");
-    }
 
     let service = CurseforgeService::new(data.db.clone());
 
     match service.get_file_download_url(mod_id, file_id).await {
-        Ok(url) => HttpResponse::Ok().json(url),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(url) => Ok(web::Json(url)),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -102,18 +98,14 @@ async fn get_file(
     path: web::Path<(i32, i32)>,
     data: web::Data<AppState>,
 )
--> impl Responder {
-    let (mod_id, file_id) = path.into_inner();
-    if mod_id <= 0 || file_id <= 0 {
-        return HttpResponse::BadRequest().body("Mod ID and File ID must be positive integers");
-    }
+-> Result<impl Responder, ApiError> {
+    let (_, file_id) = path.into_inner();
 
     let service = CurseforgeService::new(data.db.clone());
 
     match service.get_file(file_id).await {
-        Ok(Some(file_data)) => HttpResponse::Ok().json(file_data),
-        Ok(None) => HttpResponse::NotFound().body("File not found"),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(file_data) => Ok(web::Json(file_data)),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -122,16 +114,12 @@ async fn get_files_by_ids(
     body: web::Json<FileIdsBody>,
     data: web::Data<AppState>,
 )
--> impl Responder {
-    if body.file_ids.is_empty() {
-        return HttpResponse::BadRequest().body("File IDs cannot be empty");
-    }
-
+-> Result<impl Responder, ApiError> {
     let service = CurseforgeService::new(data.db.clone());
 
     match service.get_files(body.file_ids.clone()).await {
-        Ok(files) => HttpResponse::Ok().json(files),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(files) => Ok(web::Json(files)),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -140,16 +128,12 @@ async fn get_fingerprints(
     body: web::Json<FingerprintsBody>,
     data: web::Data<AppState>,
 )
--> impl Responder {
-    if body.fingerprints.is_empty() {
-        return HttpResponse::BadRequest().body("Fingerprints cannot be empty");
-    }
-
+-> Result<impl Responder, ApiError> {
     let service = CurseforgeService::new(data.db.clone());
 
     match service.get_fingerprints(body.fingerprints.clone(), None).await {
-        Ok(fingerprint_result) => HttpResponse::Ok().json(fingerprint_result),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(fingerprint_result) => Ok(web::Json(fingerprint_result)),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -159,21 +143,14 @@ async fn get_fingerprints_by_game_id(
     body: web::Json<FingerprintsBody>,
     data: web::Data<AppState>,
 )
--> impl Responder {
+-> Result<impl Responder, ApiError> {
     let game_id = path.into_inner();
-    if game_id <= 0 {
-        return HttpResponse::BadRequest().body("Game ID must be a positive integer");
-    }
-
-    if body.fingerprints.is_empty() {
-        return HttpResponse::BadRequest().body("Fingerprints cannot be empty");
-    }
 
     let service = CurseforgeService::new(data.db.clone());
 
     match service.get_fingerprints(body.fingerprints.clone(), Some(game_id)).await {
-        Ok(fingerprint_result) => HttpResponse::Ok().json(fingerprint_result),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(fingerprint_result) => Ok(web::Json(fingerprint_result)),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -182,11 +159,11 @@ async fn get_categories(
     query: web::Query<CategoriesQuery>,
     data: web::Data<AppState>,
 )
--> impl Responder {
+-> Result<impl Responder, ApiError> {
     let service = CurseforgeService::new(data.db.clone());
 
     match service.get_categories(query.game_id, query.class_id, query.class_only).await {
-        Ok(categories) => HttpResponse::Ok().json(categories),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(categories) => Ok(web::Json(categories)),
+        Err(e) => Err(e.into()),
     }
 }

@@ -1,13 +1,16 @@
 pub mod config;
+pub mod errors;
 pub mod models;
 pub mod routes;
 pub mod services;
 
+use actix_web::dev::Service as _;
 use actix_web::{web, App, HttpServer};
 use std::env;
 
 use crate::config::database::connect;
 use crate::config::AppState;
+use crate::errors::ApiError;
 use crate::routes::config;
 
 #[actix_web::main]
@@ -23,7 +26,18 @@ async fn main() -> std::io::Result<()> {
     let _ = HttpServer::new(move || {
         let app_data = web::Data::new(AppState { db: client.clone() });
 
-        App::new().app_data(app_data).configure(config)
+        App::new()
+            .app_data(app_data)
+            .app_data(web::JsonConfig::default().error_handler(|err, _| {
+                ApiError::BadRequest(err.to_string()).into()
+            }))
+            .app_data(web::QueryConfig::default().error_handler(|err, _| {
+                ApiError::BadRequest(err.to_string()).into()
+            }))
+            .app_data(web::PathConfig::default().error_handler(|err, _| {
+                ApiError::BadRequest(err.to_string()).into()
+            }))
+            .configure(config)
     })
     .bind(&bind_address)
     .expect("Failed to bind server")

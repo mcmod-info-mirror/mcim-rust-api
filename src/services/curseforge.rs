@@ -6,7 +6,8 @@ use crate::config::database::get_database_name;
 use crate::models::curseforge::entities::{Category, File, Fingerprint, Mod};
 use crate::models::curseforge::responses::*;
 
-use crate::services::ServiceError;
+// use crate::services::ServiceError;
+use crate::errors::ServiceError;
 
 pub struct CurseforgeService {
     db: Client,
@@ -19,9 +20,10 @@ impl CurseforgeService {
 
     pub async fn get_mod(&self, mod_id: i32) -> Result<Option<ModResponse>, ServiceError> {
         if mod_id.is_negative() {
-            return Err(ServiceError::LogicalError(String::from(
-                "Mod ID cannot be negative",
-            )));
+            return Err(ServiceError::InvalidInput {
+                field: String::from("mod_id"),
+                reason: String::from("Mod ID cannot be negative"),
+            });
         }
 
         let collection = self
@@ -32,21 +34,25 @@ impl CurseforgeService {
         match collection.find_one(doc! { "_id": mod_id }, None).await? {
             Some(doc) => {
                 let mod_data: Mod = bson::from_document(doc).map_err(|e| {
-                    ServiceError::LogicalError(format!("Failed to deserialize Mod: {}", e))
+                    ServiceError::UnexpectedError(format!("Failed to deserialize Mod: {}", e))
                 })?;
 
                 let response = ModResponse { data: mod_data };
                 Ok(Some(response))
             }
-            None => Ok(None),
+            None => Err(ServiceError::NotFound {
+                resource: String::from("Mod"),
+                detail: Some(format!("Mod with ID {} not found", mod_id)),
+            }),
         }
     }
 
     pub async fn get_mods(&self, mod_ids: Vec<i32>) -> Result<ModsResponse, ServiceError> {
         if mod_ids.is_empty() {
-            return Err(ServiceError::LogicalError(String::from(
-                "Mod IDs cannot be empty",
-            )));
+            return Err(ServiceError::InvalidInput {
+                field: String::from("mod_ids"),
+                reason: String::from("Mod IDs cannot be empty"),
+            });
         }
 
         let collection = self
@@ -59,21 +65,41 @@ impl CurseforgeService {
             .await?;
 
         let mut mods = Vec::new();
-        while let Ok(Some(doc)) = cursor.try_next().await {
-            let mod_data: Mod = bson::from_document(doc).map_err(|e| {
-                ServiceError::LogicalError(format!("Failed to deserialize Mod: {}", e))
-            })?;
-            mods.push(mod_data);
-        }
 
+        while let Some(doc) = cursor
+            .try_next()
+            .await
+            .map_err(|e| ServiceError::Database {
+                message: "Failed to fetch mods from database".to_string(),
+                source: Some(e),
+            })?
+        {
+            match bson::from_document::<Mod>(doc) {
+                Ok(mod_data) => mods.push(mod_data),
+                Err(e) => {
+                    return Err(ServiceError::UnexpectedError(format!(
+                        "Failed to deserialize Mod: {}",
+                        e
+                    )));
+                }
+            }
+        }
+        // empty 则直接返回 { "data": [] }
+        if mods.is_empty() {
+            return Err(ServiceError::NotFound {
+                resource: String::from("Mods"),
+                detail: Some("No mods found for the provided IDs".to_string()),
+            });
+        }
         Ok(ModsResponse { data: mods })
     }
 
     pub async fn get_mod_by_slug(&self, slug: &str) -> Result<Option<ModResponse>, ServiceError> {
         if slug.trim().is_empty() {
-            return Err(ServiceError::LogicalError(String::from(
-                "Slug cannot be empty",
-            )));
+            return Err(ServiceError::InvalidInput {
+                field: String::from("slug"),
+                reason: String::from("Slug cannot be empty"),
+            });
         }
 
         let collection = self
@@ -81,24 +107,34 @@ impl CurseforgeService {
             .database(get_database_name().as_str())
             .collection::<Document>("curseforge_mods");
 
-        match collection.find_one(doc! { "slug": slug }, None).await? {
+        match collection
+            .find_one(doc! { "slug": slug }, None)
+            .await
+            .map_err(|e| ServiceError::Database {
+                message: "Failed to fetch mod by slug".to_string(),
+                source: Some(e),
+            })? {
             Some(doc) => {
                 let mod_data: Mod = bson::from_document(doc).map_err(|e| {
-                    ServiceError::LogicalError(format!("Failed to deserialize Mod: {}", e))
+                    ServiceError::UnexpectedError(format!("Failed to deserialize Mod: {}", e))
                 })?;
 
                 let response = ModResponse { data: mod_data };
                 Ok(Some(response))
             }
-            None => Ok(None),
+            None => Err(ServiceError::NotFound {
+                resource: String::from("Mod"),
+                detail: Some(format!("Mod with slug '{}' not found", slug)),
+            }),
         }
     }
 
-    pub async fn get_file(&self, file_id: i32) -> Result<Option<FileResponse>, ServiceError> {
+    pub async fn get_file(&self, file_id: i32) -> Result<FileResponse, ServiceError> {
         if file_id.is_negative() {
-            return Err(ServiceError::LogicalError(String::from(
-                "File ID cannot be negative",
-            )));
+            return Err(ServiceError::InvalidInput {
+                field: String::from("file_id"),
+                reason: String::from("File ID cannot be negative"),
+            });
         }
 
         let collection = self
@@ -106,24 +142,34 @@ impl CurseforgeService {
             .database(get_database_name().as_str())
             .collection::<Document>("curseforge_files");
 
-        match collection.find_one(doc! { "_id": file_id }, None).await? {
+        match collection
+            .find_one(doc! { "_id": file_id }, None)
+            .await
+            .map_err(|e| ServiceError::Database {
+                message: "Failed to fetch file by ID".to_string(),
+                source: Some(e),
+            })? {
             Some(doc) => {
                 let file_data: File = bson::from_document(doc).map_err(|e| {
-                    ServiceError::LogicalError(format!("Failed to deserialize File: {}", e))
+                    ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
                 })?;
 
                 let response = FileResponse { data: file_data };
-                Ok(Some(response))
+                Ok(response)
             }
-            None => Ok(None),
+            None => Err(ServiceError::NotFound {
+                resource: String::from("File"),
+                detail: Some(format!("File with ID {} not found", file_id)),
+            }),
         }
     }
 
     pub async fn get_files(&self, file_ids: Vec<i32>) -> Result<FilesResponse, ServiceError> {
         if file_ids.is_empty() {
-            return Err(ServiceError::LogicalError(String::from(
-                "File IDs cannot be empty",
-            )));
+            return Err(ServiceError::InvalidInput {
+                field: String::from("file_ids"),
+                reason: String::from("File IDs cannot be empty"),
+            });
         }
 
         let collection = self
@@ -136,13 +182,22 @@ impl CurseforgeService {
             .await?;
 
         let mut files = Vec::new();
-        while let Ok(Some(doc)) = cursor.try_next().await {
+        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::Database {
+            message: String::from("Failed to fetch files from database"),
+            source: Some(e),
+        }) {
             let file_data: File = bson::from_document(doc).map_err(|e| {
-                ServiceError::LogicalError(format!("Failed to deserialize File: {}", e))
+                ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
             })?;
             files.push(file_data);
         }
 
+        if files.is_empty() {
+            return Err(ServiceError::NotFound {
+                resource: String::from("Files"),
+                detail: Some("No files found for the provided IDs".to_string()),
+            });
+        }
         Ok(FilesResponse { data: files })
     }
 
@@ -155,9 +210,10 @@ impl CurseforgeService {
         page_size: Option<i32>,
     ) -> Result<ModFilesResponse, ServiceError> {
         if mod_id.is_negative() {
-            return Err(ServiceError::LogicalError(String::from(
-                "Mod ID cannot be negative",
-            )));
+            return Err(ServiceError::InvalidInput {
+                field: String::from("mod_id"),
+                reason: String::from("Mod ID cannot be negative"),
+            });
         }
 
         let collection = self
@@ -181,7 +237,7 @@ impl CurseforgeService {
                 5 => "Quilt",
                 6 => "NeoForge",
                 _ => {
-                    return Err(ServiceError::LogicalError(String::from(
+                    return Err(ServiceError::UnexpectedError(String::from(
                         "Invalid mod loader type",
                     )))
                 }
@@ -196,7 +252,6 @@ impl CurseforgeService {
         let index = index.unwrap_or(0);
         let page_size = page_size.unwrap_or(50);
 
-        // 使用聚合管道同时获取数据和总数
         let pipeline = vec![
             doc! { "$match": filter },
             doc! {
@@ -212,32 +267,40 @@ impl CurseforgeService {
             },
         ];
 
-        let mut cursor = collection
-            .aggregate(pipeline, None)
-            .await
-            .map_err(ServiceError::Database)?;
-        let result = cursor.try_next().await.map_err(ServiceError::Database)?;
+        let mut cursor =
+            collection
+                .aggregate(pipeline, None)
+                .await
+                .map_err(|e| ServiceError::Database {
+                    message: String::from("Failed to aggregate mod files"),
+                    source: Some(e),
+                })?;
 
-        let (files, total_count) = if let Some(doc) = result {
+        let result = cursor.try_next().await.map_err(|e| ServiceError::Database {
+            message: String::from("Failed to fetch mod files"),
+            source: Some(e),
+        });
+
+        let (files, total_count) = if let Ok(Some(doc)) = result {
             // 获取数据
-            let data_array = doc
-                .get_array("data")
-                .map_err(|_| ServiceError::LogicalError("Failed to get data array".to_string()))?;
+            let data_array: &Vec<bson::Bson> = doc.get_array("data").map_err(|_| {
+                ServiceError::UnexpectedError("Failed to get data array".to_string())
+            })?;
 
             let mut files = Vec::new();
             for item in data_array {
                 if let Some(file_doc) = item.as_document() {
                     let file_data: File = bson::from_document(file_doc.clone()).map_err(|e| {
-                        ServiceError::LogicalError(format!("Failed to deserialize File: {}", e))
+                        ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
                     })?;
                     files.push(file_data);
                 }
             }
 
             // 获取总数
-            let count_array = doc
-                .get_array("count")
-                .map_err(|_| ServiceError::LogicalError("Failed to get count array".to_string()))?;
+            let count_array = doc.get_array("count").map_err(|_| {
+                ServiceError::UnexpectedError("Failed to get count array".to_string())
+            })?;
 
             let total_count = if let Some(count_item) = count_array.first() {
                 count_item
@@ -253,7 +316,6 @@ impl CurseforgeService {
             (Vec::new(), 0)
         };
 
-        // 现在你有了 files 和 total_count，可以构建响应
         let result_count = files.len() as i32;
         Ok(ModFilesResponse {
             data: files,
@@ -272,20 +334,19 @@ impl CurseforgeService {
         file_id: i32,
     ) -> Result<DownloadUrlResponse, ServiceError> {
         if mod_id.is_negative() || file_id.is_negative() {
-            return Err(ServiceError::LogicalError(String::from(
-                "Mod ID and File ID cannot be negative",
-            )));
+            return Err(ServiceError::InvalidInput {
+                field: String::from("mod_id or file_id"),
+                reason: String::from("Mod ID and File ID cannot be negative"),
+            });
         }
 
-        let file: FileResponse = self
-            .get_file(file_id)
-            .await?
-            .ok_or_else(|| ServiceError::LogicalError(String::from("File not found")))?;
-
-        Ok(DownloadUrlResponse{
-            data: file.data.download_url.unwrap()
-        })
-    }
+            let file = self.get_file(file_id).await?;
+    
+            let file_data = file;
+            Ok(DownloadUrlResponse {
+                data: file_data.data.download_url.unwrap_or_default(),
+            })
+        }
 
     pub async fn get_fingerprints(
         &self,
@@ -293,9 +354,10 @@ impl CurseforgeService {
         game_id: Option<i32>,
     ) -> Result<FingerprintResponse, ServiceError> {
         if fingerprints.is_empty() {
-            return Err(ServiceError::LogicalError(String::from(
-                "Fingerprints cannot be empty",
-            )));
+            return Err(ServiceError::InvalidInput {
+                field: String::from("fingerprints"),
+                reason: String::from("Fingerprints cannot be empty"),
+            });
         }
 
         let collection = self
@@ -312,11 +374,14 @@ impl CurseforgeService {
         let mut cursor = collection.find(filter, None).await?;
         let mut fingerprint_results = Vec::new();
 
-        while let Ok(Some(doc)) = cursor.try_next().await {
+        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::Database {
+            message: String::from("Failed to fetch fingerprints from database"),
+            source: Some(e),
+        }) {
             if let Ok(fingerprint) = bson::from_document::<Fingerprint>(doc) {
                 fingerprint_results.push(fingerprint);
             } else {
-                return Err(ServiceError::LogicalError(String::from(
+                return Err(ServiceError::UnexpectedError(String::from(
                     "Failed to deserialize Fingerprint",
                 )));
             }
@@ -362,12 +427,22 @@ impl CurseforgeService {
             filter.insert("isClass", true);
         }
 
-        let mut cursor = collection.find(filter, None).await?;
+        let mut cursor =
+            collection
+                .find(filter, None)
+                .await
+                .map_err(|e| ServiceError::Database {
+                    message: String::from("Failed to fetch categories from database"),
+                    source: Some(e),
+                })?;
 
         let mut categories = Vec::new();
-        while let Ok(Some(doc)) = cursor.try_next().await {
+        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::Database {
+            message: String::from("Failed to fetch categories from database"),
+            source: Some(e),
+        }) {
             let category: Category = bson::from_document(doc).map_err(|e| {
-                ServiceError::LogicalError(format!("Failed to deserialize Category: {}", e))
+                ServiceError::UnexpectedError(format!("Failed to deserialize Category: {}", e))
             })?;
             categories.push(category);
         }
