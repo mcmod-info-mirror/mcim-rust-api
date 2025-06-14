@@ -22,9 +22,14 @@ jobs:
     - name: Start MongoDB
       uses: supercharge/mongodb-github-action@1.12.0
 
+    - name: Install MongoDB Database Tools
+      run: |
+        curl -O https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2404-x86_64-100.12.2.deb 
+        sudo dpkg -i mongodb-database-tools-ubuntu2404-x86_64-100.12.2.deb
+        sudo apt-get install -f -y
+
     - name: Install dependencies
       run: |
-        just mongodb-tool-install
         just import-data
 
     - name: Run tests
