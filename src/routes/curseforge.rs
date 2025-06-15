@@ -9,6 +9,7 @@ use crate::errors::{ApiError, ServiceError};
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/curseforge/v1")
+            .service(search_mods)
             .service(get_mod)
             .service(get_files_by_ids)
             .service(get_mods)
@@ -20,6 +21,53 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .service(get_categories),
     );
 }
+
+
+#[utoipa::path(
+    get,
+    path = "/mods/search",
+    params(
+        ("gameId" = i32, Query, description = "ID of the game to filter mods by (optional)"),
+        ("classId" = Option<i32>, Query, description = "ID of the class to filter mods by (optional)"),
+        ("categoryId" = Option<i32>, Query, description = "ID of the category to filter mods by (optional)"),
+        ("categoryIds" = Option<String>, Query, description = "Comma-separated list of category IDs to filter mods by (optional)"),
+        ("gameVersion" = Option<String>, Query, description = "Game version filter (optional)"),
+        ("gameVersions" = Option<String>, Query, description = "Comma-separated list of game versions to filter mods by (optional)"),
+        ("searchFilter" = Option<String>, Query, description = "Search filter for mod names (optional)"),
+        ("sortField" = Option<String>, Query, description = "Field to sort results by (optional)"),
+        ("sortOrder" = Option<String>, Query, description = "Order to sort results in (asc/desc) (optional)"),
+        ("modLoaderType" = Option<String>, Query, description = "Mod loader type filter (optional)"),
+        ("modLoaderTypes" = Option<String>, Query, description = "Comma-separated list of mod loader types to filter mods by (optional)"),
+        ("gameVersionTypeId" = Option<i32>, Query, description = "Game version type ID filter (optional)"),
+        ("authorId" = Option<i32>, Query, description = "ID of the author to filter mods by (optional)"),
+        ("primaryAuthorId" = Option<i32>, Query, description = "ID of the primary author to filter mods by (optional)"),
+        ("slug" = Option<String>, Query, description = "Slug of the mod to retrieve (optional)"),
+        ("index" = Option<i32>, Query, description = "Zero-based index of the first item to include in the response. The limit is: (index + pageSize <= 10,000).", example = 0, maximum = 10000, minimum = 0),
+        ("pageSize" = Option<i32>, Query, description = "Number of items to include in the response. The default/maximum value is 50.", example = 50, maximum = 50, minimum = 1)
+    ),
+    responses(
+        (status = 200, description = "Search Result found", body = Vec<ModResponse>),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Curseforge",
+)]
+#[get("/mods/search")]
+async fn search_mods(
+    query: web::Query<SearchQuery>,
+    data: web::Data<AppState>,
+) -> Result<impl Responder, ApiError> {
+    let service = CurseforgeService::new(data.db.clone());
+
+    match service.search_mods(
+        &query,
+        &data.curseforge_api_url,
+        &data.curseforge_api_key,
+    ).await {
+        Ok(mods) => Ok(web::Json(mods)),
+        Err(e) => Err(e.into()),
+    }
+}
+
 
 
 #[utoipa::path(

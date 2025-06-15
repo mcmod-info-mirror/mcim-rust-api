@@ -16,6 +16,18 @@ const FINGERPRINTS: [i32; 2] = [2070800629, 1904165976];
 
 
 #[actix_web::test]
+async fn test_search() {
+    let app = init_service(create_test_app().await).await;
+
+    let req = TestRequest::get()
+        .uri("/curseforge/v1/mods/search?gameId=432&classId=6&index=0&pageSize=20")
+        .to_request();
+
+    let resp = app.call(req).await.unwrap();
+    assert!(resp.status().is_success());
+}
+
+#[actix_web::test]
 async fn test_get_mod_success() {
     let app = init_service(create_test_app().await).await;
 

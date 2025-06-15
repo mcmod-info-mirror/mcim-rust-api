@@ -1,21 +1,91 @@
+use crate::models::curseforge::requests::SearchQuery;
 use bson::doc;
 use futures::stream::TryStreamExt;
-use mongodb::{bson::Document, Client};
+use mongodb::{bson::Document, Client as Mongo_Client};
+use reqwest::Client;
 
 use crate::config::database::get_database_name;
+use crate::errors::ServiceError;
 use crate::models::curseforge::entities::{Category, File, Fingerprint, Mod};
 use crate::models::curseforge::responses::*;
 
-// use crate::services::ServiceError;
-use crate::errors::ServiceError;
-
 pub struct CurseforgeService {
-    db: Client,
+    db: Mongo_Client,
 }
 
 impl CurseforgeService {
-    pub fn new(db: Client) -> Self {
+    pub fn new(db: Mongo_Client) -> Self {
         Self { db }
+    }
+
+    pub async fn search_mods(
+        &self,
+        query: &SearchQuery,
+        curseforge_api_url: &str,
+        curseforge_api_key: &str,
+    ) -> Result<SearchResponse, ServiceError> {
+        let mut params: Vec<(&str, String)> = Vec::new();
+
+        macro_rules! add_param {
+            ($field:ident, $key:expr) => {
+                if let Some(value) = &query.$field {
+                    params.push(($key, value.to_string()));
+                }
+            };
+            ($field:ident, $key:expr, transform) => {
+                if let Some(value) = query.$field {
+                    params.push(($key, value.to_string()));
+                }
+            };
+        }
+
+        let game_id = query.game_id.unwrap_or(432);
+        let index = query.index.unwrap_or(0);
+        let page_size = query.page_size.unwrap_or(50);
+
+        params.push(("gameId", game_id.to_string()));
+        params.push(("index", index.to_string()));
+        params.push(("pageSize", page_size.to_string()));
+
+        add_param!(class_id, "classId", transform);
+        add_param!(category_id, "categoryId", transform);
+        add_param!(category_ids, "categoryIds");
+        add_param!(game_version, "gameVersion");
+        add_param!(game_versions, "gameVersions");
+        add_param!(search_filter, "searchFilter");
+        add_param!(sort_field, "sortField");
+        add_param!(sort_order, "sortOrder");
+        add_param!(mod_loader_type, "modLoaderType");
+        add_param!(mod_loader_types, "modLoaderTypes");
+        add_param!(game_version_type_id, "gameVersionTypeId", transform);
+        add_param!(author_id, "authorId", transform);
+        add_param!(primary_author_id, "primaryAuthorId", transform);
+        add_param!(slug, "slug");
+
+        let response = Client::new()
+            .get(format!("{}/v1/mods/search", curseforge_api_url))
+            .header("x-api-key", curseforge_api_key)
+            .query(&params)
+            .send()
+            .await
+            .map_err(|e| ServiceError::ExternalServiceError {
+            service: "Curseforge API".into(),
+            message: format!("Failed to send request: {}", e),
+            })?;
+
+        let search_result: SearchResponse = response.error_for_status()
+            .map_err(|e| ServiceError::ExternalServiceError {
+                service: "Curseforge API".into(),
+                message: format!("Request failed: {}", e),
+            })?
+            .json()
+            .await
+            .map_err(|e| ServiceError::ExternalServiceError {
+                service: "Curseforge API".into(),
+                message: format!("Failed to parse response: {}", e),
+            })?;
+
+        Ok(search_result)
     }
 
     pub async fn get_mod(&self, mod_id: i32) -> Result<Option<ModResponse>, ServiceError> {
@@ -341,13 +411,13 @@ impl CurseforgeService {
             });
         }
 
-            let file = self.get_file(file_id).await?;
-    
-            let file_data = file;
-            Ok(DownloadUrlResponse {
-                data: file_data.data.download_url.unwrap_or_default(),
-            })
-        }
+        let file = self.get_file(file_id).await?;
+
+        let file_data = file;
+        Ok(DownloadUrlResponse {
+            data: file_data.data.download_url.unwrap_or_default(),
+        })
+    }
 
     pub async fn get_fingerprints(
         &self,

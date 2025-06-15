@@ -11,7 +11,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 bson = {version = "2.0", features = ["chrono-0_4"] }
 mongodb = { version = "2.4.0", features = ["tokio-runtime"] }
-dotenvy = "0.15"
 chrono = { version = "0.4.41", features = ["serde"] }
 futures = "0.3.31"
 serde-value = "0.7.0"
@@ -19,3 +18,12 @@ utoipa = { version = "5.3.1", features = ["actix_extras", "chrono"] }
 utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 utoipa-actix-web = "0.1.2"
 utoipauto = "=0.3.0-alpha.2"
+actix-service = "2.0.3"
+futures-util = "0.3.31"
+bytes = "1.10.1"
+md5 = "0.7.0"
+reqwest = { version = "0.12.20", features = ["json"] }
+
+[dependencies.redis]
+version = "0.31.0"
+features = ["aio", "tokio-comp"]

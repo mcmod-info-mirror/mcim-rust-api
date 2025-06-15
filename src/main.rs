@@ -3,14 +3,16 @@ pub mod errors;
 pub mod models;
 pub mod routes;
 pub mod services;
+pub mod middlewares;
 
 use actix_web::{web, App, HttpServer};
+use std::env;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use utoipauto::utoipauto;
-use std::env;
 
-use crate::config::database::connect;
+use crate::config::database::connect as connect_mongo;
+use crate::config::_redis::connect as connect_redis;
 use crate::config::AppState;
 use crate::errors::ApiError;
 use crate::routes::config as routes_config;
@@ -31,14 +33,21 @@ pub struct OpenApiDoc;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // 配置MongoDB连接
-    let client = connect().await.expect("Failed to connect to MongoDB");
+    let mongo_client = connect_mongo().await.expect("Failed to connect to MongoDB");
+    let redis_client = connect_redis().await.expect("Failed to connect to Redis");
 
-    // 获取服务器端口，默认为8080
+    // 获取服务器端口，默认为 8080
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let bind_address = format!("0.0.0.0:{}", port);
 
     let app = move || {
-        let app_data = web::Data::new(AppState { db: client.clone() });
+        let app_data = web::Data::new(AppState {
+            db: mongo_client.clone(),
+            redis: redis_client.clone(),
+            curseforge_api_url: env::var("CURSEFORGE_API_URL").unwrap_or_else(|_| "https://api.curseforge.com".to_string()),
+            modrinth_api_url: env::var("MODRINTH_API_URL").unwrap_or_else(|_| "https://api.modrinth.com".to_string()),
+            curseforge_api_key: env::var("CURSEFORGE_API_KEY").unwrap_or_else(|_| "".to_string()),
+        });
 
         App::new()
             .app_data(app_data)
@@ -55,9 +64,7 @@ async fn main() -> std::io::Result<()> {
                     .error_handler(|err, _| ApiError::BadRequest(err.to_string()).into()),
             )
             .configure(routes_config)
-            .service(
-                SwaggerUi::new("/docs/{_:.*}").url("/openapi.json", OpenApiDoc::openapi()),
-            )
+            .service(SwaggerUi::new("/docs/{_:.*}").url("/openapi.json", OpenApiDoc::openapi()))
     };
 
     HttpServer::new(app).bind(&bind_address)?.run().await
