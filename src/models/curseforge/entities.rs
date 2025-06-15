@@ -1,9 +1,10 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use utoipa::{ToSchema};
 
 use crate::models::deserialize_bson_datetime_flexible;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct File {
     #[serde(rename = "_id")]
     pub id: i32,
@@ -59,7 +60,7 @@ pub struct File {
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Mod {
     #[serde(rename = "_id")]
     pub id: i32,
@@ -108,7 +109,7 @@ pub struct Mod {
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Fingerprint {
     #[serde(rename = "_id")]
     pub id: i32,
@@ -120,7 +121,7 @@ pub struct Fingerprint {
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Category {
     #[serde(rename = "_id")]
     pub id: i32,
@@ -146,7 +147,7 @@ pub struct Category {
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct FileDependencies {
     #[serde(rename = "modId")]
     pub mod_id: i32,
@@ -154,7 +155,7 @@ pub struct FileDependencies {
     pub relation_type: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct FileSortableGameVersions {
     #[serde(rename = "gameVersionName")]
     pub game_version_name: Option<String>,
@@ -168,20 +169,20 @@ pub struct FileSortableGameVersions {
     pub game_version_type_id: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Hash {
     pub value: String,
     pub algo: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Author {
     pub id: i32,
     pub name: String,
     pub url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Logo {
     pub id: i32,
     #[serde(rename = "modId")]
@@ -193,7 +194,7 @@ pub struct Logo {
     pub url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct CategoryInfo {
     pub id: Option<i32>,
     #[serde(rename = "gameId")]
@@ -215,7 +216,7 @@ pub struct CategoryInfo {
     pub display_index: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Links {
     #[serde(rename = "websiteUrl")]
     pub website_url: Option<String>,
@@ -227,7 +228,7 @@ pub struct Links {
     pub source_url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct ScreenShot {
     pub id: i32,
     #[serde(rename = "modId")]
@@ -239,13 +240,13 @@ pub struct ScreenShot {
     pub url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Module {
     pub name: Option<String>,
     pub fingerprint: Option<i64>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct FileIndex {
     #[serde(rename = "gameVersion")]
     pub game_version: Option<String>,
@@ -260,7 +261,7 @@ pub struct FileIndex {
     pub mod_loader: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct FileInfo {
     pub id: i32,
     #[serde(rename = "gameId")]

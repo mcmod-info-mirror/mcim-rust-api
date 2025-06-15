@@ -2,8 +2,8 @@
 name = "mcim-rust-api"
 version = "0.1.0"
 edition = "2021"
-authors = ["Your Name <your.email@example.com>"]
-description = "一个用Rust编写的信息管理API"
+authors = ["z0z0r4@outlook.com"]
+description = "MCIM API rewritten in Rust"
 
 [dependencies]
 actix-web = "4"
@@ -15,3 +15,7 @@ dotenvy = "0.15"
 chrono = { version = "0.4.41", features = ["serde"] }
 futures = "0.3.31"
 serde-value = "0.7.0"
+utoipa = { version = "5.3.1", features = ["actix_extras", "chrono"] }
+utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
+utoipa-actix-web = "0.1.2"
+utoipauto = "=0.3.0-alpha.2"

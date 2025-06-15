@@ -4,6 +4,8 @@ use crate::config::AppState;
 use crate::models::translate::requests::{
     CurseForgeTranslationRequest, CurseforgeQuery, ModrinthQuery, ModrinthTranslationRequest,
 };
+use crate::models::translate::responses::{
+    CurseForgeTranslationResponse, ModrinthTranslationResponse};
 use crate::services::translate::{CurseForgeService, ModrinthService};
 
 
@@ -19,6 +21,20 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     );
 }
 
+#[utoipa::path(
+    get,
+    path = "/translate/modrinth/{project_id}",
+    params(
+        ("project_id" = String, Path, description = "Project ID of the Modrinth project")
+    ),
+    responses(
+        (status = 200, description = "Translation found", body = ModrinthTranslationResponse),
+        (status = 404, description = "Translation not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    description = "Get Modrinth translation by project ID",
+    tag = "Translate",
+)]
 #[get("/modrinth/{project_id}")]
 async fn get_modrinth_translation(
     path: web::Path<String>,
@@ -38,7 +54,21 @@ async fn get_modrinth_translation(
     }
 }
 
-// Deprecated
+#[utoipa::path(
+    get,
+    path = "/translate/modrinth",
+    params(
+        ("project_id" = String, Query, description = "Project ID of the Modrinth project")
+    ),
+    responses(
+        (status = 200, description = "Translation found", body = ModrinthTranslationResponse),
+        (status = 404, description = "Translation not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    description = "Get Modrinth translation by project ID",
+    tag = "Translate",
+)]
+#[deprecated]
 #[get("/modrinth")]
 async fn get_modrinth_translation_deprecated(
     query: web::Query<ModrinthQuery>,
@@ -58,6 +88,20 @@ async fn get_modrinth_translation_deprecated(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/translate/curseforge/{mod_id}",
+    params(
+        ("mod_id" = i32, Path, description = "Mod ID of the CurseForge mod")
+    ),
+    responses(
+        (status = 200, description = "Translation found", body = CurseForgeTranslationResponse),
+        (status = 404, description = "Translation not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    description = "Get CurseForge translation by mod ID",
+    tag = "Translate",
+)]
 #[get("/curseforge/{mod_id}")]
 async fn get_curseforge_translation(
     path: web::Path<i32>,
@@ -75,7 +119,22 @@ async fn get_curseforge_translation(
 }
 
 // Deprecated
+#[utoipa::path(
+    get,
+    path = "/translate/curseforge",
+    params(
+        ("mod_id" = i32, Query, description = "Mod ID of the CurseForge mod")
+    ),
+    responses(
+        (status = 200, description = "Translation found", body = CurseForgeTranslationResponse),
+        (status = 404, description = "Translation not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    description = "Get CurseForge translation by mod ID",
+    tag = "Translate",
+)]
 #[get("/curseforge")]
+#[deprecated]
 async fn get_curseforge_translation_deprecated(
     query: web::Query<CurseforgeQuery>,
     data: web::Data<AppState>,
@@ -91,6 +150,17 @@ async fn get_curseforge_translation_deprecated(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/translate/modrinth/batch",
+    request_body = ModrinthTranslationRequest,
+    responses(
+        (status = 200, description = "Translations found", body = Vec<ModrinthTranslationResponse>),
+        (status = 500, description = "Internal server error")
+    ),
+    description = "Get Modrinth translations in batch by project IDs",
+    tag = "Translate",
+)]
 #[post("/modrinth")]
 async fn get_modrinth_translation_batch(
     data: web::Data<AppState>,
@@ -100,11 +170,22 @@ async fn get_modrinth_translation_batch(
     let service = ModrinthService::new(data.db.clone());
 
     match service.get_translations_batch(project_ids).await {
-        Ok(translation) => HttpResponse::Created().json(translation),
+        Ok(translation) => HttpResponse::Ok().json(translation),
         Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/translate/curseforge/batch",
+    request_body = CurseForgeTranslationRequest,
+    responses(
+        (status = 200, description = "Translations found", body = Vec<CurseForgeTranslationResponse>),
+        (status = 500, description = "Internal server error")
+    ),
+    description = "Get CurseForge translations in batch by mod IDs",
+    tag = "Translate",
+)]
 #[post("/curseforge")]
 async fn get_curseforge_translation_batch(
     data: web::Data<AppState>,
@@ -114,7 +195,7 @@ async fn get_curseforge_translation_batch(
     let service = CurseForgeService::new(data.db.clone());
 
     match service.get_translations_batch(mod_ids).await {
-        Ok(translation) => HttpResponse::Created().json(translation),
+        Ok(translation) => HttpResponse::Ok().json(translation),
         Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
     }
 }

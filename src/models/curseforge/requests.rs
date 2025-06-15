@@ -1,6 +1,7 @@
+use utoipa::ToSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct ModsBody {
     #[serde(rename = "modIds")]
     pub mod_ids: Vec<i32>,
@@ -9,7 +10,7 @@ pub struct ModsBody {
 }
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct ModFilesQuery {
     #[serde(rename = "gameVersion")]
     pub game_version: Option<String>,
@@ -21,18 +22,18 @@ pub struct ModFilesQuery {
 }
 
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct FileIdsBody {
     #[serde(rename = "fileIds")]
     pub file_ids: Vec<i32>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct FingerprintsBody {
     pub fingerprints: Vec<i32>
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct CategoriesQuery {
     #[serde(rename = "gameId")]
     pub game_id: i32,

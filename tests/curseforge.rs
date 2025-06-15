@@ -1,5 +1,5 @@
 use actix_web::{
-    body, dev::Service, test::{init_service, TestRequest}, web, App
+    dev::Service, test::{init_service, TestRequest}
 };
 use serde_json::json;
 

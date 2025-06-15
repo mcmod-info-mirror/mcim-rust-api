@@ -3,6 +3,7 @@ use actix_web::{get, web, HttpResponse, Responder};
 use crate::config::AppState;
 use crate::services::common::get_statistics_info;
 use crate::models::common::requests::StatisticsQuery;
+use crate::models::common::responses::StatisticsResponse;
 use crate::errors::{ApiError};
 
 pub fn config(cfg: &mut web::ServiceConfig) {
@@ -10,11 +11,37 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     .service(get_statistics);
 }
 
+
+#[utoipa::path(
+    get,
+    path = "/",
+    responses(
+        (status = 200, description = "Welcome message"),
+    ),
+    description = "Root endpoint for the MCIM Translation API",
+    tag = "Root"
+)]
 #[get("/")]
 async fn root() -> impl Responder {
     HttpResponse::Ok().body("Welcome to the MCIM Translation API!")
 }
 
+
+#[utoipa::path(
+    get,
+    path = "/statistics",
+    params(
+        ("curseforge" = Option<bool>, Query, description = "Include CurseForge statistics"),
+        ("modrinth" = Option<bool>, Query, description = "Include Modrinth statistics"),
+        ("translate" = Option<bool>, Query, description = "Include translation statistics")
+    ),
+    responses(
+        (status = 200, description = "Statistics retrieved successfully", body = StatisticsResponse),
+        (status = 500, description = "Internal server error")
+    ),
+    description = "Get statistics for CurseForge and Modrinth",
+    tag = "Common"
+)]
 #[get("/statistics")]
 async fn get_statistics(
     query: web::Query<StatisticsQuery>,

@@ -1,8 +1,9 @@
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, Responder};
 
 use crate::config::AppState;
 use crate::services::curseforge::CurseforgeService;
 use crate::models::curseforge::requests::*;
+use crate::models::curseforge::responses::*;
 use crate::errors::{ApiError, ServiceError};
 
 pub fn config(cfg: &mut web::ServiceConfig) {
@@ -20,6 +21,20 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     );
 }
 
+
+#[utoipa::path(
+    get,
+    path = "/mods/{mod_id}",
+    params(
+        ("mod_id" = i32, Path, description = "ID of the mod to retrieve")
+    ),
+    responses(
+        (status = 200, description = "Mod found", body = ModResponse),
+        (status = 404, description = "Mod not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Curseforge",
+)]
 #[get("/mods/{mod_id}")]
 async fn get_mod(
     path: web::Path<i32>,
@@ -40,6 +55,17 @@ async fn get_mod(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/mods",
+    request_body = ModsBody,
+    responses(
+        (status = 200, description = "Mods found", body = Vec<ModResponse>),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Curseforge",
+)]
 #[post("/mods")]
 async fn get_mods(
     body: web::Json<ModsBody>,
@@ -54,6 +80,23 @@ async fn get_mods(
 }
 
 
+#[utoipa::path(
+    get,
+    path = "/mods/{mod_id}/files",
+    params(
+        ("mod_id" = i32, Path, description = "ID of the mod to retrieve files for"),
+        ("game_version" = String, Query, description = "Game version filter (optional)"),
+        ("mod_loader_type" = Option<String>, Query, description = "Mod loader type filter (optional)"),
+        ("index" = Option<i32>, Query, description = "Index for pagination (optional)"),
+        ("page_size" = Option<i32>, Query, description = "Page size for pagination (optional)")
+    ),
+    responses(
+        (status = 200, description = "Files found", body = Vec<FileResponse>),
+        (status = 404, description = "Mod not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Curseforge",
+)]
 #[get("/mods/{mod_id}/files")]
 async fn get_mod_files(
     path: web::Path<i32>,
@@ -77,6 +120,20 @@ async fn get_mod_files(
 }
 
 
+#[utoipa::path(
+    get,
+    path = "/mods/{mod_id}/files/{file_id}/download-url",
+    params(
+        ("mod_id" = i32, Path, description = "ID of the mod"),
+        ("file_id" = i32, Path, description = "ID of the file to retrieve download URL for")
+    ),
+    responses(
+        (status = 200, description = "Download URL found", body = DownloadUrlResponse),
+        (status = 404, description = "File not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Curseforge",
+)]
 #[get("/mods/{mod_id}/files/{file_id}/download-url")]
 async fn get_file_download_url(
     path: web::Path<(i32, i32)>,
@@ -93,6 +150,21 @@ async fn get_file_download_url(
     }
 }
 
+
+#[utoipa::path(
+    get,
+    path = "/mods/files/{file_id}",
+    params(
+        ("mod_id" = i32, Path, description = "ID of the mod to which the file belongs"),
+        ("file_id" = i32, Path, description = "ID of the file to retrieve")
+    ),
+    responses(
+        (status = 200, description = "File found", body = FileResponse),
+        (status = 404, description = "File not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Curseforge",
+)]
 #[get("/mods/{mod_id}/files/{file_id}")]
 async fn get_file(
     path: web::Path<(i32, i32)>,
@@ -109,6 +181,19 @@ async fn get_file(
     }
 }
 
+
+
+#[utoipa::path(
+    post,
+    path = "/mods/files",
+    request_body = FileIdsBody,
+    responses(
+        (status = 200, description = "Files found", body = Vec<FileResponse>),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Curseforge",
+)]
 #[post("/mods/files")]
 async fn get_files_by_ids(
     body: web::Json<FileIdsBody>,
@@ -123,6 +208,18 @@ async fn get_files_by_ids(
     }
 }
 
+
+#[utoipa::path(
+    post,
+    path = "/fingerprints",
+    request_body = FingerprintsBody,
+    responses(
+        (status = 200, description = "Fingerprints found", body = FingerprintResult),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Curseforge",
+)]
 #[post("/fingerprints")]
 async fn get_fingerprints(
     body: web::Json<FingerprintsBody>,
@@ -137,6 +234,21 @@ async fn get_fingerprints(
     }
 }
 
+
+#[utoipa::path(
+    post,
+    path = "/fingerprints/{game_id}",
+    params(
+        ("game_id" = i32, Path, description = "ID of the game to filter fingerprints by")
+    ),
+    request_body = FingerprintsBody,
+    responses(
+        (status = 200, description = "Fingerprints found", body = FingerprintResult),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Curseforge",
+)]
 #[post("/fingerprints/{game_id}")]
 async fn get_fingerprints_by_game_id(
     path: web::Path<i32>,
@@ -154,6 +266,21 @@ async fn get_fingerprints_by_game_id(
     }
 }
 
+
+#[utoipa::path(
+    get,
+    path = "/categories",
+    params(
+        ("game_id" = i32, Query, description = "ID of the game to filter categories by"),
+        ("class_id" = Option<i32>, Query, description = "ID of the class to filter categories by (optional)"),
+        ("class_only" = Option<bool>, Query, description = "Whether to return only classes (optional)")
+    ),
+    responses(
+        (status = 200, description = "Categories found", body = CategoriesResponse),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Curseforge",
+)]
 #[get("/categories")]
 async fn get_categories(
     query: web::Query<CategoriesQuery>,
