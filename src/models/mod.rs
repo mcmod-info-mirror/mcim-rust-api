@@ -3,7 +3,7 @@ pub mod curseforge;
 pub mod modrinth;
 pub mod translate;
 
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct ErrorResponse {

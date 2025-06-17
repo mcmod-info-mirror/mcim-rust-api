@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, Responder, HttpResponse};
+use actix_web::{get, post, web, Responder};
 
 use crate::config::AppState;
 use crate::errors::{ApiError, ServiceError};

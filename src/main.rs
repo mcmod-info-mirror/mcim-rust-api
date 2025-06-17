@@ -8,7 +8,6 @@ pub mod utils;
 use actix_web::{web, App, HttpServer};
 use dotenvy::dotenv;
 use std::env;
-use std::sync::Arc;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use utoipauto::utoipauto;
