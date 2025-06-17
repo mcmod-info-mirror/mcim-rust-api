@@ -59,7 +59,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+      
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+      
       - name: build
         run: |
           cargo build --release --verbose --bin mcim-rust-api
