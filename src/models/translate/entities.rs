@@ -2,7 +2,7 @@ use serde::{Serialize, Deserialize};
 use chrono::DateTime;
 use chrono::Utc;
 
-use crate::models::deserialize_bson_datetime_flexible;
+use bson::serde_helpers::chrono_datetime_as_bson_datetime;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ModrinthTranslation {
@@ -11,9 +11,7 @@ pub struct ModrinthTranslation {
     pub translated: String,
     pub original: String,
 
-    #[serde(
-        deserialize_with = "deserialize_bson_datetime_flexible"
-    )]
+    #[serde(with = "chrono_datetime_as_bson_datetime")]
     pub translated_at: DateTime<Utc>,
 }
 
@@ -23,8 +21,7 @@ pub struct CurseForgeTranslation {
     pub modid: i32,
     pub translated: String,
     pub original: String,
-    #[serde(
-        deserialize_with = "deserialize_bson_datetime_flexible"
-    )]
+
+    #[serde(with = "chrono_datetime_as_bson_datetime")]
     pub translated_at: DateTime<Utc>,
 }

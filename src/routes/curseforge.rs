@@ -1,5 +1,4 @@
 use actix_web::{get, post, web, Responder, HttpResponse};
-use std::sync::Arc;
 
 use crate::config::AppState;
 use crate::errors::{ApiError, ServiceError};
@@ -234,7 +233,7 @@ async fn get_file_download_url(
 
 #[utoipa::path(
     get,
-    path = "/curseforge/v1/mods/files/{file_id}",
+    path = "/curseforge/v1/mods/{mod_id}/files/{file_id}",
     params(
         ("mod_id" = i32, Path, description = "ID of the mod to which the file belongs"),
         ("file_id" = i32, Path, description = "ID of the file to retrieve")

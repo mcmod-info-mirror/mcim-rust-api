@@ -103,7 +103,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_projects");
+            .collection::<Project>("modrinth_projects");
 
         match collection
             .find_one(
@@ -116,11 +116,12 @@ impl ModrinthService {
             .await?
         {
             Some(doc) => {
-                let project_data: Project = bson::from_document(doc).map_err(|e| {
-                    ServiceError::UnexpectedError(format!("Failed to deserialize Project: {}", e))
-                })?;
+                // let project_data: Project = bson::from_document(doc).map_err(|e| {
+                //     ServiceError::UnexpectedError(format!("Failed to deserialize Project: {}", e))
+                // })?;
 
-                Ok(Some(project_data))
+                // Ok(Some(project_data))
+                Ok(Some(doc))
             }
             None => Err(ServiceError::NotFound {
                 resource: String::from("Modrinth Project"),
@@ -146,7 +147,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_projects");
+            .collection::<Project>("modrinth_projects");
 
         let filter = doc! {
             "$or": [
@@ -174,15 +175,16 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            match bson::from_document::<Project>(doc) {
-                Ok(project) => projects.push(project),
-                Err(e) => {
-                    return Err(ServiceError::UnexpectedError(format!(
-                        "Failed to deserialize Project: {}",
-                        e
-                    )));
-                }
-            }
+            // match bson::from_document::<Project>(doc) {
+            //     Ok(project) => projects.push(project),
+            //     Err(e) => {
+            //         return Err(ServiceError::UnexpectedError(format!(
+            //             "Failed to deserialize Project: {}",
+            //             e
+            //         )));
+            //     }
+            // }
+            projects.push(doc);
         }
 
         if projects.is_empty() {
@@ -209,7 +211,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_versions");
+            .collection::<Version>("modrinth_versions");
 
         let filter = doc! { "project_id": &project_id };
 
@@ -225,15 +227,16 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            match bson::from_document::<Version>(doc) {
-                Ok(version) => versions.push(version),
-                Err(e) => {
-                    return Err(ServiceError::UnexpectedError(format!(
-                        "Failed to deserialize Version: {}",
-                        e
-                    )));
-                }
-            }
+            // match bson::from_document::<Version>(doc) {
+            //     Ok(version) => versions.push(version),
+            //     Err(e) => {
+            //         return Err(ServiceError::UnexpectedError(format!(
+            //             "Failed to deserialize Version: {}",
+            //             e
+            //         )));
+            //     }
+            // }
+            versions.push(doc);
         }
 
         if versions.is_empty() {
@@ -253,7 +256,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_projects");
+            .collection::<Project>("modrinth_projects");
 
         let filter = doc! { "_id": { "$in": project_ids } };
 
@@ -269,15 +272,16 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            match bson::from_document::<Project>(doc) {
-                Ok(project) => projects.push(project),
-                Err(e) => {
-                    return Err(ServiceError::UnexpectedError(format!(
-                        "Failed to deserialize Project: {}",
-                        e
-                    )));
-                }
-            }
+            // match bson::from_document::<Project>(doc) {
+            //     Ok(project) => projects.push(project),
+            //     Err(e) => {
+            //         return Err(ServiceError::UnexpectedError(format!(
+            //             "Failed to deserialize Project: {}",
+            //             e
+            //         )));
+            //     }
+            // }
+            projects.push(doc);
 
             if projects.is_empty() {
                 return Err(ServiceError::NotFound {
@@ -300,18 +304,19 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_versions");
+            .collection::<Version>("modrinth_versions");
 
         match collection
             .find_one(doc! { "_id": &version_id }, None)
             .await?
         {
             Some(doc) => {
-                let version_data: Version = bson::from_document(doc).map_err(|e| {
-                    ServiceError::UnexpectedError(format!("Failed to deserialize Version: {}", e))
-                })?;
+                // let version_data: Version = bson::from_document(doc).map_err(|e| {
+                //     ServiceError::UnexpectedError(format!("Failed to deserialize Version: {}", e))
+                // })?;
 
-                Ok(Some(version_data))
+                // Ok(Some(version_data))
+                Ok(Some(doc))
             }
             None => Err(ServiceError::NotFound {
                 resource: String::from("Modrinth Version"),
@@ -334,7 +339,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_versions");
+            .collection::<Version>("modrinth_versions");
 
         let filter = doc! { "_id": { "$in": version_ids } };
 
@@ -350,15 +355,16 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            match bson::from_document::<Version>(doc) {
-                Ok(version) => versions.push(version),
-                Err(e) => {
-                    return Err(ServiceError::UnexpectedError(format!(
-                        "Failed to deserialize Version: {}",
-                        e
-                    )));
-                }
-            }
+            // match bson::from_document::<Version>(doc) {
+            //     Ok(version) => versions.push(version),
+            //     Err(e) => {
+            //         return Err(ServiceError::UnexpectedError(format!(
+            //             "Failed to deserialize Version: {}",
+            //             e
+            //         )));
+            //     }
+            // }
+            versions.push(doc);
         }
 
         if versions.is_empty() {
@@ -386,17 +392,16 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_files");
+            .collection::<File>("modrinth_files");
 
         let filter = doc! { format!("_id.{}", algorithm): &hash };
 
         match collection.find_one(filter, None).await? {
             Some(doc) => {
-                let file_data: File = bson::from_document(doc).map_err(|e| {
-                    ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
-                })?;
-
-                Ok(Some(file_data))
+                // let file_data: File = bson::from_document(doc).map_err(|e| {
+                //     ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
+                // })?;
+                Ok(Some(doc))
             }
             None => Err(ServiceError::NotFound {
                 resource: String::from("Modrinth files"),
@@ -424,7 +429,7 @@ impl ModrinthService {
         let files_collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_files");
+            .collection::<File>("modrinth_files");
 
         let hash_field = format!("_id.{}", &algorithm);
         let files_filter = doc! { &hash_field: { "$in": &hashes } };
@@ -441,15 +446,16 @@ impl ModrinthService {
                     source: Some(e),
                 })?
         {
-            match bson::from_document::<File>(doc) {
-                Ok(file) => files.push(file),
-                Err(e) => {
-                    return Err(ServiceError::UnexpectedError(format!(
-                        "Failed to deserialize File: {}",
-                        e
-                    )));
-                }
-            }
+            // match bson::from_document::<File>(doc) {
+            //     Ok(file) => files.push(file),
+            //     Err(e) => {
+            //         return Err(ServiceError::UnexpectedError(format!(
+            //             "Failed to deserialize File: {}",
+            //             e
+            //         )));
+            //     }
+            // }
+            files.push(doc);
         }
 
         if files.is_empty() {
@@ -466,7 +472,7 @@ impl ModrinthService {
         let versions_collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_versions");
+            .collection::<Version>("modrinth_versions");
 
         let versions_filter = doc! { "_id": { "$in": &version_ids } };
         let mut versions_cursor = versions_collection.find(versions_filter, None).await?;
@@ -481,15 +487,16 @@ impl ModrinthService {
                     source: Some(e),
                 })?
         {
-            match bson::from_document::<Version>(doc) {
-                Ok(version) => versions.push(version),
-                Err(e) => {
-                    return Err(ServiceError::UnexpectedError(format!(
-                        "Failed to deserialize Version: {}",
-                        e
-                    )));
-                }
-            }
+            // match bson::from_document::<Version>(doc) {
+            //     Ok(version) => versions.push(version),
+            //     Err(e) => {
+            //         return Err(ServiceError::UnexpectedError(format!(
+            //             "Failed to deserialize Version: {}",
+            //             e
+            //         )));
+            //     }
+            // }
+            versions.push(doc);
         }
 
         if versions.is_empty() {

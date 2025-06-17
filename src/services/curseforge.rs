@@ -1,6 +1,6 @@
 use bson::doc;
 use futures::stream::TryStreamExt;
-use mongodb::{bson::Document, Client as Mongo_Client};
+use mongodb::{Client as Mongo_Client};
 use reqwest::Client;
 
 use crate::config::database::get_database_name;
@@ -106,14 +106,19 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("curseforge_mods");
+            .collection::<Mod>("curseforge_mods");
 
         match collection.find_one(doc! { "_id": mod_id }, None).await? {
-            Some(doc) => {
-                let mod_data: Mod = bson::from_document(doc).map_err(|e| {
-                    ServiceError::UnexpectedError(format!("Failed to deserialize Mod: {}", e))
-                })?;
+            // Some(doc) => {
+            //     let mod_data: Mod = bson::from_document(doc).map_err(|e| {
+            //         ServiceError::UnexpectedError(format!("Failed to deserialize Mod: {}", e))
+            //     })?;
 
+            //     let response = ModResponse { data: mod_data };
+            //     Ok(Some(response))
+            // }
+            Some(mod_data) => {
+                // 不需要手动反序列化
                 let response = ModResponse { data: mod_data };
                 Ok(Some(response))
             }
@@ -135,7 +140,7 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("curseforge_mods");
+            .collection::<Mod>("curseforge_mods");
 
         let mut cursor = collection
             .find(doc! { "_id": { "$in": mod_ids } }, None)
@@ -151,15 +156,17 @@ impl CurseforgeService {
                 source: Some(e),
             })?
         {
-            match bson::from_document::<Mod>(doc) {
-                Ok(mod_data) => mods.push(mod_data),
-                Err(e) => {
-                    return Err(ServiceError::UnexpectedError(format!(
-                        "Failed to deserialize Mod: {}",
-                        e
-                    )));
-                }
-            }
+            // match bson::from_document::<Mod>(doc) {
+            //     Ok(mod_data) => mods.push(mod_data),
+            //     Err(e) => {
+            //         return Err(ServiceError::UnexpectedError(format!(
+            //             "Failed to deserialize Mod: {}",
+            //             e
+            //         )));
+            //     }
+            // }
+            // 不需要手动反序列化
+            mods.push(doc);
         }
         // empty 则直接返回 { "data": [] }
         if mods.is_empty() {
@@ -182,7 +189,7 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("curseforge_mods");
+            .collection::<Mod>("curseforge_mods");
 
         match collection
             .find_one(doc! { "slug": slug }, None)
@@ -191,11 +198,16 @@ impl CurseforgeService {
                 message: "Failed to fetch mod by slug".to_string(),
                 source: Some(e),
             })? {
-            Some(doc) => {
-                let mod_data: Mod = bson::from_document(doc).map_err(|e| {
-                    ServiceError::UnexpectedError(format!("Failed to deserialize Mod: {}", e))
-                })?;
+            // Some(doc) => {
+            //     let mod_data: Mod = bson::from_document(doc).map_err(|e| {
+            //         ServiceError::UnexpectedError(format!("Failed to deserialize Mod: {}", e))
+            //     })?;
 
+            //     let response = ModResponse { data: mod_data };
+            //     Ok(Some(response))
+            // }
+            Some(mod_data) => {
+                // 不需要手动反序列化
                 let response = ModResponse { data: mod_data };
                 Ok(Some(response))
             }
@@ -217,7 +229,7 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("curseforge_files");
+            .collection::<File>("curseforge_files");
 
         match collection
             .find_one(doc! { "_id": file_id }, None)
@@ -226,11 +238,16 @@ impl CurseforgeService {
                 message: "Failed to fetch file by ID".to_string(),
                 source: Some(e),
             })? {
-            Some(doc) => {
-                let file_data: File = bson::from_document(doc).map_err(|e| {
-                    ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
-                })?;
+            // Some(doc) => {
+            //     let file_data: File = bson::from_document(doc).map_err(|e| {
+            //         ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
+            //     })?;
 
+            //     let response = FileResponse { data: file_data };
+            //     Ok(response)
+            // }
+            Some(file_data) => {
+                // 不需要手动反序列化
                 let response = FileResponse { data: file_data };
                 Ok(response)
             }
@@ -252,7 +269,7 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("curseforge_files");
+            .collection::<File>("curseforge_files");
 
         let mut cursor = collection
             .find(doc! { "_id": { "$in": file_ids } }, None)
@@ -263,10 +280,10 @@ impl CurseforgeService {
             message: String::from("Failed to fetch files from database"),
             source: Some(e),
         }) {
-            let file_data: File = bson::from_document(doc).map_err(|e| {
-                ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
-            })?;
-            files.push(file_data);
+            // let file_data: File = bson::from_document(doc).map_err(|e| {
+            //     ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
+            // })?;
+            files.push(doc);
         }
 
         if files.is_empty() {
@@ -296,7 +313,7 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("curseforge_files");
+            .collection::<File>("curseforge_files");
 
         let mut filter = doc! { "modId": mod_id };
         let mut game_version_filters = Vec::new();
@@ -441,7 +458,7 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("curseforge_fingerprints");
+            .collection::<Fingerprint>("curseforge_fingerprints");
 
         // 可选 game_id 参数用于过滤
         let mut filter = doc! { "_id": { "$in": &fingerprints } };
@@ -456,13 +473,14 @@ impl CurseforgeService {
             message: String::from("Failed to fetch fingerprints from database"),
             source: Some(e),
         }) {
-            if let Ok(fingerprint) = bson::from_document::<Fingerprint>(doc) {
-                fingerprint_results.push(fingerprint);
-            } else {
-                return Err(ServiceError::UnexpectedError(String::from(
-                    "Failed to deserialize Fingerprint",
-                )));
-            }
+            // if let Ok(fingerprint) = bson::from_document::<Fingerprint>(doc) {
+            //     fingerprint_results.push(fingerprint);
+            // } else {
+            //     return Err(ServiceError::UnexpectedError(String::from(
+            //         "Failed to deserialize Fingerprint",
+            //     )));
+            // }
+            fingerprint_results.push(doc);
         }
 
         let exact_fingerprints = fingerprint_results.iter().map(|f| f.id).collect();
@@ -494,7 +512,7 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Document>("curseforge_categories");
+            .collection::<Category>("curseforge_categories");
 
         // 构建查询过滤器
         let mut filter = doc! { "gameId": game_id };
@@ -519,10 +537,10 @@ impl CurseforgeService {
             message: String::from("Failed to fetch categories from database"),
             source: Some(e),
         }) {
-            let category: Category = bson::from_document(doc).map_err(|e| {
-                ServiceError::UnexpectedError(format!("Failed to deserialize Category: {}", e))
-            })?;
-            categories.push(category);
+            // let category: Category = bson::from_document(doc).map_err(|e| {
+            //     ServiceError::UnexpectedError(format!("Failed to deserialize Category: {}", e))
+            // })?;
+            categories.push(doc);
         }
 
         Ok(categories)
