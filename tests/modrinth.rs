@@ -1,9 +1,6 @@
 use actix_web::{
-    dev::Service,
-    test::{init_service, TestRequest},
-    http::StatusCode,
+    dev::Service, test::{init_service, TestRequest, read_body_json}, body::to_bytes
 };
-
 use serde_json::json;
 
 use mcim_rust_api::test_utils::create_test_app;
@@ -60,7 +57,9 @@ fn get_update_samples() -> Vec<UpdateSample> {
 //     let req = TestRequest::get().uri("/modrinth/").to_request();
 //     let resp = app.call(req).await.unwrap();
     
-//     assert_eq!(resp.status(), StatusCode::OK);
+//     let status = resp.status();
+//     let body: String = read_body_json(resp).await;
+//     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 // }
 
 #[actix_web::test]
@@ -71,7 +70,10 @@ async fn test_modrinth_search() {
         .to_request();
     let resp = app.call(req).await.unwrap();
     
-    assert_eq!(resp.status(), StatusCode::OK);
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -84,7 +86,10 @@ async fn test_modrinth_project() {
             .to_request();
         let resp = app.call(req).await.unwrap();
         
-        assert_eq!(resp.status(), StatusCode::OK);
+        let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
     }
 }
 
@@ -97,7 +102,10 @@ async fn test_modrinth_projects() {
         .to_request();
     let resp = app.call(req).await.unwrap();
     
-    assert_eq!(resp.status(), StatusCode::OK);
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -110,7 +118,10 @@ async fn test_modrinth_project_versions() {
             .to_request();
         let resp = app.call(req).await.unwrap();
         
-        assert_eq!(resp.status(), StatusCode::OK);
+        let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
     }
 }
 
@@ -124,7 +135,10 @@ async fn test_modrinth_version() {
             .to_request();
         let resp = app.call(req).await.unwrap();
         
-        assert_eq!(resp.status(), StatusCode::OK);
+        let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
     }
 }
 
@@ -137,7 +151,10 @@ async fn test_modrinth_versions() {
         .to_request();
     let resp = app.call(req).await.unwrap();
     
-    assert_eq!(resp.status(), StatusCode::OK);
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -150,7 +167,10 @@ async fn test_modrinth_version_file_sha1() {
             .to_request();
         let resp = app.call(req).await.unwrap();
         
-        assert_eq!(resp.status(), StatusCode::OK);
+        let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
     }
 }
 
@@ -164,7 +184,10 @@ async fn test_modrinth_version_file_sha512() {
             .to_request();
         let resp = app.call(req).await.unwrap();
         
-        assert_eq!(resp.status(), StatusCode::OK);
+        let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
     }
 }
 
@@ -182,7 +205,10 @@ async fn test_modrinth_version_file_sha1_update() {
             .to_request();
         let resp = app.call(req).await.unwrap();
         
-        assert_eq!(resp.status(), StatusCode::OK);
+        let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
     }
 }
 
@@ -202,7 +228,10 @@ async fn test_modrinth_version_file_sha512_update() {
             }))
             .to_request();
         let resp = app.call(req).await.unwrap();
-        assert_eq!(resp.status(), StatusCode::OK);
+        let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
     }
 }
 
@@ -218,7 +247,10 @@ async fn test_modrinth_version_files_sha1() {
         .to_request();
     let resp = app.call(req).await.unwrap();
     
-    assert_eq!(resp.status(), StatusCode::OK);
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -233,7 +265,10 @@ async fn test_modrinth_version_files_sha512() {
         .to_request();
     let resp = app.call(req).await.unwrap();
     
-    assert_eq!(resp.status(), StatusCode::OK);
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -255,7 +290,10 @@ async fn test_modrinth_version_files_sha1_update() {
             .to_request();
         let resp = app.call(req).await.unwrap();
         
-        assert_eq!(resp.status(), StatusCode::OK);
+        let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
     }
 }
 
@@ -277,7 +315,10 @@ async fn test_modrinth_version_files_sha512_update() {
             .to_request();
         let resp = app.call(req).await.unwrap();
         
-        assert_eq!(resp.status(), StatusCode::OK);
+        let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
         }
 }
 
@@ -287,7 +328,10 @@ async fn test_modrinth_tag_category() {
     let req = TestRequest::get().uri("/modrinth/v2/tag/category").to_request();
     let resp = app.call(req).await.unwrap();
     
-    assert_eq!(resp.status(), StatusCode::OK);
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -296,7 +340,10 @@ async fn test_modrinth_tag_loader() {
     let req = TestRequest::get().uri("/modrinth/v2/tag/loader").to_request();
     let resp = app.call(req).await.unwrap();
     
-    assert_eq!(resp.status(), StatusCode::OK);
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -305,5 +352,8 @@ async fn test_modrinth_tag_game_version() {
     let req = TestRequest::get().uri("/modrinth/v2/tag/game_version").to_request();
     let resp = app.call(req).await.unwrap();
     
-    assert_eq!(resp.status(), StatusCode::OK);
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }

@@ -1,5 +1,5 @@
 use actix_web::{
-    dev::Service, test::{init_service, TestRequest}
+    dev::Service, test::{init_service, TestRequest, read_body_json}, body::to_bytes
 };
 use serde_json::json;
 
@@ -15,6 +15,7 @@ const FILE_IDS: [i32; 2] = [3913840, 5976953];
 const FINGERPRINTS: [i32; 2] = [2070800629, 1904165976];
 
 
+
 #[actix_web::test]
 async fn test_search() {
     let app = init_service(create_test_app().await).await;
@@ -24,7 +25,10 @@ async fn test_search() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -36,7 +40,10 @@ async fn test_get_mod_success() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -78,7 +85,11 @@ async fn test_get_mods_success() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
 }
 
 #[actix_web::test]
@@ -95,6 +106,7 @@ async fn test_get_mods_not_found() {
     let resp = app.call(req).await.unwrap();
 
     assert_eq!(resp.status(), 404);
+
 }
 
 #[actix_web::test]
@@ -106,7 +118,11 @@ async fn test_get_file_success() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
 }
 
 #[actix_web::test]
@@ -124,7 +140,11 @@ async fn test_get_files_success() {
 
     let resp = app.call(req).await.unwrap();
     eprint!("{:?}", resp);
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
 }
 
 #[actix_web::test]
@@ -136,7 +156,11 @@ async fn test_get_mod_files_success() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -148,7 +172,11 @@ async fn test_get_mod_files_with_filters() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
 }
 
 #[actix_web::test]
@@ -160,7 +188,10 @@ async fn test_get_file_download_url() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
 
 #[actix_web::test]
@@ -177,7 +208,11 @@ async fn test_get_fingerprints_success() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
 }
 
 #[actix_web::test]
@@ -194,7 +229,11 @@ async fn test_get_fingerprints_by_game_id_success() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
 }
 
 #[actix_web::test]
@@ -206,7 +245,11 @@ async fn test_get_categories_success() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
 }
 
 #[actix_web::test]
@@ -218,7 +261,11 @@ async fn test_get_categories_with_class_id_filter_success() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
 }
 
 #[actix_web::test]
@@ -230,5 +277,8 @@ async fn test_get_categories_with_class_only_filters() {
         .to_request();
 
     let resp = app.call(req).await.unwrap();
-    assert!(resp.status().is_success());
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
 }
