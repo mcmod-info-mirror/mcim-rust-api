@@ -62,10 +62,10 @@ services:
 
   mcim-rust-api:
     container_name: mcim-rust-api
-    image: mcim-rust-api:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: z0z0r4/mcim-rust-api:main
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     ports:
       - 8080:8080
     restart: always
