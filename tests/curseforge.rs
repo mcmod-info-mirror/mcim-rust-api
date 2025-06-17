@@ -20,7 +20,7 @@ async fn test_search() {
     let app = init_service(create_test_app().await).await;
 
     let req = TestRequest::get()
-        .uri("/curseforge/v1/mods/search?gameId=432&classId=6&index=0&pageSize=20")
+        .uri("/curseforge/v1/mods/search?gameId=432&classId=6&index=0&pageSize=50")
         .to_request();
 
     let resp = app.call(req).await.unwrap();

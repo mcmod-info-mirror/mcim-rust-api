@@ -1,18 +1,19 @@
-use redis::{Client};
+use redis::{Client, aio::MultiplexedConnection};
+use std::sync::Arc;
 use std::env;
 
-pub async fn connect() -> Result<Client, Box<dyn std::error::Error>> {
+pub async fn connect() -> Result<Arc<MultiplexedConnection>, Box<dyn std::error::Error + Send + Sync>> {
     let redis_url = env::var("REDIS_URL")
         .unwrap_or_else(|_| "redis://localhost:6379".to_string());
-    
+
     let client = Client::open(redis_url)?;
     
-    // 测试连接
-    let mut con = client.get_connection()?;
-    redis::cmd("PING").exec(&mut con).unwrap();
+    // 获取异步 MultiplexedConnection
+    let conn = client.get_multiplexed_async_connection().await?;
     
     println!("Connected to Redis successfully!");
-    Ok(client)
+    
+    Ok(Arc::new(conn))
 }
 
 pub fn get_redis_url() -> String {

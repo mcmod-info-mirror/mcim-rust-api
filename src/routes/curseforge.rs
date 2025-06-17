@@ -1,15 +1,17 @@
-use actix_web::{get, post, web, Responder};
+use actix_web::{get, post, web, Responder, HttpResponse};
+use std::sync::Arc;
 
 use crate::config::AppState;
-use crate::services::curseforge::CurseforgeService;
+use crate::errors::{ApiError, ServiceError};
 use crate::models::curseforge::requests::*;
 use crate::models::curseforge::responses::*;
-use crate::errors::{ApiError, ServiceError};
+use crate::services::curseforge::CurseforgeService;
+use crate::utils::redis_cache::{cacheable_json, create_key};
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/curseforge/v1")
-            .service(search_mods)
+            .service(search_mods_cached)
             .service(get_mod)
             .service(get_files_by_ids)
             .service(get_mods)
@@ -22,10 +24,9 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     );
 }
 
-
 #[utoipa::path(
     get,
-    path = "/mods/search",
+    path = "/curseforge/v1/mods/search",
     params(
         ("gameId" = i32, Query, description = "ID of the game to filter mods by (optional)"),
         ("classId" = Option<i32>, Query, description = "ID of the class to filter mods by (optional)"),
@@ -46,33 +47,67 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         ("pageSize" = Option<i32>, Query, description = "Number of items to include in the response. The default/maximum value is 50.", example = 50, maximum = 50, minimum = 1)
     ),
     responses(
-        (status = 200, description = "Search Result found", body = Vec<ModResponse>),
+        (status = 200, description = "Search Result found", body = SearchResponse),
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
 )]
 #[get("/mods/search")]
-async fn search_mods(
+async fn search_mods_cached(
     query: web::Query<SearchQuery>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = CurseforgeService::new(data.db.clone());
+    let redis_pool = data.redis_pool.clone();
+    let db = data.db.clone();
+    let curseforge_api_url = data.curseforge_api_url.clone();
+    let curseforge_api_key = data.curseforge_api_key.clone();
 
-    match service.search_mods(
-        &query,
-        &data.curseforge_api_url,
-        &data.curseforge_api_key,
-    ).await {
-        Ok(mods) => Ok(web::Json(mods)),
-        Err(e) => Err(e.into()),
-    }
+    let key = create_key(
+        "GET".to_string(),
+        "/curseforge/v1/mods/search".to_string(),
+        query.to_string(),
+    );
+
+    cacheable_json(
+        redis_pool,
+        key,
+        3600, // 缓存 1 小时
+        move || {
+            let service = CurseforgeService::new(db.clone());
+            Box::pin(async move {
+                service
+                    .search_mods(
+                        &query,
+                        &curseforge_api_url,
+                        &curseforge_api_key,
+                    )
+                    .await
+                    .map_err(Into::into)
+            })
+        },
+    ).await
 }
 
 
+// async fn search_mods(
+//     query: web::Query<SearchQuery>,
+//     data: web::Data<AppState>,
+// ) -> Result<impl Responder, ApiError> {
+//     let service = CurseforgeService::new(data.db.clone());
+
+//     match service.search_mods(
+//         &query,
+//         &data.curseforge_api_url,
+//         &data.curseforge_api_key,
+//     ).await {
+//         Ok(search_result) => Ok(web::Json(search_result)),
+//         Err(e) => Err(e.into()),
+//     }
+// }
 
 #[utoipa::path(
     get,
-    path = "/mods/{mod_id}",
+    path = "/curseforge/v1/mods/{mod_id}",
     params(
         ("mod_id" = i32, Path, description = "ID of the mod to retrieve")
     ),
@@ -105,7 +140,7 @@ async fn get_mod(
 
 #[utoipa::path(
     post,
-    path = "/mods",
+    path = "/curseforge/v1/mods",
     request_body = ModsBody,
     responses(
         (status = 200, description = "Mods found", body = Vec<ModResponse>),
@@ -127,10 +162,9 @@ async fn get_mods(
     }
 }
 
-
 #[utoipa::path(
     get,
-    path = "/mods/{mod_id}/files",
+    path = "/curseforge/v1/mods/{mod_id}/files",
     params(
         ("mod_id" = i32, Path, description = "ID of the mod to retrieve files for"),
         ("game_version" = String, Query, description = "Game version filter (optional)"),
@@ -150,27 +184,28 @@ async fn get_mod_files(
     path: web::Path<i32>,
     query: web::Query<ModFilesQuery>,
     data: web::Data<AppState>,
-)
--> Result<impl Responder, ApiError> {
+) -> Result<impl Responder, ApiError> {
     let mod_id = path.into_inner();
     let service = CurseforgeService::new(data.db.clone());
 
-    match service.get_mod_files(
-        mod_id,
-        query.game_version.clone(),
-        query.mod_loader_type,
-        query.index,
-        query.page_size,
-    ).await {
+    match service
+        .get_mod_files(
+            mod_id,
+            query.game_version.clone(),
+            query.mod_loader_type,
+            query.index,
+            query.page_size,
+        )
+        .await
+    {
         Ok(files) => Ok(web::Json(files)),
-        Err(e) => Err(e.into())
+        Err(e) => Err(e.into()),
     }
 }
 
-
 #[utoipa::path(
     get,
-    path = "/mods/{mod_id}/files/{file_id}/download-url",
+    path = "/curseforge/v1/mods/{mod_id}/files/{file_id}/download-url",
     params(
         ("mod_id" = i32, Path, description = "ID of the mod"),
         ("file_id" = i32, Path, description = "ID of the file to retrieve download URL for")
@@ -186,8 +221,7 @@ async fn get_mod_files(
 async fn get_file_download_url(
     path: web::Path<(i32, i32)>,
     data: web::Data<AppState>,
-)
--> Result<impl Responder, ApiError> {
+) -> Result<impl Responder, ApiError> {
     let (mod_id, file_id) = path.into_inner();
 
     let service = CurseforgeService::new(data.db.clone());
@@ -198,10 +232,9 @@ async fn get_file_download_url(
     }
 }
 
-
 #[utoipa::path(
     get,
-    path = "/mods/files/{file_id}",
+    path = "/curseforge/v1/mods/files/{file_id}",
     params(
         ("mod_id" = i32, Path, description = "ID of the mod to which the file belongs"),
         ("file_id" = i32, Path, description = "ID of the file to retrieve")
@@ -217,8 +250,7 @@ async fn get_file_download_url(
 async fn get_file(
     path: web::Path<(i32, i32)>,
     data: web::Data<AppState>,
-)
--> Result<impl Responder, ApiError> {
+) -> Result<impl Responder, ApiError> {
     let (_, file_id) = path.into_inner();
 
     let service = CurseforgeService::new(data.db.clone());
@@ -229,11 +261,9 @@ async fn get_file(
     }
 }
 
-
-
 #[utoipa::path(
     post,
-    path = "/mods/files",
+    path = "/curseforge/v1/mods/files",
     request_body = FileIdsBody,
     responses(
         (status = 200, description = "Files found", body = Vec<FileResponse>),
@@ -246,8 +276,7 @@ async fn get_file(
 async fn get_files_by_ids(
     body: web::Json<FileIdsBody>,
     data: web::Data<AppState>,
-)
--> Result<impl Responder, ApiError> {
+) -> Result<impl Responder, ApiError> {
     let service = CurseforgeService::new(data.db.clone());
 
     match service.get_files(body.file_ids.clone()).await {
@@ -256,10 +285,9 @@ async fn get_files_by_ids(
     }
 }
 
-
 #[utoipa::path(
     post,
-    path = "/fingerprints",
+    path = "/curseforge/v1/fingerprints",
     request_body = FingerprintsBody,
     responses(
         (status = 200, description = "Fingerprints found", body = FingerprintResult),
@@ -272,20 +300,21 @@ async fn get_files_by_ids(
 async fn get_fingerprints(
     body: web::Json<FingerprintsBody>,
     data: web::Data<AppState>,
-)
--> Result<impl Responder, ApiError> {
+) -> Result<impl Responder, ApiError> {
     let service = CurseforgeService::new(data.db.clone());
 
-    match service.get_fingerprints(body.fingerprints.clone(), None).await {
+    match service
+        .get_fingerprints(body.fingerprints.clone(), None)
+        .await
+    {
         Ok(fingerprint_result) => Ok(web::Json(fingerprint_result)),
         Err(e) => Err(e.into()),
     }
 }
 
-
 #[utoipa::path(
     post,
-    path = "/fingerprints/{game_id}",
+    path = "/curseforge/v1/fingerprints/{game_id}",
     params(
         ("game_id" = i32, Path, description = "ID of the game to filter fingerprints by")
     ),
@@ -302,22 +331,23 @@ async fn get_fingerprints_by_game_id(
     path: web::Path<i32>,
     body: web::Json<FingerprintsBody>,
     data: web::Data<AppState>,
-)
--> Result<impl Responder, ApiError> {
+) -> Result<impl Responder, ApiError> {
     let game_id = path.into_inner();
 
     let service = CurseforgeService::new(data.db.clone());
 
-    match service.get_fingerprints(body.fingerprints.clone(), Some(game_id)).await {
+    match service
+        .get_fingerprints(body.fingerprints.clone(), Some(game_id))
+        .await
+    {
         Ok(fingerprint_result) => Ok(web::Json(fingerprint_result)),
         Err(e) => Err(e.into()),
     }
 }
 
-
 #[utoipa::path(
     get,
-    path = "/categories",
+    path = "/curseforge/v1/categories",
     params(
         ("game_id" = i32, Query, description = "ID of the game to filter categories by"),
         ("class_id" = Option<i32>, Query, description = "ID of the class to filter categories by (optional)"),
@@ -333,11 +363,13 @@ async fn get_fingerprints_by_game_id(
 async fn get_categories(
     query: web::Query<CategoriesQuery>,
     data: web::Data<AppState>,
-)
--> Result<impl Responder, ApiError> {
+) -> Result<impl Responder, ApiError> {
     let service = CurseforgeService::new(data.db.clone());
 
-    match service.get_categories(query.game_id, query.class_id, query.class_only).await {
+    match service
+        .get_categories(query.game_id, query.class_id, query.class_only)
+        .await
+    {
         Ok(categories) => Ok(web::Json(categories)),
         Err(e) => Err(e.into()),
     }

@@ -73,7 +73,7 @@ impl ModrinthService {
                         return Err(ServiceError::UnexpectedError(String::from("Failed to convert document")));
                     }
                 }
-                Err(e) => return Err(ServiceError::Database {
+                Err(e) => return Err(ServiceError::DatabaseError {
                     message: e.to_string(),
                     source: Some(e),
                 }),
@@ -178,7 +178,7 @@ impl CurseForgeService {
                         return Err(ServiceError::UnexpectedError(String::from("Failed to convert document")));
                     }
                 }
-                Err(e) => return Err(ServiceError::Database {
+                Err(e) => return Err(ServiceError::DatabaseError {
                     message: e.to_string(),
                     source: Some(e),
                 }),

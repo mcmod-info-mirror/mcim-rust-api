@@ -38,7 +38,7 @@ impl ApiError {
 impl From<ServiceError> for ApiError {
     fn from(err: ServiceError) -> Self {
         match err {
-            ServiceError::Database { message, source: _ } => {
+            ServiceError::DatabaseError { message, source: _ } => {
                 ApiError::InternalServerError(format!("Database error: {}", message))
             }
             ServiceError::NotFound { resource, detail } => {

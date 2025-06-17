@@ -1,4 +1,3 @@
-use crate::models::curseforge::requests::SearchQuery;
 use bson::doc;
 use futures::stream::TryStreamExt;
 use mongodb::{bson::Document, Client as Mongo_Client};
@@ -8,6 +7,7 @@ use crate::config::database::get_database_name;
 use crate::errors::ServiceError;
 use crate::models::curseforge::entities::{Category, File, Fingerprint, Mod};
 use crate::models::curseforge::responses::*;
+use crate::models::curseforge::requests::SearchQuery;
 
 pub struct CurseforgeService {
     db: Mongo_Client,
@@ -23,7 +23,7 @@ impl CurseforgeService {
         query: &SearchQuery,
         curseforge_api_url: &str,
         curseforge_api_key: &str,
-    ) -> Result<SearchResponse, ServiceError> {
+    ) -> Result<serde_json::Value, ServiceError> {
         let mut params: Vec<(&str, String)> = Vec::new();
 
         macro_rules! add_param {
@@ -73,16 +73,23 @@ impl CurseforgeService {
             message: format!("Failed to send request: {}", e),
             })?;
 
-        let search_result: SearchResponse = response.error_for_status()
-            .map_err(|e| ServiceError::ExternalServiceError {
+        // 检查状态码
+        if !response.status().is_success() {
+            return Err(ServiceError::ExternalServiceError {
                 service: "Curseforge API".into(),
-                message: format!("Request failed: {}", e),
-            })?
-            .json()
+                message: format!(
+                    "Request failed with status code: {}",
+                    response.status()
+                ),
+            });
+        }
+
+        let search_result = response
+            .json::<serde_json::Value>()
             .await
             .map_err(|e| ServiceError::ExternalServiceError {
                 service: "Curseforge API".into(),
-                message: format!("Failed to parse response: {}", e),
+                message: format!("Failed to parse JSON: {}", e),
             })?;
 
         Ok(search_result)
@@ -139,7 +146,7 @@ impl CurseforgeService {
         while let Some(doc) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::Database {
+            .map_err(|e| ServiceError::DatabaseError {
                 message: "Failed to fetch mods from database".to_string(),
                 source: Some(e),
             })?
@@ -180,7 +187,7 @@ impl CurseforgeService {
         match collection
             .find_one(doc! { "slug": slug }, None)
             .await
-            .map_err(|e| ServiceError::Database {
+            .map_err(|e| ServiceError::DatabaseError {
                 message: "Failed to fetch mod by slug".to_string(),
                 source: Some(e),
             })? {
@@ -215,7 +222,7 @@ impl CurseforgeService {
         match collection
             .find_one(doc! { "_id": file_id }, None)
             .await
-            .map_err(|e| ServiceError::Database {
+            .map_err(|e| ServiceError::DatabaseError {
                 message: "Failed to fetch file by ID".to_string(),
                 source: Some(e),
             })? {
@@ -252,7 +259,7 @@ impl CurseforgeService {
             .await?;
 
         let mut files = Vec::new();
-        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::Database {
+        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::DatabaseError {
             message: String::from("Failed to fetch files from database"),
             source: Some(e),
         }) {
@@ -342,12 +349,12 @@ impl CurseforgeService {
             collection
                 .aggregate(pipeline, None)
                 .await
-                .map_err(|e| ServiceError::Database {
+                .map_err(|e| ServiceError::DatabaseError {
                     message: String::from("Failed to aggregate mod files"),
                     source: Some(e),
                 })?;
 
-        let result = cursor.try_next().await.map_err(|e| ServiceError::Database {
+        let result = cursor.try_next().await.map_err(|e| ServiceError::DatabaseError {
             message: String::from("Failed to fetch mod files"),
             source: Some(e),
         });
@@ -445,7 +452,7 @@ impl CurseforgeService {
         let mut cursor = collection.find(filter, None).await?;
         let mut fingerprint_results = Vec::new();
 
-        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::Database {
+        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::DatabaseError {
             message: String::from("Failed to fetch fingerprints from database"),
             source: Some(e),
         }) {
@@ -502,13 +509,13 @@ impl CurseforgeService {
             collection
                 .find(filter, None)
                 .await
-                .map_err(|e| ServiceError::Database {
+                .map_err(|e| ServiceError::DatabaseError {
                     message: String::from("Failed to fetch categories from database"),
                     source: Some(e),
                 })?;
 
         let mut categories = Vec::new();
-        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::Database {
+        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::DatabaseError {
             message: String::from("Failed to fetch categories from database"),
             source: Some(e),
         }) {

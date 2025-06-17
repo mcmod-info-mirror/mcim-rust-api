@@ -4,7 +4,7 @@ use mongodb::error::Error as MongoError;
 
 #[derive(Debug)]
 pub enum ServiceError {
-    Database {
+    DatabaseError {
         message: String,
         source: Option<MongoError>,
     },
@@ -26,7 +26,7 @@ pub enum ServiceError {
 impl Display for ServiceError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ServiceError::Database { message, .. } => {
+            ServiceError::DatabaseError { message, .. } => {
                 write!(f, "Database error: {}", message)
             }
             ServiceError::NotFound { resource, detail } => {
@@ -52,7 +52,7 @@ impl Display for ServiceError {
 impl StdError for ServiceError {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match self {
-            ServiceError::Database { source, .. } => {
+            ServiceError::DatabaseError { source, .. } => {
                 source.as_ref().map(|e| e as &dyn std::error::Error)
             }
             ServiceError::NotFound { .. } => None,
@@ -65,7 +65,7 @@ impl StdError for ServiceError {
 
 impl From<MongoError> for ServiceError {
     fn from(err: MongoError) -> Self {
-        ServiceError::Database {
+        ServiceError::DatabaseError {
             message: err.to_string(),
             source: Some(err),
         }

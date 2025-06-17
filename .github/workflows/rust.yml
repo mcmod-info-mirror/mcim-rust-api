@@ -11,6 +11,9 @@ env:
 
 jobs:
   test:
+    env:
+      CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+
     runs-on: ubuntu-latest
 
     steps:
@@ -25,11 +28,23 @@ jobs:
     - name: Start MongoDB
       uses: supercharge/mongodb-github-action@1.12.0
 
+    - name: Start Redis
+      uses: supercharge/redis-github-action@1.7.0
+
     - name: Install MongoDB Database Tools
       run: |
         curl -O https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2404-x86_64-100.12.2.deb 
         sudo dpkg -i mongodb-database-tools-ubuntu2404-x86_64-100.12.2.deb
         sudo apt-get install -f -y
+
+    - name: Install Redis tool
+      run: |
+        sudo apt-get install lsb-release curl gpg
+        curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+        sudo chmod 644 /usr/share/keyrings/redis-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+        sudo apt-get update
+        sudo apt install redis-tools
 
     - name: Install dependencies
       run: |

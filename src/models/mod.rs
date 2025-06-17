@@ -29,7 +29,6 @@ where
 
     Ok(T::from(DateTimeWrapper::from(None)))
 }
-
 pub struct DateTimeWrapper(pub Option<DateTime<Utc>>);
 
 impl From<Option<DateTime<Utc>>> for DateTimeWrapper {

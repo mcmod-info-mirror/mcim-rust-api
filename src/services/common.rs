@@ -7,7 +7,7 @@ async fn get_collection_count(db: &mongodb::Client, collection_name: &str) -> Re
 
     // 如果 $collStats 失败，回退到 estimated_document_count
     let count = collection.estimated_document_count(None).await.map_err(|e| {
-            ServiceError::Database {
+            ServiceError::DatabaseError {
                 message: format!("Failed to get collection count for {}: {}", collection_name, e), source: Some(e.into()),
             }
     })?;
