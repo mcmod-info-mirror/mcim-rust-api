@@ -1,8 +1,7 @@
 use actix_web::{get, post, web, Responder};
 
-
 use crate::config::AppState;
-use crate::errors::{ApiError};
+use crate::errors::ApiError;
 use crate::models::modrinth::entities::*;
 use crate::models::modrinth::requests::*;
 use crate::models::modrinth::responses::*;
@@ -11,23 +10,34 @@ use crate::utils::redis_cache::{cacheable_json, create_key};
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("/modrinth/v2")
-            .service(search_cached)
-            .service(get_project)
-            .service(get_projects)
-            .service(get_project_versions)
-            .service(get_version)
-            .service(get_versions)
-            .service(get_version_file)
-            .service(get_version_files)
-            .service(update_version_file)
-            .service(update_version_files)
-            .service(get_categories)
-            .service(get_loaders)
-            .service(get_game_versions),
+        web::scope("/modrinth").service(root).service(
+            web::scope("/v2")
+                .service(search_cached)
+                .service(get_project)
+                .service(get_projects)
+                .service(get_project_versions)
+                .service(get_version)
+                .service(get_versions)
+                .service(get_version_file)
+                .service(get_version_files)
+                .service(update_version_file)
+                .service(update_version_files)
+                .service(get_categories)
+                .service(get_loaders)
+                .service(get_game_versions),
+        ),
     );
 }
 
+#[utoipa::path(
+    get,
+    path = "/modrinth",
+    responses(
+        (status = 200, description = "Modrinth Message")
+    ),
+    description = "Root endpoint for the Modrinth API",
+    tag = "Modrinth"
+)]
 #[get("/")]
 pub async fn root() -> impl Responder {
     "Modrinth API"
@@ -46,7 +56,8 @@ pub async fn root() -> impl Responder {
     responses(
         (status = 200, description = "Search results found", body = SearchResponse)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Modrinth Search for projects"
 )]
 #[get("/search")]
 pub async fn search_cached(
@@ -114,7 +125,8 @@ pub async fn search_cached(
     responses(
         (status = 200, description = "Project found", body = Project)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Get a project by its project_id or slug"
 )]
 #[get("/project/{project_id}")]
 pub async fn get_project(
@@ -137,7 +149,8 @@ pub async fn get_project(
     responses(
         (status = 200, description = "Projects Found", body = Vec<Project>),
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Get multiple projects by their project_ids or slugs"
 )]
 #[get("/projects")]
 pub async fn get_projects(
@@ -166,7 +179,8 @@ pub async fn get_projects(
     responses(
         (status = 200, description = "Project versions found", body = Vec<Version>)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Get all versions of a project by its project_id or slug"
 )]
 #[get("/project/{project_id}/version")]
 pub async fn get_project_versions(
@@ -189,7 +203,8 @@ pub async fn get_project_versions(
     responses(
         (status = 200, description = "Version found", body = Version)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Get a specific version by version_id"
 )]
 #[get("/version/{version_id}")]
 pub async fn get_version(
@@ -212,7 +227,8 @@ pub async fn get_version(
     responses(
         (status = 200, description = "Versions found", body = Vec<Version>)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Get multiple versions by their version_ids"
 )]
 #[get("/versions")]
 pub async fn get_versions(
@@ -241,7 +257,8 @@ pub async fn get_versions(
     responses(
         (status = 200, description = "File found", body = Version)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Get a version file by its hash"
 )]
 #[get("/version_file/{hash}")]
 pub async fn get_version_file(
@@ -266,7 +283,8 @@ pub async fn get_version_file(
     responses(
         (status = 200, description = "Files found", body = std::collections::HashMap<String, Version>)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Get multiple version files by their hashes"
 )]
 #[post("/version_files")]
 pub async fn get_version_files(
@@ -294,7 +312,8 @@ pub async fn get_version_files(
     responses(
         (status = 200, description = "File updated", body = Version)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Update a version file by its hash with new loaders and game versions"
 )]
 #[post("/version_file/{hash}/update")]
 pub async fn update_version_file(
@@ -324,7 +343,8 @@ pub async fn update_version_file(
     responses(
         (status = 200, description = "Versions Found", body = Vec<Version>)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Update multiple version files by their hashes with new loaders and game versions"
 )]
 #[post("/version_files/update")]
 pub async fn update_version_files(
@@ -333,7 +353,12 @@ pub async fn update_version_files(
 ) -> Result<impl Responder, ApiError> {
     let service = ModrinthService::new(data.db.clone());
     match service
-        .get_version_files_update(body.hashes.clone(), body.algorithm.clone(), body.loaders.clone(), body.game_versions.clone())
+        .get_version_files_update(
+            body.hashes.clone(),
+            body.algorithm.clone(),
+            body.loaders.clone(),
+            body.game_versions.clone(),
+        )
         .await
     {
         Ok(versions) => Ok(web::Json(versions)),
@@ -347,7 +372,8 @@ pub async fn update_version_files(
     responses(
         (status = 200, description = "Categories found", body = Vec<Category>)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Get all categories"
 )]
 #[get("/tag/category")]
 pub async fn get_categories(data: web::Data<AppState>) -> Result<impl Responder, ApiError> {
@@ -364,7 +390,8 @@ pub async fn get_categories(data: web::Data<AppState>) -> Result<impl Responder,
     responses(
         (status = 200, description = "Loaders found", body = Vec<Loader>)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Get all loaders"
 )]
 #[get("/tag/loader")]
 pub async fn get_loaders(data: web::Data<AppState>) -> Result<impl Responder, ApiError> {
@@ -381,7 +408,8 @@ pub async fn get_loaders(data: web::Data<AppState>) -> Result<impl Responder, Ap
     responses(
         (status = 200, description = "Game versions found", body = Vec<GameVersion>)
     ),
-    tag = "Modrinth"
+    tag = "Modrinth",
+    description = "Get all game versions"
 )]
 #[get("/tag/game_version")]
 pub async fn get_game_versions(data: web::Data<AppState>) -> Result<impl Responder, ApiError> {

@@ -9,18 +9,34 @@ use crate::utils::redis_cache::{cacheable_json, create_key};
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("/curseforge/v1")
-            .service(search_mods_cached)
-            .service(get_mod)
-            .service(get_files_by_ids)
-            .service(get_mods)
-            .service(get_mod_files)
-            .service(get_file_download_url)
-            .service(get_file)
-            .service(get_fingerprints)
-            .service(get_fingerprints_by_game_id)
-            .service(get_categories),
+        web::scope("/curseforge").service(root).service(
+            web::scope("/v1")
+                .service(search_mods_cached)
+                .service(get_mod)
+                .service(get_files_by_ids)
+                .service(get_mods)
+                .service(get_mod_files)
+                .service(get_file_download_url)
+                .service(get_file)
+                .service(get_fingerprints)
+                .service(get_fingerprints_by_game_id)
+                .service(get_categories),
+        ),
     );
+}
+
+#[utoipa::path(
+    get,
+    path = "/curseforge",
+    responses(
+        (status = 200, description = "Curseforge Message"),
+    ),
+    description = "Root endpoint for the Curseforge API",
+    tag = "Curseforge"
+)]
+#[get("/")]
+pub async fn root() -> impl Responder {
+    "Curseforge API"
 }
 
 #[utoipa::path(
@@ -50,6 +66,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
+    description = "Curseforge Search"
 )]
 #[get("/mods/search")]
 async fn search_mods_cached(
@@ -75,18 +92,14 @@ async fn search_mods_cached(
             let service = CurseforgeService::new(db.clone());
             Box::pin(async move {
                 service
-                    .search_mods(
-                        &query,
-                        &curseforge_api_url,
-                        &curseforge_api_key,
-                    )
+                    .search_mods(&query, &curseforge_api_url, &curseforge_api_key)
                     .await
                     .map_err(Into::into)
             })
         },
-    ).await
+    )
+    .await
 }
-
 
 // async fn search_mods(
 //     query: web::Query<SearchQuery>,
@@ -116,6 +129,7 @@ async fn search_mods_cached(
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
+    description = "Curseforge Get Mod by ModId"
 )]
 #[get("/mods/{mod_id}")]
 async fn get_mod(
@@ -147,6 +161,7 @@ async fn get_mod(
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
+    description = "Curseforge Get Mods by ModIds"
 )]
 #[post("/mods")]
 async fn get_mods(
@@ -177,6 +192,7 @@ async fn get_mods(
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
+    description = "Curseforge Get Mod Files by ModId"
 )]
 #[get("/mods/{mod_id}/files")]
 async fn get_mod_files(
@@ -215,6 +231,7 @@ async fn get_mod_files(
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
+    description = "Curseforge Get File Download URL by ModId and FileId"
 )]
 #[get("/mods/{mod_id}/files/{file_id}/download-url")]
 async fn get_file_download_url(
@@ -244,6 +261,7 @@ async fn get_file_download_url(
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
+    description = "Curseforge Get File by ModId and FileId"
 )]
 #[get("/mods/{mod_id}/files/{file_id}")]
 async fn get_file(
@@ -270,6 +288,7 @@ async fn get_file(
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
+    description = "Curseforge Get Files by FileIds"
 )]
 #[post("/mods/files")]
 async fn get_files_by_ids(
@@ -294,6 +313,7 @@ async fn get_files_by_ids(
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
+    description = "Curseforge Get Fingerprints by Fingerprints"
 )]
 #[post("/fingerprints")]
 async fn get_fingerprints(
@@ -324,6 +344,7 @@ async fn get_fingerprints(
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
+    description = "Curseforge Get Fingerprints by GameId and Fingerprints"
 )]
 #[post("/fingerprints/{game_id}")]
 async fn get_fingerprints_by_game_id(
@@ -357,6 +378,7 @@ async fn get_fingerprints_by_game_id(
         (status = 500, description = "Internal server error")
     ),
     tag = "Curseforge",
+    description = "Curseforge Get Categories by GameId and ClassId"
 )]
 #[get("/categories")]
 async fn get_categories(

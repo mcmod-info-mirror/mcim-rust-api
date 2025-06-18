@@ -1,16 +1,14 @@
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::{get, web, Responder};
 
 use crate::config::AppState;
-use crate::services::common::get_statistics_info;
+use crate::errors::ApiError;
 use crate::models::common::requests::StatisticsQuery;
 use crate::models::common::responses::StatisticsResponse;
-use crate::errors::{ApiError};
+use crate::services::common::get_statistics_info;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(root)
-    .service(get_statistics);
+    cfg.service(root).service(get_statistics);
 }
-
 
 #[utoipa::path(
     get,
@@ -18,14 +16,23 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     responses(
         (status = 200, description = "Welcome message"),
     ),
-    description = "Root endpoint for the MCIM Translation API",
+    description = "Root endpoint for the MCIM API",
     tag = "Root"
 )]
 #[get("/")]
 async fn root() -> impl Responder {
-    HttpResponse::Ok().body("Welcome to the MCIM Translation API!")
+    web::Json(serde_json::json!({
+        "Status": "https://status.mcimirror.top",
+        "Docs": [
+            "https://mod.mcimirror.top/docs"
+        ],
+        "Github": "https://github.com/mcmod-info-mirror",
+        "contact": {
+            "Email": "z0z0r4@outlook.com",
+            "QQ": "3531890582"
+        }
+    }))
 }
-
 
 #[utoipa::path(
     get,
@@ -51,11 +58,11 @@ async fn get_statistics(
         query.curseforge.unwrap_or(true),
         query.modrinth.unwrap_or(true),
         query.translate.unwrap_or(true),
-        &data.db
+        &data.db,
     )
     .await
     {
         Ok(stats) => Ok(web::Json(stats)),
-        Err(e) => Err(e.into())
+        Err(e) => Err(e.into()),
     }
 }
