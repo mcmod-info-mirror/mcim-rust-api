@@ -11,7 +11,7 @@ pub async fn connect() -> Result<Arc<MultiplexedConnection>, Box<dyn std::error:
     // 获取异步 MultiplexedConnection
     let conn = client.get_multiplexed_async_connection().await?;
     
-    println!("Connected to Redis successfully!");
+    log::info!("Connected to Redis successfully!");
     
     Ok(Arc::new(conn))
 }

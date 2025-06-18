@@ -5,7 +5,7 @@ pub mod routes;
 pub mod services;
 pub mod utils;
 
-use actix_web::{web, App, HttpServer};
+use actix_web::{web, App, HttpServer, middleware::Logger};
 use dotenvy::dotenv;
 use std::env;
 use utoipa::OpenApi;
@@ -33,14 +33,19 @@ pub struct OpenApiDoc;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // 初始化环境变量
     dotenv().ok();
+
+    // 初始化日志记录
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+
 
     // 配置MongoDB连接
     let mongo_client = connect_mongo().await.expect("Failed to connect to MongoDB");
     let redis_pool = connect_redis().await.expect("Failed to connect to Redis");
 
     // 获取服务器端口，默认为 8080
-    let port = env::var("PORT").unwrap_or_else(|_| "28080".to_string());
+    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let bind_address = format!("0.0.0.0:{}", port);
 
     let redis_pool_clone = redis_pool.clone();
@@ -70,8 +75,11 @@ async fn main() -> std::io::Result<()> {
                     .error_handler(|err, _| ApiError::BadRequest(err.to_string()).into()),
             )
             .configure(routes_config)
+            .wrap(Logger::new("%a \"%r\" %s %D ms"))
             .service(SwaggerUi::new("/docs/{_:.*}").url("/openapi.json", OpenApiDoc::openapi()))
     };
+
+    log::info!("🚀 Server starting on http://0.0.0.0:{}", port);
 
     HttpServer::new(app).bind(&bind_address)?.run().await
 }
