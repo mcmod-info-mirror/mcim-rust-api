@@ -51,6 +51,8 @@ pub mod test_utils {
             curseforge_api_url: "https://api.curseforge.com".to_string(),
             modrinth_api_url: "https://api.modrinth.com".to_string(),
             curseforge_api_key: env::var("CURSEFORGE_API_KEY").unwrap_or_else(|_| "".to_string()),
+            curseforge_file_cdn_url: "https://mediafilez.forgecdn.net".to_string(),
+            modrinth_file_cdn_url: "https://cdn.modrinth.com".to_string(),
         };
 
         App::new()

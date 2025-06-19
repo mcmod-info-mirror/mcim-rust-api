@@ -51,16 +51,17 @@ fn get_update_samples() -> Vec<UpdateSample> {
     ]
 }
 
-// #[actix_web::test]
-// async fn test_modrinth_root() {
-//     let app = init_service(create_test_app().await).await;
-//     let req = TestRequest::get().uri("/modrinth/").to_request();
-//     let resp = app.call(req).await.unwrap();
+#[actix_web::test]
+async fn test_modrinth_root() {
+    let app = init_service(create_test_app().await).await;
+    let req = TestRequest::get().uri("/modrinth/").to_request();
+    let resp = app.call(req).await.unwrap();
     
-//     let status = resp.status();
-//     let body: String = read_body_json(resp).await;
-//     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-// }
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+}
 
 #[actix_web::test]
 async fn test_modrinth_search() {
