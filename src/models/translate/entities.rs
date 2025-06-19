@@ -6,22 +6,22 @@ use bson::serde_helpers::chrono_datetime_as_bson_datetime;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ModrinthTranslation {
-    #[serde(rename = "_id")]
+    #[serde(alias = "_id")]
     pub project_id: String,
     pub translated: String,
     pub original: String,
 
-    #[serde(with = "chrono_datetime_as_bson_datetime")]
+    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
     pub translated_at: DateTime<Utc>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CurseForgeTranslation {
-    #[serde(rename = "_id")]
+    #[serde(alias = "_id")]
     pub modid: i32,
     pub translated: String,
     pub original: String,
 
-    #[serde(with = "chrono_datetime_as_bson_datetime")]
+    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
     pub translated_at: DateTime<Utc>,
 }

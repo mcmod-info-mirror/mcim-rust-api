@@ -12,15 +12,15 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         web::scope("/curseforge").service(root).service(
             web::scope("/v1")
                 .service(search_mods_cached)
+                .service(get_categories)
                 .service(get_mod)
-                .service(get_files_by_ids)
                 .service(get_mods)
-                .service(get_mod_files)
-                .service(get_file_download_url)
                 .service(get_file)
+                .service(get_file_download_url)
+                .service(get_mod_files)
+                .service(get_files_by_ids)
                 .service(get_fingerprints)
                 .service(get_fingerprints_by_game_id)
-                .service(get_categories),
         ),
     );
 }
@@ -181,10 +181,10 @@ async fn get_mods(
     path = "/curseforge/v1/mods/{mod_id}/files",
     params(
         ("mod_id" = i32, Path, description = "ID of the mod to retrieve files for"),
-        ("game_version" = String, Query, description = "Game version filter (optional)"),
-        ("mod_loader_type" = Option<String>, Query, description = "Mod loader type filter (optional)"),
+        ("gameVersion" = Option<String>, Query, description = "Game version filter (optional)"),
+        ("modLoaderType" = Option<String>, Query, description = "Mod loader type filter (optional)"),
         ("index" = Option<i32>, Query, description = "Index for pagination (optional)"),
-        ("page_size" = Option<i32>, Query, description = "Page size for pagination (optional)")
+        ("pageSize" = Option<i32>, Query, description = "Page size for pagination (optional)")
     ),
     responses(
         (status = 200, description = "Files found", body = Vec<FileResponse>),
@@ -369,9 +369,9 @@ async fn get_fingerprints_by_game_id(
     get,
     path = "/curseforge/v1/categories",
     params(
-        ("game_id" = i32, Query, description = "ID of the game to filter categories by"),
-        ("class_id" = Option<i32>, Query, description = "ID of the class to filter categories by (optional)"),
-        ("class_only" = Option<bool>, Query, description = "Whether to return only classes (optional)")
+        ("gameId" = i32, Query, description = "ID of the game to filter categories by"),
+        ("classId" = Option<i32>, Query, description = "ID of the class to filter categories by (optional)"),
+        ("classOnly" = Option<bool>, Query, description = "Whether to return only classes (optional)")
     ),
     responses(
         (status = 200, description = "Categories found", body = CategoriesResponse),

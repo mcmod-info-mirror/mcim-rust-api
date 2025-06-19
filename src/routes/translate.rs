@@ -152,7 +152,7 @@ async fn get_curseforge_translation_deprecated(
 
 #[utoipa::path(
     post,
-    path = "/translate/modrinth/batch",
+    path = "/translate/modrinth",
     request_body = ModrinthTranslationRequest,
     responses(
         (status = 200, description = "Translations found", body = Vec<ModrinthTranslationResponse>),
@@ -177,7 +177,7 @@ async fn get_modrinth_translation_batch(
 
 #[utoipa::path(
     post,
-    path = "/translate/curseforge/batch",
+    path = "/translate/curseforge",
     request_body = CurseForgeTranslationRequest,
     responses(
         (status = 200, description = "Translations found", body = Vec<CurseForgeTranslationResponse>),

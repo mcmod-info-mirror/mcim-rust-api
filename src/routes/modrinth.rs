@@ -120,7 +120,7 @@ pub async fn search_cached(
     get,
     path = "/modrinth/v2/project/{project_id}",
     params(
-        ("project_id" = String, Query, description = "ID of the game to filter project"),
+        ("project_id" = String, Path, description = "ID of the game to filter project"),
     ),
     responses(
         (status = 200, description = "Project found", body = Project)
