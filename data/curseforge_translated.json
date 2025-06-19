@@ -4,15 +4,15 @@
         "original": "View Items and Recipes",
         "translated": "查看物品和配方",
         "translated_at": {
-            "$date": "2025-02-02T10:45:23.641Z"
+            "$date": "2025-02-02T10:01:52.805Z"
         }
     },
     {
-        "modId": 1004027,
-        "translated": "提供更多把钥匙用于忍术激活",
+        "_id": 1004027,
         "original": "Makes more keys available for jutsu activation",
+        "translated": "为术的激活提供更多按键选择",
         "translated_at": {
-            "$date": "2025-02-02T10:40:54.928Z"
+            "$date": "2025-02-02T09:47:09.623Z"
         }
     }
 ]
