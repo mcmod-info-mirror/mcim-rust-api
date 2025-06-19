@@ -17,8 +17,11 @@ pub struct Category {
     pub url: String,
     #[serde(rename = "iconUrl")]
     pub icon_url: String,
-    #[serde(rename = "dateModified")]
-    pub date_modified: String,
+    #[serde(
+        rename = "dateModified",
+        deserialize_with = "chrono_datetime_as_bson_datetime::deserialize"
+    )]
+    pub date_modified: DateTime<Utc>,
     #[serde(rename = "isClass")]
     pub is_class: Option<bool>,
     #[serde(rename = "classId")]
