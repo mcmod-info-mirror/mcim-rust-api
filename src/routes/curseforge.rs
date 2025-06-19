@@ -144,7 +144,7 @@ async fn get_mod(
         Ok(Some(mod_data)) => Ok(web::Json(mod_data)),
         Ok(None) => Err(ServiceError::NotFound {
             resource: "Mod".to_string(),
-            detail: Some(mod_id.to_string()),
+            detail: Some(format!("Mod with ID {} not found", mod_id)),
         }
         .into()),
         Err(e) => Err(e.into()),

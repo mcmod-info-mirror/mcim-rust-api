@@ -145,7 +145,7 @@ impl CurseforgeService {
             .collection::<Mod>("curseforge_mods");
 
         let mut cursor = collection
-            .find(doc! { "_id": { "$in": mod_ids } }, None)
+            .find(doc! { "_id": { "$in": &mod_ids } }, None)
             .await?;
 
         let mut mods = Vec::new();
@@ -166,7 +166,7 @@ impl CurseforgeService {
         if mods.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Mods"),
-                detail: Some("No mods found for the provided IDs".to_string()),
+                detail: Some(format!("No mods found for the provided IDs: {:?}", mod_ids)),
             });
         }
         Ok(ModsResponse { data: mods })
@@ -218,7 +218,7 @@ impl CurseforgeService {
             .collection::<File>("curseforge_files");
 
         let mut cursor = collection
-            .find(doc! { "_id": { "$in": file_ids } }, None)
+            .find(doc! { "_id": { "$in": &file_ids } }, None)
             .await?;
 
         let mut files = Vec::new();
@@ -233,7 +233,7 @@ impl CurseforgeService {
         if files.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Files"),
-                detail: Some("No files found for the provided IDs".to_string()),
+                detail: Some(format!("No files found for the provided IDs: {:?}", file_ids)),
             });
         }
         Ok(FilesResponse { data: files })

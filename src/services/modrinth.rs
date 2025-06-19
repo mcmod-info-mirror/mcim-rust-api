@@ -24,7 +24,7 @@ impl ModrinthService {
         limit: Option<i32>,
         index: Option<String>,
         modrinth_api_url: &str,
-    // ) -> Result<SearchResponse, ServiceError> {
+        // ) -> Result<SearchResponse, ServiceError> {
     ) -> Result<serde_json::Value, ServiceError> {
         let client = Client::new();
         let api_url = format!("{}/v2/search", modrinth_api_url);
@@ -151,8 +151,8 @@ impl ModrinthService {
 
         let filter = doc! {
             "$or": [
-                { "_id": { "$in": project_ids_or_slugs.clone() } },
-                { "slug": { "$in": project_ids_or_slugs } }
+                { "_id": { "$in": &project_ids_or_slugs.clone() } },
+                { "slug": { "$in": &project_ids_or_slugs } }
             ]
         };
 
@@ -190,7 +190,10 @@ impl ModrinthService {
         if projects.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth Project"),
-                detail: Some("No projects found for the provided IDs or slugs".to_string()),
+                detail: Some(format!(
+                    "No projects found for the provided IDs or slugs: {:?}",
+                    project_ids_or_slugs
+                )),
             });
         }
 
@@ -258,7 +261,7 @@ impl ModrinthService {
             .database(get_database_name().as_str())
             .collection::<Project>("modrinth_projects");
 
-        let filter = doc! { "_id": { "$in": project_ids } };
+        let filter = doc! { "_id": { "$in": &project_ids } };
 
         let mut cursor = collection.find(filter, None).await?;
 
@@ -272,21 +275,15 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            // match bson::from_document::<Project>(doc) {
-            //     Ok(project) => projects.push(project),
-            //     Err(e) => {
-            //         return Err(ServiceError::UnexpectedError(format!(
-            //             "Failed to deserialize Project: {}",
-            //             e
-            //         )));
-            //     }
-            // }
             projects.push(doc);
 
             if projects.is_empty() {
                 return Err(ServiceError::NotFound {
                     resource: String::from("Modrinth Project"),
-                    detail: Some("No projects found for the provided IDs".to_string()),
+                    detail: Some(format!(
+                        "No projects found for the provided IDs: {:?}",
+                        project_ids
+                    )),
                 });
             }
         }
@@ -341,7 +338,7 @@ impl ModrinthService {
             .database(get_database_name().as_str())
             .collection::<Version>("modrinth_versions");
 
-        let filter = doc! { "_id": { "$in": version_ids } };
+        let filter = doc! { "_id": { "$in": &version_ids } };
 
         let mut cursor = collection.find(filter, None).await?;
 
@@ -361,7 +358,10 @@ impl ModrinthService {
         if versions.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth Version"),
-                detail: Some("No versions found for the provided IDs".to_string()),
+                detail: Some(format!(
+                    "No versions found for the provided IDs: {:?}",
+                    version_ids
+                )),
             });
         }
 
@@ -448,7 +448,10 @@ impl ModrinthService {
         if files.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth files"),
-                detail: Some("No files found for the provided hashes".to_string()),
+                detail: Some(format!(
+                    "No files found for the provided hashes: {:?}",
+                    hashes
+                )),
             });
         }
 
@@ -477,12 +480,15 @@ impl ModrinthService {
         //     versions.push(doc);
         // }
 
-        let versions: Vec<Version> = self.get_versions(version_ids).await?;
+        let versions: Vec<Version> = self.get_versions(version_ids.clone()).await?;
 
         if versions.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth versions"),
-                detail: Some("No versions found for the file version IDs".to_string()),
+                detail: Some(format!(
+                    "No versions found for the provided version IDs: {:?}",
+                    version_ids
+                )),
             });
         }
 
@@ -504,7 +510,10 @@ impl ModrinthService {
         if result.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth version files"),
-                detail: Some("No matching version files found".to_string()),
+                detail: Some(format!(
+                    "No matching version files found for hashes: {:?}",
+                    hashes
+                )),
             });
         }
 
@@ -619,7 +628,7 @@ impl ModrinthService {
         let hash_field = format!("_id.{}", algorithm);
 
         let mut pipeline = vec![
-            doc! { "$match": { &hash_field: { "$in": hashes } } },
+            doc! { "$match": { &hash_field: { "$in": &hashes } } },
             doc! { "$project": {
                 format!("_id.{}", algorithm): 1,
                 "project_id": 1
@@ -690,7 +699,10 @@ impl ModrinthService {
         if result.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth version files"),
-                detail: Some("No matching version files found".to_string()),
+                detail: Some(format!(
+                    "No matching version files found for hashes: {:?}",
+                    hashes
+                )),
             });
         }
 
