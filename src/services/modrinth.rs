@@ -355,15 +355,6 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            // match bson::from_document::<Version>(doc) {
-            //     Ok(version) => versions.push(version),
-            //     Err(e) => {
-            //         return Err(ServiceError::UnexpectedError(format!(
-            //             "Failed to deserialize Version: {}",
-            //             e
-            //         )));
-            //     }
-            // }
             versions.push(doc);
         }
 
@@ -381,7 +372,7 @@ impl ModrinthService {
         &self,
         hash: String,
         algorithm: String,
-    ) -> Result<Option<File>, ServiceError> {
+    ) -> Result<Option<Version>, ServiceError> {
         if hash.is_empty() {
             return Err(ServiceError::InvalidInput {
                 field: String::from("hash"),
@@ -398,17 +389,22 @@ impl ModrinthService {
 
         match collection.find_one(filter, None).await? {
             Some(doc) => {
-                // let file_data: File = bson::from_document(doc).map_err(|e| {
-                //     ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
-                // })?;
-                Ok(Some(doc))
+                let version_data = self.get_version(doc.version_id).await;
+                match version_data {
+                    Ok(Some(version)) => Ok(Some(version)),
+                    Ok(None) => Err(ServiceError::NotFound {
+                        resource: String::from("Modrinth Version"),
+                        detail: Some(format!(
+                            "Version for file with {} {} not found",
+                            algorithm, hash
+                        )),
+                    }),
+                    Err(e) => Err(e),
+                }
             }
             None => Err(ServiceError::NotFound {
                 resource: String::from("Modrinth files"),
-                detail: Some(format!(
-                    "File with {} {} not found",
-                    algorithm, hash
-                )),
+                detail: Some(format!("File with {} {} not found", algorithm, hash)),
             }),
         }
     }
@@ -446,15 +442,6 @@ impl ModrinthService {
                     source: Some(e),
                 })?
         {
-            // match bson::from_document::<File>(doc) {
-            //     Ok(file) => files.push(file),
-            //     Err(e) => {
-            //         return Err(ServiceError::UnexpectedError(format!(
-            //             "Failed to deserialize File: {}",
-            //             e
-            //         )));
-            //     }
-            // }
             files.push(doc);
         }
 
@@ -468,36 +455,29 @@ impl ModrinthService {
         // 提取版本 ID
         let version_ids: Vec<String> = files.iter().map(|file| file.version_id.clone()).collect();
 
-        // 查找版本
-        let versions_collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<Version>("modrinth_versions");
+        // // 查找版本
+        // let versions_collection = self
+        //     .db
+        //     .database(get_database_name().as_str())
+        //     .collection::<Version>("modrinth_versions");
 
-        let versions_filter = doc! { "_id": { "$in": &version_ids } };
-        let mut versions_cursor = versions_collection.find(versions_filter, None).await?;
-        let mut versions = Vec::new();
+        // let versions_filter = doc! { "_id": { "$in": &version_ids } };
+        // let mut versions_cursor = versions_collection.find(versions_filter, None).await?;
+        // let mut versions = Vec::new();
 
-        while let Some(doc) =
-            versions_cursor
-                .try_next()
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: format!("Failed to fetch version documents: {}", e),
-                    source: Some(e),
-                })?
-        {
-            // match bson::from_document::<Version>(doc) {
-            //     Ok(version) => versions.push(version),
-            //     Err(e) => {
-            //         return Err(ServiceError::UnexpectedError(format!(
-            //             "Failed to deserialize Version: {}",
-            //             e
-            //         )));
-            //     }
-            // }
-            versions.push(doc);
-        }
+        // while let Some(doc) =
+        //     versions_cursor
+        //         .try_next()
+        //         .await
+        //         .map_err(|e| ServiceError::DatabaseError {
+        //             message: format!("Failed to fetch version documents: {}", e),
+        //             source: Some(e),
+        //         })?
+        // {
+        //     versions.push(doc);
+        // }
+
+        let versions: Vec<Version> = self.get_versions(version_ids).await?;
 
         if versions.is_empty() {
             return Err(ServiceError::NotFound {
@@ -507,7 +487,8 @@ impl ModrinthService {
         }
 
         // 创建哈希值到版本的映射
-        let mut result = std::collections::HashMap::new();
+        let mut result: std::collections::HashMap<String, Version> =
+            std::collections::HashMap::new();
 
         for version in versions {
             if let Some(first_file) = version.files.first() {
@@ -628,7 +609,6 @@ impl ModrinthService {
             });
         }
 
-
         // 使用聚合查询从 modrinth_files 集合开始
         let files_collection = self
             .db
@@ -690,21 +670,21 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            if let (Some(bson::Bson::String(hash_value)), Some(bson::Bson::Document(detail_doc))) = 
-            (doc.get("_id"), doc.get("detail")) {
-            
-            match bson::from_document::<Version>(detail_doc.clone()) {
-                Ok(version) => {
-                    result.insert(hash_value.clone(), version);
-                }
-                Err(e) => {
-                    return Err(ServiceError::UnexpectedError(format!(
-                        "Failed to deserialize Version: {}",
-                        e
-                    )));
+            if let (Some(bson::Bson::String(hash_value)), Some(bson::Bson::Document(detail_doc))) =
+                (doc.get("_id"), doc.get("detail"))
+            {
+                match bson::from_document::<Version>(detail_doc.clone()) {
+                    Ok(version) => {
+                        result.insert(hash_value.clone(), version);
+                    }
+                    Err(e) => {
+                        return Err(ServiceError::UnexpectedError(format!(
+                            "Failed to deserialize Version: {}",
+                            e
+                        )));
+                    }
                 }
             }
-        }
         }
 
         if result.is_empty() {
@@ -733,13 +713,12 @@ impl ModrinthService {
                 })?;
 
         let categories: Vec<Category> =
-            cursor
-                .try_collect::<Vec<Category>>()
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
+            cursor.try_collect::<Vec<Category>>().await.map_err(|e| {
+                ServiceError::DatabaseError {
                     message: e.to_string(),
                     source: Some(e),
-                })?;
+                }
+            })?;
 
         Ok(categories)
     }
