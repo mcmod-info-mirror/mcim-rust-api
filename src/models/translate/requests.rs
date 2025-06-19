@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct CurseforgeQuery {
+    #[serde(rename = "modId")]
     pub mod_id: i32,
 }
 

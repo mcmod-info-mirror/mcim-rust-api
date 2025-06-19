@@ -17,8 +17,8 @@ pub struct ModrinthTranslation {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CurseForgeTranslation {
-    #[serde(alias = "_id")]
-    pub modid: i32,
+    #[serde(rename = "modId", alias = "_id")]
+    pub mod_id: i32,
     pub translated: String,
     pub original: String,
 

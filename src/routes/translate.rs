@@ -123,7 +123,7 @@ async fn get_curseforge_translation(
     get,
     path = "/translate/curseforge",
     params(
-        ("mod_id" = i32, Query, description = "Mod ID of the CurseForge mod")
+        ("modId" = i32, Query, description = "Mod ID of the CurseForge mod")
     ),
     responses(
         (status = 200, description = "Translation found", body = CurseForgeTranslationResponse),
