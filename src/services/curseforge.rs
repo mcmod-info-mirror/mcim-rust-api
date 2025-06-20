@@ -126,7 +126,7 @@ impl CurseforgeService {
             }
             None => Err(ServiceError::NotFound {
                 resource: String::from("Mod"),
-                detail: Some(format!("Mod with ID {} not found", mod_id)),
+                detail: Some(format!("Mod with modId {} not found", mod_id)),
             }),
         }
     }
@@ -166,7 +166,7 @@ impl CurseforgeService {
         if mods.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Mods"),
-                detail: Some(format!("No mods found for the provided IDs: {:?}", mod_ids)),
+                detail: Some(format!("No mods found for the provided modIds: {:?}", mod_ids)),
             });
         }
         Ok(ModsResponse { data: mods })
@@ -199,7 +199,7 @@ impl CurseforgeService {
             }
             None => Err(ServiceError::NotFound {
                 resource: String::from("File"),
-                detail: Some(format!("File with ID {} not found", file_id)),
+                detail: Some(format!("File with fileId {} not found", file_id)),
             }),
         }
     }
@@ -233,7 +233,7 @@ impl CurseforgeService {
         if files.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Files"),
-                detail: Some(format!("No files found for the provided IDs: {:?}", file_ids)),
+                detail: Some(format!("No files found for the provided fileIds: {:?}", file_ids)),
             });
         }
         Ok(FilesResponse { data: files })
@@ -480,6 +480,16 @@ impl CurseforgeService {
         }) {
             // categories.push(CategoryResponseObject::from(doc));
             categories.push(doc);
+        }
+
+        if categories.is_empty() {
+            return Err(ServiceError::NotFound {
+                resource: String::from("Categories"),
+                detail: Some(format!(
+                    "No categories found for gameId {} and classId {:?} and classOnly {:?}",
+                    game_id, class_id, class_only.unwrap_or(false)
+                )),
+            });
         }
 
         Ok(CategoriesResponse { data: categories })

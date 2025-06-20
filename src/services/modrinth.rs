@@ -191,7 +191,7 @@ impl ModrinthService {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth Project"),
                 detail: Some(format!(
-                    "No projects found for the provided IDs or slugs: {:?}",
+                    "No projects found for the provided project_ids or slugs: {:?}",
                     project_ids_or_slugs
                 )),
             });
@@ -281,7 +281,7 @@ impl ModrinthService {
                 return Err(ServiceError::NotFound {
                     resource: String::from("Modrinth Project"),
                     detail: Some(format!(
-                        "No projects found for the provided IDs: {:?}",
+                        "No projects found for the provided project_ids: {:?}",
                         project_ids
                     )),
                 });
@@ -359,7 +359,7 @@ impl ModrinthService {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth Version"),
                 detail: Some(format!(
-                    "No versions found for the provided IDs: {:?}",
+                    "No versions found for the provided version_ids: {:?}",
                     version_ids
                 )),
             });
@@ -449,8 +449,8 @@ impl ModrinthService {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth files"),
                 detail: Some(format!(
-                    "No files found for the provided hashes: {:?}",
-                    hashes
+                    "No files found for the provided {} hashes: {:?}",
+                    algorithm, hashes
                 )),
             });
         }
@@ -486,7 +486,7 @@ impl ModrinthService {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth versions"),
                 detail: Some(format!(
-                    "No versions found for the provided version IDs: {:?}",
+                    "No versions found for the provided version_ids: {:?}",
                     version_ids
                 )),
             });
