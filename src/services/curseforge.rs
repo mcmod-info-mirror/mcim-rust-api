@@ -392,7 +392,7 @@ impl CurseforgeService {
 
     pub async fn get_fingerprints(
         &self,
-        fingerprints: Vec<i32>,
+        fingerprints: Vec<i64>,
         game_id: Option<i32>,
     ) -> Result<FingerprintResponse, ServiceError> {
         if fingerprints.is_empty() {

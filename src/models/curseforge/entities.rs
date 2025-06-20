@@ -241,7 +241,7 @@ pub struct Mod {
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Fingerprint {
     #[serde(alias = "_id")]
-    pub id: i32,
+    pub id: i64,
     pub file: FileInfo,
     #[serde(rename = "latestFiles")]
     pub latest_files: Vec<FileInfo>,
