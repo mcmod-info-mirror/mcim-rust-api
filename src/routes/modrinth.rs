@@ -185,10 +185,32 @@ pub async fn get_projects(
 #[get("/project/{project_id}/version")]
 pub async fn get_project_versions(
     idslug: web::Path<String>,
+    query: web::Query<ProjectVersionQuery>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
     let service = ModrinthService::new(data.db.clone());
-    match service.get_project_all_versions(idslug.into_inner()).await {
+
+    let game_versions = query
+        .game_versions
+        .as_ref()
+        .and_then(|v| serde_json::from_str::<Vec<String>>(v).ok())
+        .filter(|v| !v.is_empty());
+
+    let loaders = query
+        .loaders
+        .as_ref()
+        .and_then(|v| serde_json::from_str::<Vec<String>>(v).ok())
+        .filter(|v| !v.is_empty());
+
+    match service
+        .get_project_all_versions(
+            idslug.into_inner(),
+            loaders,
+            game_versions,
+            query.featured,
+        )
+        .await
+    {
         Ok(versions) => Ok(web::Json(versions)),
         Err(e) => Err(ApiError::from(e)),
     }

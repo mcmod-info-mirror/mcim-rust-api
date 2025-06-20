@@ -175,15 +175,6 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            // match bson::from_document::<Project>(doc) {
-            //     Ok(project) => projects.push(project),
-            //     Err(e) => {
-            //         return Err(ServiceError::UnexpectedError(format!(
-            //             "Failed to deserialize Project: {}",
-            //             e
-            //         )));
-            //     }
-            // }
             projects.push(doc);
         }
 
@@ -202,12 +193,15 @@ impl ModrinthService {
 
     pub async fn get_project_all_versions(
         &self,
-        project_id: String,
+        project_id_or_slug: String,
+        loaders: Option<Vec<String>>,
+        game_versions: Option<Vec<String>>,
+        featured: Option<bool>,
     ) -> Result<Vec<Version>, ServiceError> {
-        if project_id.is_empty() {
+        if project_id_or_slug.is_empty() {
             return Err(ServiceError::InvalidInput {
-                field: String::from("project_id"),
-                reason: String::from("project_id cannot be empty"),
+                field: String::from("project_id or slug"),
+                reason: String::from("project_id_or_slug cannot be empty"),
             });
         }
 
@@ -216,7 +210,25 @@ impl ModrinthService {
             .database(get_database_name().as_str())
             .collection::<Version>("modrinth_versions");
 
-        let filter = doc! { "project_id": &project_id };
+        let mut filter = doc! { "project_id": &project_id_or_slug };
+
+        if let Some(featured) = featured {
+            filter.insert("featured", featured);
+        }
+
+        if let Some(game_versions) = game_versions {
+            filter.insert(
+                "game_versions",
+                doc! { "$elemMatch": { "$in": game_versions } },
+            );
+        }
+
+        if let Some(loaders) = loaders {
+            filter.insert(
+                "loaders",
+                doc! { "$elemMatch": { "$in": loaders } },
+            );
+        }
 
         let mut cursor = collection.find(filter, None).await?;
 
@@ -230,22 +242,13 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            // match bson::from_document::<Version>(doc) {
-            //     Ok(version) => versions.push(version),
-            //     Err(e) => {
-            //         return Err(ServiceError::UnexpectedError(format!(
-            //             "Failed to deserialize Version: {}",
-            //             e
-            //         )));
-            //     }
-            // }
             versions.push(doc);
         }
 
         if versions.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth Version"),
-                detail: Some(format!("No versions found for project ID {}", &project_id)),
+                detail: Some(format!("No versions found for project ID {}", &project_id_or_slug)),
             });
         }
 

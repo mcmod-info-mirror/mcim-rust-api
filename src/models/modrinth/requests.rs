@@ -50,3 +50,11 @@ pub struct ProjectIds {
 pub struct AlgorithmItems {
     pub algorithm: String,
 }
+
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct ProjectVersionQuery {
+    pub game_versions: Option<String>,
+    pub loaders: Option<String>,
+    pub featured: Option<bool>,
+}
