@@ -79,7 +79,7 @@ async fn main() -> std::io::Result<()> {
                     .error_handler(|err, _| ApiError::BadRequest(err.to_string()).into()),
             )
             .configure(routes_config)
-            .wrap(Logger::new("%a \"%r\" %s %D ms"))
+            .wrap(Logger::new("%a \"%r\" %s \"%{Referer}i\" \"%{User-Agent}i\" %D ms"))
             .service(SwaggerUi::new("/docs/{_:.*}").url("/openapi.json", OpenApiDoc::openapi()))
     };
 
