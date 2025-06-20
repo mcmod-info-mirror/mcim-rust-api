@@ -87,7 +87,7 @@ jobs:
         with:
           images: ${{ vars.DOCKER_USERNAME }}/mcim-rust-api
           tags: |
-            {{ github.sha | slice: 0, 8 }}
+            type=sha,format=short,prefix=
             latest
 
       - name: Log in to Docker Hub
