@@ -15,11 +15,11 @@ pub struct FingerprintResult {
     // pub exact_matches: Vec<FingerprintResponseObject>,
     pub exact_matches: Vec<Fingerprint>,
     #[serde(rename = "exactFingerprints")]
-    pub exact_fingerprints: Vec<i32>,
+    pub exact_fingerprints: Vec<i64>,
     #[serde(rename = "installedFingerprints")]
-    pub installed_fingerprints: Vec<i32>,
+    pub installed_fingerprints: Vec<i64>,
     #[serde(rename = "unmatchedFingerprints")]
-    pub unmatched_fingerprints: Vec<i32>,
+    pub unmatched_fingerprints: Vec<i64>,
 }
 
 // #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]

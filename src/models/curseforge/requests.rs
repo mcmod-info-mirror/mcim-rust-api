@@ -76,7 +76,7 @@ pub struct FileIdsBody {
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct FingerprintsBody {
-    pub fingerprints: Vec<i32>
+    pub fingerprints: Vec<i64>
 }
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
