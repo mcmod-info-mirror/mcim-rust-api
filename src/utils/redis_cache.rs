@@ -31,7 +31,7 @@ where
         }
         Ok(None) => {} // 没有缓存，继续执行
         Err(e) => {
-            eprintln!("Redis get error: {}", e);
+            log::error!("Redis get error: {}", e);
             use_cache = false;
         }
     }
@@ -40,17 +40,17 @@ where
     match handler().await {
         Ok(data) => {
             // 只有成功时才缓存和返回
-            let json_result = serde_json::to_string(&data).map_err(|e| {
-                eprintln!("JSON serialize error: {}", e);
+            let json_result: String = serde_json::to_string(&data).map_err(|e| {
+                log::error!("JSON serialize error: {}", e);
                 ApiError::InternalServerError("Serialization error".to_string())
             })?;
 
             if use_cache {
                 if let Err(e) = conn
-                    .set_ex::<&str, &str, u64>(&key, &json_result, ttl)
+                    .set_ex::<&str, &str, ()>(&key, json_result.as_str(), ttl)
                     .await
                 {
-                    eprintln!("Redis set error: {}", e);
+                    log::error!("Redis set error: {}", e);
                 }
             }
 
