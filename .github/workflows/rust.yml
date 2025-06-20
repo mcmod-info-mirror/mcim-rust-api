@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -53,33 +54,85 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
 
-  build:
-    needs: "test"
+  # build:
+  #   needs: "test"
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - uses: actions/checkout@v4
+      
+  #     - name: Cache Cargo
+  #       uses: Swatinem/rust-cache@v2
+      
+  #     - name: build
+  #       run: |
+  #         cargo build --release --verbose --bin mcim-rust-api
+
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: build-artifact
+  #         path: target/release/mcim-rust-api
+
+  # docker_build:
+  #   needs: "test"
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name != 'pull_request'
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+
+  #     - name: Extract Docker image metadata
+  #       id: meta
+  #       uses: docker/metadata-action@v5
+  #       with:
+  #         images: ${{ vars.DOCKER_USERNAME }}/mcim-rust-api
+  #         tags: |
+  #           type=sha,format=short,prefix=
+  #           latest
+
+  #     - name: Log in to Docker Hub
+  #       uses: docker/login-action@v3
+  #       with:
+  #         username: ${{ vars.DOCKER_USERNAME }}
+  #         password: ${{ secrets.DOCKER_PASSWORD }}
+
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
+      
+  #     - name: Build and push Docker image
+  #       uses: docker/build-push-action@v6
+  #       with:
+  #         push: ${{ github.event_name != 'pull_request' }}
+  #         platforms: linux/amd64,linux/arm64
+  #         tags: ${{ steps.meta.outputs.tags }}
+  #         annotations: ${{ steps.meta.outputs.annotations }}
+  #         cache-from: type=gha
+  #         cache-to: type=gha,mode=max
+  
+  build_and_docker:
+    needs: test
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
-      
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2
-      
-      - name: build
-        run: |
-          cargo build --release --verbose --bin mcim-rust-api
 
-      - name: Upload Artifact
+      - name: Build Rust Binary
+        run: | 
+          cargo build --release --verbose --bin mcim-rust-api
+          mkdir -p build_output
+          cp target/release/mcim-rust-api build_output/
+
+      - name: Upload Rust Binary Artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact
           path: target/release/mcim-rust-api
-
-  docker_build:
-    needs: "test"
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
       - name: Extract Docker image metadata
         id: meta
@@ -98,11 +151,13 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          push: ${{ github.event_name != 'pull_request' }}
+          context: .
+          push: true
+          platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
           annotations: ${{ steps.meta.outputs.annotations }}
           cache-from: type=gha

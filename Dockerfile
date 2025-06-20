@@ -1,12 +1,12 @@
-FROM rust:1.87.0 AS builder
+# FROM rust:1.87.0 AS builder
 
-WORKDIR /app
+# WORKDIR /app
 
-COPY Cargo.toml ./Cargo.toml
+# COPY Cargo.toml ./Cargo.toml
 
-COPY src ./src
+# COPY src ./src
 
-RUN cargo build --release
+# RUN cargo build --release
 
 FROM ubuntu:latest
 
@@ -19,7 +19,9 @@ RUN update-ca-certificates
 
 WORKDIR /app
 
-COPY --from=builder /app/target/release/mcim-rust-api ./mcim-rust-api
+# COPY --from=builder /app/target/release/mcim-rust-api ./mcim-rust-api
+
+COPY build_output/mcim-rust-api /app/mcim-rust-api
 
 EXPOSE 8080
 
