@@ -10,7 +10,7 @@ use mcim_rust_api::test_utils::create_test_app;
 
 // 测试数据常量
 const PROJECT_IDS: &[&str] = &["Wnxd13zP", "Ua7DFN59"];
-const SLUGS: &[&str] = &["sodium", "clumps"];
+const SLUGS: &[&str] = &["yungs-api", "clumps"];
 const VERSION_IDS: &[&str] = &[
     "dpSzBMP6", "IOIGqCVr", "xVBjqLw6", "8jfhokYb", "fTWVa6NX", "Km2A7nLe",
 ];

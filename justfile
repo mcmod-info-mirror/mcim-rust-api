@@ -16,19 +16,19 @@ redis-tool-install:
     sudo apt install redis-tools # for redis-cli
 
 import-data:
-    mongoimport --db mcim_backend --collection modrinth_projects --file ./data/modrinth_projects.json --jsonArray
-    mongoimport --db mcim_backend --collection modrinth_versions --file ./data/modrinth_versions.json --jsonArray
-    mongoimport --db mcim_backend --collection modrinth_files --file ./data/modrinth_files.json --jsonArray
-    mongoimport --db mcim_backend --collection modrinth_loaders --file ./data/modrinth_loaders.json --jsonArray
-    mongoimport --db mcim_backend --collection modrinth_game_versions --file ./data/modrinth_game_versions.json --jsonArray
-    mongoimport --db mcim_backend --collection modrinth_categories --file ./data/modrinth_categories.json --jsonArray
-    mongoimport --db mcim_backend --collection curseforge_mods --file ./data/curseforge_mods.json --jsonArray
-    mongoimport --db mcim_backend --collection curseforge_files --file ./data/curseforge_files.json --jsonArray
-    mongoimport --db mcim_backend --collection curseforge_fingerprints --file ./data/curseforge_fingerprints.json --jsonArray
-    mongoimport --db mcim_backend --collection curseforge_categories --file ./data/curseforge_categories.json --jsonArray
-    mongoimport --db mcim_backend --collection file_cdn_files --file ./data/file_cdn_files.json --jsonArray
-    mongoimport --db mcim_backend --collection modrinth_translated --file ./data/modrinth_translated.json --jsonArray
-    mongoimport --db mcim_backend --collection curseforge_translated --file ./data/curseforge_translated.json --jsonArray
+    mongoimport --db mcim_backend --collection modrinth_projects --file ./data/modrinth_projects.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection modrinth_versions --file ./data/modrinth_versions.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection modrinth_files --file ./data/modrinth_files.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection modrinth_loaders --file ./data/modrinth_loaders.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection modrinth_game_versions --file ./data/modrinth_game_versions.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection modrinth_categories --file ./data/modrinth_categories.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection curseforge_mods --file ./data/curseforge_mods.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection curseforge_files --file ./data/curseforge_files.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection curseforge_fingerprints --file ./data/curseforge_fingerprints.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection curseforge_categories --file ./data/curseforge_categories.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection file_cdn_files --file ./data/file_cdn_files.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection modrinth_translated --file ./data/modrinth_translated.json --jsonArray --drop
+    mongoimport --db mcim_backend --collection curseforge_translated --file ./data/curseforge_translated.json --jsonArray --drop
 
 
 build:
