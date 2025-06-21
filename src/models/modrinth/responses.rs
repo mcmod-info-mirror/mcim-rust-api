@@ -8,7 +8,7 @@ use crate::models::modrinth::entities::*;
 #[derive(Deserialize, Serialize, ToSchema)]
 pub struct MutilFilesResponse {
     #[serde(flatten)]
-    pub entries: HashMap<String, Version>,
+    pub entries: Option<HashMap<String, Version>>,
 }
 
 #[derive(Deserialize, Serialize, ToSchema)]
