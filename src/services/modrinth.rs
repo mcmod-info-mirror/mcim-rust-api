@@ -238,7 +238,7 @@ impl ModrinthService {
             .database(get_database_name().as_str())
             .collection::<Version>("modrinth_versions");
 
-        let mut filter = doc! { "project_id": &project_id_or_slug };
+        let mut filter = doc! { "project_id": &project_id };
 
         if let Some(featured) = featured {
             filter.insert("featured", featured);
@@ -252,13 +252,10 @@ impl ModrinthService {
         }
 
         if let Some(loaders) = loaders {
-            filter.insert(
-                "loaders",
-                doc! { "$elemMatch": { "$in": loaders } },
-            );
+            filter.insert("loaders", doc! { "$elemMatch": { "$in": loaders } });
         }
 
-        let mut cursor = collection.find(filter, None).await?;
+        let mut cursor = version_collection.find(filter, None).await?;
 
         let mut versions = Vec::new();
 
@@ -276,7 +273,10 @@ impl ModrinthService {
         if versions.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth Version"),
-                detail: Some(format!("No versions found for project ID {}", &project_id_or_slug)),
+                detail: Some(format!(
+                    "No versions found for project ID {}",
+                    &project_id_or_slug
+                )),
             });
         }
 
@@ -409,7 +409,7 @@ impl ModrinthService {
             return Err(ServiceError::InvalidInput {
                 field: String::from("hash"),
                 reason: String::from("hash cannot be empty"),
-            });  // 单个 hash 请求直接返回 404
+            }); // 单个 hash 请求直接返回 404
         }
 
         let collection = self
@@ -451,7 +451,7 @@ impl ModrinthService {
             //     field: String::from("hashes"),
             //     reason: String::from("hashes cannot be empty"),
             // });
-            return Ok(MutilFilesResponse { entries: None}); // 官方返回的是 {}
+            return Ok(MutilFilesResponse { entries: None }); // 官方返回的是 {}
         }
 
         // 查找文件
@@ -550,7 +550,9 @@ impl ModrinthService {
             });
         }
 
-        Ok(MutilFilesResponse { entries: Some(result) })
+        Ok(MutilFilesResponse {
+            entries: Some(result),
+        })
     }
 
     pub async fn get_version_file_update(
@@ -649,7 +651,7 @@ impl ModrinthService {
             //     field: String::from("hashes"),
             //     reason: String::from("hashes cannot be empty"),
             // });
-            return Ok(MutilFilesResponse { entries: None }) // 官方返回的是 {}
+            return Ok(MutilFilesResponse { entries: None }); // 官方返回的是 {}
         }
 
         // 使用聚合查询从 modrinth_files 集合开始
@@ -741,7 +743,9 @@ impl ModrinthService {
             return Ok(MutilFilesResponse { entries: None }); // 官方返回的是 {}
         }
 
-        Ok(MutilFilesResponse { entries: Some(result) })
+        Ok(MutilFilesResponse {
+            entries: Some(result),
+        })
     }
 
     pub async fn get_categories(&self) -> Result<Vec<Category>, ServiceError> {
