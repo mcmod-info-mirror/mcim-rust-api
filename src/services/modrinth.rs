@@ -208,7 +208,32 @@ impl ModrinthService {
             });
         }
 
-        let collection = self
+
+        /// TODO: 按照 modrinth 设计的逻辑是尽可能缓存这种前置查询
+        /// 未来应该试着在 redis 添加这些映射
+        /// project_id <-> slug
+        /// {algorithm: hash} <-> version_id
+        /// 目前暂时不做，直接查询数据库
+
+        // 检查项目是否存在
+        let project = self
+            .get_project_by_id_or_slug(project_id_or_slug.clone())
+            .await?;
+
+        let project_id = match project {
+            Some(p) => p.id,
+            None => {
+                return Err(ServiceError::NotFound {
+                    resource: String::from("Modrinth Project"),
+                    detail: Some(format!(
+                        "Project with ID or slug {} not found",
+                        project_id_or_slug
+                    )),
+                });
+            }
+        };
+
+        let version_collection = self
             .db
             .database(get_database_name().as_str())
             .collection::<Version>("modrinth_versions");
