@@ -75,12 +75,12 @@ pub async fn search_cached(
     );
 
     cacheable_json(
-        redis_pool,
+        redis_pool.clone(),
         key,
         3600, // 缓存 1 小时
         move || {
             Box::pin(async move {
-                let service = ModrinthService::new(db);
+                let service = ModrinthService::new(db, redis_pool);
                 service
                     .search(
                         query.query,
@@ -133,7 +133,7 @@ pub async fn get_project(
     idslug: web::Path<String>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service.get_project_by_id_or_slug(idslug.into_inner()).await {
         Ok(project) => Ok(web::Json(project)),
         Err(e) => Err(ApiError::from(e)),
@@ -160,7 +160,7 @@ pub async fn get_projects(
     let ids: Vec<&str> = serde_json::from_str(&project_ids.ids)
         .map_err(|_| ApiError::BadRequest("Invalid JSON format for ids".to_string()))?;
 
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service
         .get_projects(ids.into_iter().map(|s| s.to_string()).collect())
         .await
@@ -188,7 +188,7 @@ pub async fn get_project_versions(
     query: web::Query<ProjectVersionQuery>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
 
     let game_versions = query
         .game_versions
@@ -233,7 +233,7 @@ pub async fn get_version(
     version_id: web::Path<String>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service.get_version(version_id.into_inner()).await {
         Ok(version) => Ok(web::Json(version)),
         Err(e) => Err(ApiError::from(e)),
@@ -260,7 +260,7 @@ pub async fn get_versions(
     let ids: Vec<&str> = serde_json::from_str(&version_ids.ids)
         .map_err(|_| ApiError::BadRequest("Invalid JSON format for ids".to_string()))?;
 
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service
         .get_versions(ids.into_iter().map(|s| s.to_string()).collect())
         .await
@@ -288,7 +288,7 @@ pub async fn get_version_file(
     query: web::Query<AlgorithmItems>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service
         .get_version_file(hash.into_inner(), query.algorithm.clone())
         .await
@@ -313,7 +313,7 @@ pub async fn get_version_files(
     body: web::Json<HashesQuery>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service
         .get_version_files(body.hashes.clone(), body.algorithm.clone())
         .await
@@ -344,7 +344,7 @@ pub async fn update_version_file(
     query: web::Query<AlgorithmItems>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service
         .get_version_file_update(
             hash.into_inner(),
@@ -373,7 +373,7 @@ pub async fn update_version_files(
     body: web::Json<MultiUpdateItems>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service
         .get_version_files_update(
             body.hashes.clone(),
@@ -399,7 +399,7 @@ pub async fn update_version_files(
 )]
 #[get("/tag/category")]
 pub async fn get_categories(data: web::Data<AppState>) -> Result<impl Responder, ApiError> {
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service.get_categories().await {
         Ok(categories) => Ok(web::Json(categories)),
         Err(e) => Err(ApiError::from(e)),
@@ -417,7 +417,7 @@ pub async fn get_categories(data: web::Data<AppState>) -> Result<impl Responder,
 )]
 #[get("/tag/loader")]
 pub async fn get_loaders(data: web::Data<AppState>) -> Result<impl Responder, ApiError> {
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service.get_loaders().await {
         Ok(loaders) => Ok(web::Json(loaders)),
         Err(e) => Err(ApiError::from(e)),
@@ -435,7 +435,7 @@ pub async fn get_loaders(data: web::Data<AppState>) -> Result<impl Responder, Ap
 )]
 #[get("/tag/game_version")]
 pub async fn get_game_versions(data: web::Data<AppState>) -> Result<impl Responder, ApiError> {
-    let service = ModrinthService::new(data.db.clone());
+    let service = ModrinthService::new(data.db.clone(), data.redis_pool.clone());
     match service.get_game_versions().await {
         Ok(game_versions) => Ok(web::Json(game_versions)),
         Err(e) => Err(ApiError::from(e)),
