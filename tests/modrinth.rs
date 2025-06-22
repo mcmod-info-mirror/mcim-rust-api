@@ -126,6 +126,13 @@ async fn test_modrinth_projects_by_project_ids() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+    // Check if the response body is a JSON array
+    let json_body = serde_json::from_str::<Vec<serde_json::Value>>(&body)
+        .expect("Failed to parse JSON response");
+    // Ensure the number of projects matches the expected count
+    assert!(json_body.len() == PROJECT_IDS.len(), 
+        "Expected {} projects, got {}", PROJECT_IDS.len(), json_body.len()
+    );
 }
 
 #[actix_web::test]
@@ -144,6 +151,15 @@ async fn test_modrinth_projects_by_slugs() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
+    // Check if the response body is a JSON array
+    let json_body = serde_json::from_str::<Vec<serde_json::Value>>(&body)
+        .expect("Failed to parse JSON response");
+
+    // Ensure the number of projects matches the expected count
+    assert!(json_body.len() == SLUGS.len(), 
+        "Expected {} projects, got {}", SLUGS.len(), json_body.len()
+    );
 }
 
 #[actix_web::test]
@@ -176,6 +192,15 @@ async fn test_modrinth_project_versions_by_project_id() {
         let body_bytes = to_bytes(resp.into_body()).await.unwrap();
         let body = String::from_utf8_lossy(&body_bytes);
         assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
+        // Check if the response body is a JSON array
+        let json_body = serde_json::from_str::<Vec<serde_json::Value>>(&body)
+            .expect("Failed to parse JSON response");
+
+        // Ensure the number of versions is not 0
+        assert!(!json_body.is_empty(), 
+            "Expected at least one version for project {}, got {}", project_id, json_body.len()
+        );
     }
 }
 
@@ -193,6 +218,15 @@ async fn test_modrinth_project_versions_by_slug() {
         let body_bytes = to_bytes(resp.into_body()).await.unwrap();
         let body = String::from_utf8_lossy(&body_bytes);
         assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
+        // Check if the response body is a JSON array
+        let json_body = serde_json::from_str::<Vec<serde_json::Value>>(&body)
+            .expect("Failed to parse JSON response");
+
+        // Ensure the number of versions is not 0
+        assert!(!json_body.is_empty(), 
+            "Expected at least one version for project {}, got {}", slug, json_body.len()
+        );
     }
 }
 
@@ -210,6 +244,16 @@ async fn test_modrinth_version() {
         let body_bytes = to_bytes(resp.into_body()).await.unwrap();
         let body = String::from_utf8_lossy(&body_bytes);
         assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
+        // Check if the response body is a JSON object
+        let json_body: serde_json::Value = serde_json::from_str(&body)
+            .expect("Failed to parse JSON response");
+
+        // Ensure the version ID matches the expected one
+        assert_eq!(
+            json_body["id"].as_str(),
+            Some(version_id).map(|v| &**v),
+        );
     }
 }
 
@@ -229,6 +273,15 @@ async fn test_modrinth_versions() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+
+    // Check if the response body is a JSON array
+    let json_body = serde_json::from_str::<Vec<serde_json::Value>>(&body)
+        .expect("Failed to parse JSON response");
+
+    // Ensure the number of versions matches the expected count
+    assert!(json_body.len() == VERSION_IDS.len(), 
+        "Expected {} versions, got {}", VERSION_IDS.len(), json_body.len()
+    );
 }
 
 #[actix_web::test]
