@@ -1,9 +1,8 @@
 use bson::doc;
 use futures::stream::StreamExt;
-use mongodb::{bson::Document, Client};
+use mongodb::Client;
 
 use crate::config::database::get_database_name;
-use crate::models::translate::responses::{CurseForgeTranslationResponse, ModrinthTranslationResponse};
 use crate::models::translate::entities::{CurseForgeTranslation, ModrinthTranslation};
 use crate::errors::ServiceError;
 

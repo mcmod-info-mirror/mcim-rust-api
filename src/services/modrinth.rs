@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use bson::doc;
 use futures::stream::TryStreamExt;
 use mongodb::{bson::Document, Client as Mongo_Client};
@@ -209,11 +207,11 @@ impl ModrinthService {
         }
 
 
-        /// TODO: 按照 modrinth 设计的逻辑是尽可能缓存这种前置查询
-        /// 未来应该试着在 redis 添加这些映射
-        /// project_id <-> slug
-        /// {algorithm: hash} <-> version_id
-        /// 目前暂时不做，直接查询数据库
+        // TODO: 按照 modrinth 设计的逻辑是尽可能缓存这种前置查询
+        // 未来应该试着在 redis 添加这些映射
+        // project_id <-> slug
+        // {algorithm: hash} <-> version_id
+        // 目前暂时不做，直接查询数据库
 
         // 检查项目是否存在
         let project = self
