@@ -9,9 +9,23 @@ use crate::models::translate::responses::{
 use crate::services::translate::{CurseForgeService, ModrinthService};
 
 #[allow(deprecated)]
-mod deprecated_routes {
+pub mod deprecated_routes {
     use super::*;
 
+    #[utoipa::path(
+        get,
+        path = "/translate/modrinth",
+        params(
+            ("project_id" = String, Query, description = "Project ID of the Modrinth project")
+        ),
+        responses(
+            (status = 200, description = "Translation found", body = ModrinthTranslationResponse),
+            (status = 404, description = "Translation not found"),
+            (status = 500, description = "Internal server error")
+        ),
+        description = "Get Modrinth translation by project ID",
+        tag = "Translate",
+    )]
     #[deprecated]
     #[get("/modrinth")]
     pub(super) async fn get_modrinth_translation_deprecated(
@@ -32,6 +46,21 @@ mod deprecated_routes {
         }
     }
 
+
+    #[utoipa::path(
+        get,
+        path = "/translate/curseforge",
+        params(
+            ("modId" = i32, Query, description = "Mod ID of the CurseForge mod")
+        ),
+        responses(
+            (status = 200, description = "Translation found", body = CurseForgeTranslationResponse),
+            (status = 404, description = "Translation not found"),
+            (status = 500, description = "Internal server error")
+        ),
+        description = "Get CurseForge translation by mod ID",
+        tag = "Translate",
+    )]
     #[deprecated]
     #[get("/curseforge")]
     pub(super) async fn get_curseforge_translation_deprecated(
