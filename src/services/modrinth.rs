@@ -218,22 +218,49 @@ impl ModrinthService {
         project_ids_or_slugs: Vec<String>,
     ) -> Result<Vec<Project>, ServiceError> {
         if project_ids_or_slugs.is_empty() {
-            // return Err(ServiceError::InvalidInput {
-            //     field: String::from("project_ids or slugs"),
-            //     reason: String::from("Project_ids or slugs cannot be empty"),
-            // });
             return Ok(Vec::new()); // 官方返回的是 []
         }
 
+        // 优化: 先从Redis缓存中查找slug->project_id映射
+        let mut resolved_project_ids = Vec::new();
+        let mut remaining_items = Vec::new();
+        
+        for item in project_ids_or_slugs {
+            // 判断是否为project_id格式 (通常是8个字符的字母数字组合)
+            if item.len() == 8 && item.chars().all(|c| c.is_ascii_alphanumeric()) {
+                resolved_project_ids.push(item);
+            } else {
+                // 可能是slug，尝试从缓存获取对应的project_id
+                if let Some(cached_project_id) = self.get_cached_project_id(&item).await {
+                    log::debug!("Found cached project_id {} for slug {}", cached_project_id, item);
+                    resolved_project_ids.push(cached_project_id);
+                } else {
+                    // 缓存中没找到，加入待查询列表
+                    remaining_items.push(item);
+                }
+            }
+        }
+
+        // 如果所有项目都从缓存中找到了对应的project_id，直接按project_id查询
+        if remaining_items.is_empty() && !resolved_project_ids.is_empty() {
+            log::debug!("All items resolved from cache, querying {} project_ids directly", resolved_project_ids.len());
+            return self.get_projects_by_ids(resolved_project_ids).await;
+        }
+
+        // 否则还需要查询数据库
         let collection = self
             .db
             .database(get_database_name().as_str())
             .collection::<Project>("modrinth_projects");
 
+        // 构建查询条件：包含已解析的project_id和剩余的待查询项
+        let mut all_items_to_query = resolved_project_ids;
+        all_items_to_query.extend(remaining_items.clone());
+
         let filter = doc! {
             "$or": [
-                { "_id": { "$in": &project_ids_or_slugs.clone() } },
-                { "slug": { "$in": &project_ids_or_slugs } }
+                { "_id": { "$in": &all_items_to_query.clone() } },
+                { "slug": { "$in": &all_items_to_query } }
             ]
         };
 
@@ -256,6 +283,11 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
+            // 缓存新发现的项目映射关系
+            if let Err(e) = self.cache_project_mapping(&doc.id, &doc.slug).await {
+                log::warn!("Failed to cache project mapping for {}: {}", doc.id, e);
+            }
+            
             projects.push(doc);
         }
 
@@ -263,8 +295,7 @@ impl ModrinthService {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth Project"),
                 detail: Some(format!(
-                    "No projects found for the provided project_ids or slugs: {:?}",
-                    project_ids_or_slugs
+                    "No projects found for the provided project_ids or slugs"
                 )),
             });
         }
