@@ -5,11 +5,10 @@ pub mod routes;
 pub mod services;
 pub mod utils;
 
-use actix_web::{web, App, HttpServer, middleware::Logger};
+use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer, Responder};
 use dotenvy::dotenv;
 use std::env;
 use utoipa::OpenApi;
-use utoipa_swagger_ui::SwaggerUi;
 use utoipauto::utoipauto;
 
 use crate::config::_redis::connect as connect_redis;
@@ -18,6 +17,7 @@ use crate::config::AppState;
 use crate::errors::ApiError;
 use crate::routes::config as routes_config;
 
+#[allow(unknown_lints)]
 #[utoipauto]
 #[derive(OpenApi)]
 #[openapi(info(
@@ -31,6 +31,15 @@ use crate::routes::config as routes_config;
 ))]
 pub struct OpenApiDoc;
 
+async fn serve_openapi() -> impl Responder {
+    let openapi_string = OpenApiDoc::openapi()
+        .to_json()
+        .expect("Should serialize to JSON");
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(openapi_string.to_string())
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // 初始化环境变量
@@ -38,7 +47,6 @@ async fn main() -> std::io::Result<()> {
 
     // 初始化日志记录
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
-
 
     // 配置MongoDB连接
     let mongo_client = connect_mongo().await.expect("Failed to connect to MongoDB");
@@ -79,8 +87,10 @@ async fn main() -> std::io::Result<()> {
                     .error_handler(|err, _| ApiError::BadRequest(err.to_string()).into()),
             )
             .configure(routes_config)
-            .wrap(Logger::new("%a \"%r\" %s \"%{Referer}i\" \"%{User-Agent}i\" %D ms"))
-            .service(SwaggerUi::new("/docs/{_:.*}").url("/openapi.json", OpenApiDoc::openapi()))
+            .wrap(Logger::new(
+                "%a \"%r\" %s \"%{Referer}i\" \"%{User-Agent}i\" %D ms",
+            ))
+            .route("/openapi.json", web::get().to(serve_openapi))
     };
 
     log::info!("🚀 Server starting on http://0.0.0.0:{}", port);

@@ -15,7 +15,6 @@ chrono = { version = "0.4.41", features = ["serde"] }
 futures = "0.3.31"
 serde-value = "0.7.0"
 utoipa = { version = "5.3.1", features = ["actix_extras", "chrono"] }
-utoipa-swagger-ui = { version = "9", features = ["actix-web"] }
 utoipa-actix-web = "0.1.2"
 utoipauto = "=0.3.0-alpha.2"
 actix-service = "2.0.3"
