@@ -1,9 +1,10 @@
-use std::collections::HashMap;
-
 use bson::doc;
 use futures::stream::TryStreamExt;
 use mongodb::{bson::Document, Client as Mongo_Client};
 use reqwest::Client;
+use redis::aio::MultiplexedConnection;
+use redis::AsyncCommands;
+use std::sync::Arc;
 
 use crate::config::database::get_database_name;
 use crate::errors::ServiceError;
@@ -11,11 +12,88 @@ use crate::models::modrinth::*;
 
 pub struct ModrinthService {
     db: Mongo_Client,
+    redis: Arc<MultiplexedConnection>,
 }
 
 impl ModrinthService {
-    pub fn new(db: Mongo_Client) -> Self {
-        Self { db }
+    pub fn new(db: Mongo_Client, redis: Arc<MultiplexedConnection>) -> Self {
+        Self { db, redis }
+    }
+
+    // 缓存 project_id <-> slug 映射
+    async fn cache_project_mapping(&self, project_id: &str, slug: &str) -> Result<(), ServiceError> {
+        let mut conn = self.redis.as_ref().clone();
+        let ttl = 3600; // 1小时过期
+        
+        // 设置双向映射
+        let project_key = format!("modrinth:project_id:{}", project_id);
+        let slug_key = format!("modrinth:slug:{}", slug);
+        
+        if let Err(e) = conn.set_ex::<String, String, ()>(project_key, slug.to_string(), ttl).await {
+            log::warn!("Failed to cache project_id->slug mapping: {}", e);
+        }
+        
+        if let Err(e) = conn.set_ex::<String, String, ()>(slug_key, project_id.to_string(), ttl).await {
+            log::warn!("Failed to cache slug->project_id mapping: {}", e);
+        }
+        
+        Ok(())
+    }
+
+    // 获取缓存的 project_id 通过 slug
+    async fn get_cached_project_id(&self, slug: &str) -> Option<String> {
+        let mut conn = self.redis.as_ref().clone();
+        let key = format!("modrinth:slug:{}", slug);
+        
+        match conn.get::<String, Option<String>>(key).await {
+            Ok(result) => result,
+            Err(e) => {
+                log::warn!("Failed to get cached project_id for slug {}: {}", slug, e);
+                None
+            }
+        }
+    }
+
+    // 获取缓存的 slug 通过 project_id
+    async fn get_cached_slug(&self, project_id: &str) -> Option<String> {
+        let mut conn = self.redis.as_ref().clone();
+        let key = format!("modrinth:project_id:{}", project_id);
+        
+        match conn.get::<String, Option<String>>(key).await {
+            Ok(result) => result,
+            Err(e) => {
+                log::warn!("Failed to get cached slug for project_id {}: {}", project_id, e);
+                None
+            }
+        }
+    }
+
+    // 缓存 {algorithm: hash} <-> version_id 映射
+    async fn cache_hash_version_mapping(&self, algorithm: &str, hash: &str, version_id: &str) -> Result<(), ServiceError> {
+        let mut conn = self.redis.as_ref().clone();
+        let ttl = 3600; // 1小时过期
+        
+        let hash_key = format!("modrinth:{}:{}", algorithm, hash);
+        
+        if let Err(e) = conn.set_ex::<String, String, ()>(hash_key, version_id.to_string(), ttl).await {
+            log::warn!("Failed to cache {}:{} -> version_id mapping: {}", algorithm, hash, e);
+        }
+        
+        Ok(())
+    }
+
+    // 获取缓存的 version_id 通过 hash
+    async fn get_cached_version_id(&self, algorithm: &str, hash: &str) -> Option<String> {
+        let mut conn = self.redis.as_ref().clone();
+        let key = format!("modrinth:{}:{}", algorithm, hash);
+        
+        match conn.get::<String, Option<String>>(key).await {
+            Ok(result) => result,
+            Err(e) => {
+                log::warn!("Failed to get cached version_id for {}:{}: {}", algorithm, hash, e);
+                None
+            }
+        }
     }
 
     pub async fn search(
@@ -98,7 +176,7 @@ impl ModrinthService {
         if project_id_or_slug.is_empty() {
             return Err(ServiceError::InvalidInput {
                 field: String::from("project_id or slug"),
-                reason: String::from("Project_id or slugcannot be empty"),
+                reason: String::from("Project_id or slug cannot be empty"),
             });
         }
 
@@ -118,11 +196,11 @@ impl ModrinthService {
             .await?
         {
             Some(doc) => {
-                // let project_data: Project = bson::from_document(doc).map_err(|e| {
-                //     ServiceError::UnexpectedError(format!("Failed to deserialize Project: {}", e))
-                // })?;
-
-                // Ok(Some(project_data))
+                // 缓存项目映射关系以供未来使用
+                if let Err(e) = self.cache_project_mapping(&doc.id, &doc.slug).await {
+                    log::warn!("Failed to cache project mapping: {}", e);
+                }
+                
                 Ok(Some(doc))
             }
             None => Err(ServiceError::NotFound {
@@ -140,22 +218,49 @@ impl ModrinthService {
         project_ids_or_slugs: Vec<String>,
     ) -> Result<Vec<Project>, ServiceError> {
         if project_ids_or_slugs.is_empty() {
-            // return Err(ServiceError::InvalidInput {
-            //     field: String::from("project_ids or slugs"),
-            //     reason: String::from("Project_ids or slugs cannot be empty"),
-            // });
             return Ok(Vec::new()); // 官方返回的是 []
         }
 
+        // 优化: 先从Redis缓存中查找slug->project_id映射
+        let mut resolved_project_ids = Vec::new();
+        let mut remaining_items = Vec::new();
+        
+        for item in project_ids_or_slugs {
+            // 判断是否为project_id格式 (通常是8个字符的字母数字组合)
+            if item.len() == 8 && item.chars().all(|c| c.is_ascii_alphanumeric()) {
+                resolved_project_ids.push(item);
+            } else {
+                // 可能是slug，尝试从缓存获取对应的project_id
+                if let Some(cached_project_id) = self.get_cached_project_id(&item).await {
+                    log::debug!("Found cached project_id {} for slug {}", cached_project_id, item);
+                    resolved_project_ids.push(cached_project_id);
+                } else {
+                    // 缓存中没找到，加入待查询列表
+                    remaining_items.push(item);
+                }
+            }
+        }
+
+        // 如果所有项目都从缓存中找到了对应的project_id，直接按project_id查询
+        if remaining_items.is_empty() && !resolved_project_ids.is_empty() {
+            log::debug!("All items resolved from cache, querying {} project_ids directly", resolved_project_ids.len());
+            return self.get_projects_by_ids(resolved_project_ids).await;
+        }
+
+        // 否则还需要查询数据库
         let collection = self
             .db
             .database(get_database_name().as_str())
             .collection::<Project>("modrinth_projects");
 
+        // 构建查询条件：包含已解析的project_id和剩余的待查询项
+        let mut all_items_to_query = resolved_project_ids;
+        all_items_to_query.extend(remaining_items.clone());
+
         let filter = doc! {
             "$or": [
-                { "_id": { "$in": &project_ids_or_slugs.clone() } },
-                { "slug": { "$in": &project_ids_or_slugs } }
+                { "_id": { "$in": &all_items_to_query.clone() } },
+                { "slug": { "$in": &all_items_to_query } }
             ]
         };
 
@@ -178,6 +283,11 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
+            // 缓存新发现的项目映射关系
+            if let Err(e) = self.cache_project_mapping(&doc.id, &doc.slug).await {
+                log::warn!("Failed to cache project mapping for {}: {}", doc.id, e);
+            }
+            
             projects.push(doc);
         }
 
@@ -185,8 +295,7 @@ impl ModrinthService {
             return Err(ServiceError::NotFound {
                 resource: String::from("Modrinth Project"),
                 detail: Some(format!(
-                    "No projects found for the provided project_ids or slugs: {:?}",
-                    project_ids_or_slugs
+                    "No projects found for the provided project_ids or slugs"
                 )),
             });
         }
@@ -209,29 +318,39 @@ impl ModrinthService {
         }
 
 
-        /// TODO: 按照 modrinth 设计的逻辑是尽可能缓存这种前置查询
-        /// 未来应该试着在 redis 添加这些映射
-        /// project_id <-> slug
-        /// {algorithm: hash} <-> version_id
-        /// 目前暂时不做，直接查询数据库
-
-        // 检查项目是否存在
-        let project = self
-            .get_project_by_id_or_slug(project_id_or_slug.clone())
-            .await?;
-
-        let project_id = match project {
-            Some(p) => p.id,
-            None => {
-                return Err(ServiceError::NotFound {
-                    resource: String::from("Modrinth Project"),
-                    detail: Some(format!(
-                        "Project with ID or slug {} not found",
-                        project_id_or_slug
-                    )),
-                });
+        // 优化: 首先尝试从缓存获取映射关系
+        let project_id = if project_id_or_slug.len() == 8 && project_id_or_slug.chars().all(|c| c.is_ascii_alphanumeric()) {
+            // 看起来像是 project_id，尝试获取对应的 slug
+            if let Some(slug) = self.get_cached_slug(&project_id_or_slug).await {
+                log::debug!("Found cached slug {} for project_id {}", slug, project_id_or_slug);
+            }
+            project_id_or_slug.clone()
+        } else {
+            // 看起来像是 slug，尝试获取对应的 project_id
+            if let Some(cached_id) = self.get_cached_project_id(&project_id_or_slug).await {
+                log::debug!("Found cached project_id {} for slug {}", cached_id, project_id_or_slug);
+                cached_id
+            } else {
+                // 缓存未命中，需要查询数据库
+                let project = self
+                    .get_project_by_id_or_slug(project_id_or_slug.clone())
+                    .await?;
+                match project {
+                    Some(p) => p.id,
+                    None => {
+                        return Err(ServiceError::NotFound {
+                            resource: String::from("Modrinth Project"),
+                            detail: Some(format!(
+                                "Project with ID or slug {} not found",
+                                project_id_or_slug
+                            )),
+                        });
+                    }
+                }
             }
         };
+
+
 
         let version_collection = self
             .db
@@ -412,6 +531,12 @@ impl ModrinthService {
             }); // 单个 hash 请求直接返回 404
         }
 
+        // 优化: 首先尝试从缓存获取 version_id
+        if let Some(cached_version_id) = self.get_cached_version_id(&algorithm, &hash).await {
+            log::debug!("Found cached version_id {} for {}:{}", cached_version_id, algorithm, hash);
+            return self.get_version(cached_version_id).await;
+        }
+
         let collection = self
             .db
             .database(get_database_name().as_str())
@@ -421,6 +546,11 @@ impl ModrinthService {
 
         match collection.find_one(filter, None).await? {
             Some(doc) => {
+                // 缓存 hash -> version_id 映射
+                if let Err(e) = self.cache_hash_version_mapping(&algorithm, &hash, &doc.version_id).await {
+                    log::warn!("Failed to cache hash-version mapping: {}", e);
+                }
+                
                 let version_data = self.get_version(doc.version_id).await;
                 match version_data {
                     Ok(Some(version)) => Ok(Some(version)),

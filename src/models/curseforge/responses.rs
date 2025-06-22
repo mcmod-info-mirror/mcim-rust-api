@@ -3,7 +3,7 @@ use utoipa::ToSchema;
 use chrono::{DateTime, Utc};
 
 
-use crate::models::curseforge::entities::{FileIndex, FileDependencies, FileSortableGameVersions, Hash, Author, Logo, Links, ScreenShot, Module};
+use crate::models::curseforge::entities::{FileIndex, Author, Logo, Links, ScreenShot};
 
 use crate::models::curseforge::entities::{Mod, File, FileInfo, Category, CategoryInfo, Fingerprint};
 
