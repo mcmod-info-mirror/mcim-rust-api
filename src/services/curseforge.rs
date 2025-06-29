@@ -1,23 +1,141 @@
 use bson::doc;
 use futures::stream::TryStreamExt;
-use mongodb::{Client as Mongo_Client};
+use mongodb::Client as Mongo_Client;
+use redis::aio::MultiplexedConnection;
+use redis::AsyncCommands;
 use reqwest::Client;
+use std::sync::Arc;
 
 use crate::config::database::get_database_name;
 use crate::errors::ServiceError;
-use crate::models::curseforge::entities::{Category, Mod, File, Fingerprint};
-use crate::models::curseforge::responses::*;
+use crate::models::curseforge::entities::{Category, File, Fingerprint, Mod};
 use crate::models::curseforge::requests::SearchQuery;
+use crate::models::curseforge::responses::*;
 
 pub struct CurseforgeService {
     db: Mongo_Client,
+    redis: Arc<MultiplexedConnection>,
 }
 
 impl CurseforgeService {
-    pub fn new(db: Mongo_Client) -> Self {
-        Self { db }
+    pub fn new(db: Mongo_Client, redis: Arc<MultiplexedConnection>) -> Self {
+        Self { db, redis }
     }
 
+    async fn add_modids_into_queue(&self, mod_ids: Vec<i32>) -> Result<(), ServiceError> {
+        let mut conn = self.redis.as_ref().clone();
+        let _ = conn
+            .sadd::<&str, &Vec<i32>, ()>("curseforge_modids", &mod_ids)
+            .await
+            .map_err(|e| -> ServiceError {
+                ServiceError::ExternalServiceError {
+                    service: "Redis".into(),
+                    message: format!("Failed to add modIds to Redis queue: {}", e),
+                }
+            })?;
+        log::debug!("Added modIds to Redis queue: {:?}", mod_ids);
+        Ok(())
+    }
+
+    async fn add_fileids_into_queue(&self, file_ids: Vec<i32>) -> Result<(), ServiceError> {
+        let mut conn = self.redis.as_ref().clone();
+        let _ = conn
+            .sadd::<&str, &Vec<i32>, ()>("curseforge_fileids", &file_ids)
+            .await
+            .map_err(|e| -> ServiceError {
+                ServiceError::ExternalServiceError {
+                    service: "Redis".into(),
+                    message: format!("Failed to add fileIds to Redis queue: {}", e),
+                }
+            })?;
+        log::debug!("Added fileIds to Redis queue: {:?}", file_ids);
+        Ok(())
+    }
+
+    async fn add_fingerprints_into_queue(
+        &self,
+        fingerprints: Vec<i64>,
+    ) -> Result<(), ServiceError> {
+        let mut conn = self.redis.as_ref().clone();
+        let _ = conn
+            .sadd::<&str, &Vec<i64>, ()>("curseforge_fingerprints", &fingerprints)
+            .await
+            .map_err(|e| -> ServiceError {
+                ServiceError::ExternalServiceError {
+                    service: "Redis".into(),
+                    message: format!("Failed to add fingerprints to Redis queue: {}", e),
+                }
+            })?;
+        log::debug!("Added fingerprints to Redis queue: {:?}", fingerprints);
+        Ok(())
+    }
+
+    async fn check_search_result(&self, data: &serde_json::Value) -> Result<(), ServiceError> {
+        if data.is_null() || !data.is_object() {
+            return Err(ServiceError::UnexpectedError(
+                "Search result is null or not an object".to_string(),
+            ));
+        }
+
+        let mods = data.get("data").and_then(|d| d.as_array()).ok_or_else(|| {
+            ServiceError::UnexpectedError("Search result does not contain 'data' array".to_string())
+        })?;
+
+        let mut mod_ids = Vec::new();
+
+        for _mod in mods {
+            if let Some(mod_id) = _mod.get("id").and_then(|id| id.as_i64()) {
+                if mod_id >= 30000 {
+                    mod_ids.push(mod_id as i32);
+                }
+            }
+        }
+
+        if mod_ids.is_empty() {
+            log::debug!("Search result is empty or no valid modIds found.");
+            return Ok(());
+        }
+
+        let collection = self
+            .db
+            .database(get_database_name().as_str())
+            .collection::<Mod>("curseforge_mods");
+
+        let mut cursor = collection
+            .find(doc! { "_id": { "$in": &mod_ids } }, None)
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: "Failed to fetch mods from database".to_string(),
+                source: Some(e),
+            })?;
+
+        let mut found_mod_ids = Vec::new();
+
+        while let Some(doc) = cursor
+            .try_next()
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: "Failed to fetch mods from database".to_string(),
+                source: Some(e),
+            })?
+        {
+            found_mod_ids.push(doc.id);
+        }
+
+        let not_found_mod_ids: Vec<i32> = mod_ids
+            .iter()
+            .filter(|id| !found_mod_ids.contains(id))
+            .cloned()
+            .collect();
+
+        if !not_found_mod_ids.is_empty() {
+            self.add_modids_into_queue(not_found_mod_ids).await?;
+        } else {
+            log::debug!("All Mods have been found in the database.");
+        }
+
+        Ok(())
+    }
 
     pub async fn search_mods(
         &self,
@@ -70,28 +188,27 @@ impl CurseforgeService {
             .send()
             .await
             .map_err(|e| ServiceError::ExternalServiceError {
-            service: "Curseforge API".into(),
-            message: format!("Failed to send request: {}", e),
+                service: "Curseforge API".into(),
+                message: format!("Failed to send request: {}", e),
             })?;
 
         // 检查状态码
         if !response.status().is_success() {
             return Err(ServiceError::ExternalServiceError {
                 service: "Curseforge API".into(),
-                message: format!(
-                    "Request failed with status code: {}",
-                    response.status()
-                ),
+                message: format!("Request failed with status code: {}", response.status()),
             });
         }
 
-        let search_result = response
-            .json::<serde_json::Value>()
-            .await
-            .map_err(|e| ServiceError::ExternalServiceError {
+        let search_result = response.json::<serde_json::Value>().await.map_err(|e| {
+            ServiceError::ExternalServiceError {
                 service: "Curseforge API".into(),
                 message: format!("Failed to parse JSON: {}", e),
-            })?;
+            }
+        })?;
+
+        // 检查搜索结果，不存在则添加到队列
+        self.check_search_result(&search_result).await?;
 
         Ok(search_result)
     }
@@ -100,7 +217,7 @@ impl CurseforgeService {
         if mod_id.is_negative() {
             return Err(ServiceError::InvalidInput {
                 field: String::from("mod_id"),
-                reason: String::from("Mod ID cannot be negative"),
+                reason: String::from("ModId cannot be negative"),
             });
         }
 
@@ -110,24 +227,19 @@ impl CurseforgeService {
             .collection::<Mod>("curseforge_mods");
 
         match collection.find_one(doc! { "_id": mod_id }, None).await? {
-            // Some(doc) => {
-            //     let mod_data: Mod = bson::from_document(doc).map_err(|e| {
-            //         ServiceError::UnexpectedError(format!("Failed to deserialize Mod: {}", e))
-            //     })?;
-
-            //     let response = ModResponse { data: mod_data };
-            //     Ok(Some(response))
-            // }
             Some(mod_data) => {
-                // 不需要手动反序列化
-                // let response = ModResponse { data: ModReponseObject::from(mod_data) };
                 let response = ModResponse { data: mod_data };
                 Ok(Some(response))
             }
-            None => Err(ServiceError::NotFound {
-                resource: String::from("Mod"),
-                detail: Some(format!("Mod with modId {} not found", mod_id)),
-            }),
+            None => {
+                // 不存在则添加到队列
+                self.add_modids_into_queue(vec![mod_id]).await?;
+
+                Err(ServiceError::NotFound {
+                    resource: String::from("Mod"),
+                    detail: Some(format!("Mod with modId {} not found", mod_id)),
+                })
+            }
         }
     }
 
@@ -135,7 +247,7 @@ impl CurseforgeService {
         if mod_ids.is_empty() {
             return Err(ServiceError::InvalidInput {
                 field: String::from("mod_ids"),
-                reason: String::from("Mod IDs cannot be empty"),
+                reason: String::from("ModIds cannot be empty"),
             });
         }
 
@@ -158,7 +270,6 @@ impl CurseforgeService {
                 source: Some(e),
             })?
         {
-            // mods.push(ModReponseObject::from(doc));
             mods.push(doc);
         }
 
@@ -166,9 +277,29 @@ impl CurseforgeService {
         if mods.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Mods"),
-                detail: Some(format!("No mods found for the provided modIds: {:?}", mod_ids)),
+                detail: Some(format!(
+                    "No mods found for the provided modIds: {:?}",
+                    mod_ids
+                )),
             });
         }
+
+        // 检查是否有未找到的 mod_id
+        let found_mod_ids: Vec<i32> = mods.iter().map(|m| m.id).collect();
+        let not_found_mod_ids: Vec<i32> = mod_ids
+            .into_iter()
+            .filter(|id| !found_mod_ids.contains(id))
+            .collect();
+        if !not_found_mod_ids.is_empty() {
+            log::debug!(
+                "modIds not found in database: {:?}, adding to queue for processing.",
+                not_found_mod_ids
+            );
+            self.add_modids_into_queue(not_found_mod_ids).await?;
+        } else {
+            log::debug!("All Mods have been found in the database.");
+        }
+
         Ok(ModsResponse { data: mods })
     }
 
@@ -176,7 +307,7 @@ impl CurseforgeService {
         if file_id.is_negative() {
             return Err(ServiceError::InvalidInput {
                 field: String::from("file_id"),
-                reason: String::from("File ID cannot be negative"),
+                reason: String::from("FileId cannot be negative"),
             });
         }
 
@@ -193,14 +324,16 @@ impl CurseforgeService {
                 source: Some(e),
             })? {
             Some(file_data) => {
-                // let response = FileResponse { data: FileResponseObject::from(file_data) };
                 let response = FileResponse { data: file_data };
                 Ok(response)
             }
-            None => Err(ServiceError::NotFound {
-                resource: String::from("File"),
-                detail: Some(format!("File with fileId {} not found", file_id)),
-            }),
+            None => {
+                self.add_fileids_into_queue(vec![file_id]).await?;
+                Err(ServiceError::NotFound {
+                    resource: String::from("File"),
+                    detail: Some(format!("File with fileId {} not found", file_id)),
+                })
+            }
         }
     }
 
@@ -208,7 +341,7 @@ impl CurseforgeService {
         if file_ids.is_empty() {
             return Err(ServiceError::InvalidInput {
                 field: String::from("file_ids"),
-                reason: String::from("File IDs cannot be empty"),
+                reason: String::from("FileIds cannot be empty"),
             });
         }
 
@@ -222,20 +355,40 @@ impl CurseforgeService {
             .await?;
 
         let mut files = Vec::new();
-        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::DatabaseError {
-            message: String::from("Failed to fetch files from database"),
-            source: Some(e),
-        }) {
-            // files.push(FileResponseObject::from(doc));
+        while let Ok(Some(doc)) = cursor
+            .try_next()
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: String::from("Failed to fetch files from database"),
+                source: Some(e),
+            })
+        {
             files.push(doc);
+        }
+
+        // 检查是否有未找到的 file_id
+        let found_file_ids: Vec<i32> = files.iter().map(|f| f.id).collect();
+        let not_found_file_ids: Vec<i32> = file_ids
+            .iter()
+            .filter(|id| !found_file_ids.contains(id))
+            .cloned()
+            .collect();
+        if !not_found_file_ids.is_empty() {
+            self.add_fileids_into_queue(not_found_file_ids).await?;
+        } else {
+            log::debug!("All Files have been found in the database.");
         }
 
         if files.is_empty() {
             return Err(ServiceError::NotFound {
                 resource: String::from("Files"),
-                detail: Some(format!("No files found for the provided fileIds: {:?}", file_ids)),
+                detail: Some(format!(
+                    "No files found for the provided fileIds: {:?}",
+                    file_ids
+                )),
             });
         }
+
         Ok(FilesResponse { data: files })
     }
 
@@ -250,7 +403,7 @@ impl CurseforgeService {
         if mod_id.is_negative() {
             return Err(ServiceError::InvalidInput {
                 field: String::from("mod_id"),
-                reason: String::from("Mod ID cannot be negative"),
+                reason: String::from("ModId cannot be negative"),
             });
         }
 
@@ -306,19 +459,20 @@ impl CurseforgeService {
             },
         ];
 
-        let mut cursor =
-            collection
-                .aggregate(pipeline, None)
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: String::from("Failed to aggregate mod files"),
-                    source: Some(e),
-                })?;
+        let mut cursor = collection.aggregate(pipeline, None).await.map_err(|e| {
+            ServiceError::DatabaseError {
+                message: String::from("Failed to aggregate mod files"),
+                source: Some(e),
+            }
+        })?;
 
-        let result = cursor.try_next().await.map_err(|e| ServiceError::DatabaseError {
-            message: String::from("Failed to fetch mod files"),
-            source: Some(e),
-        });
+        let result = cursor
+            .try_next()
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: String::from("Failed to fetch mod files"),
+                source: Some(e),
+            });
 
         let (files, total_count) = if let Ok(Some(doc)) = result {
             // 获取数据
@@ -332,7 +486,6 @@ impl CurseforgeService {
                     let file_data: File = bson::from_document(file_doc.clone()).map_err(|e| {
                         ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
                     })?;
-                    // files.push( FileResponseObject::from(file_data));
                     files.push(file_data);
                 }
             }
@@ -355,6 +508,11 @@ impl CurseforgeService {
         } else {
             (Vec::new(), 0)
         };
+        
+        // 有筛选条件很容易为空，不能当作 Mod 不存在
+        // if total_count == 0 {
+        //     self.add_modids_into_queue(vec![mod_id]).await?;
+        // }
 
         let result_count = files.len() as i32;
         Ok(ModFilesResponse {
@@ -368,7 +526,6 @@ impl CurseforgeService {
         })
     }
 
-
     pub async fn get_file_download_url(
         &self,
         mod_id: i32,
@@ -377,7 +534,7 @@ impl CurseforgeService {
         if mod_id.is_negative() || file_id.is_negative() {
             return Err(ServiceError::InvalidInput {
                 field: String::from("mod_id or file_id"),
-                reason: String::from("Mod ID and File ID cannot be negative"),
+                reason: String::from("ModId and FileId cannot be negative"),
             });
         }
 
@@ -388,7 +545,6 @@ impl CurseforgeService {
             data: file_data.data.download_url.unwrap_or_default(),
         })
     }
-
 
     pub async fn get_fingerprints(
         &self,
@@ -416,20 +572,30 @@ impl CurseforgeService {
         let mut cursor = collection.find(filter, None).await?;
         let mut fingerprint_results = Vec::new();
 
-        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::DatabaseError {
-            message: String::from("Failed to fetch fingerprints from database"),
-            source: Some(e),
-        }) {
-            // fingerprint_results.push(FingerprintResponseObject::from(doc));
+        while let Ok(Some(doc)) = cursor
+            .try_next()
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: String::from("Failed to fetch fingerprints from database"),
+                source: Some(e),
+            })
+        {
             fingerprint_results.push(doc);
         }
 
         let exact_fingerprints = fingerprint_results.iter().map(|f| f.id).collect();
 
-        let unmatched_fingerprints = fingerprints
+        let unmatched_fingerprints: Vec<i64> = fingerprints
             .into_iter()
             .filter(|f| !fingerprint_results.iter().any(|fp| fp.id == *f))
             .collect();
+
+        if unmatched_fingerprints.is_empty() {
+            log::debug!("All fingerprints have been found in the database.");
+        } else {
+            self.add_fingerprints_into_queue(unmatched_fingerprints.clone())
+                .await?;
+        }
 
         let response = FingerprintResponse {
             data: FingerprintResult {
@@ -474,10 +640,14 @@ impl CurseforgeService {
                 })?;
 
         let mut categories = Vec::new();
-        while let Ok(Some(doc)) = cursor.try_next().await.map_err(|e| ServiceError::DatabaseError {
-            message: String::from("Failed to fetch categories from database"),
-            source: Some(e),
-        }) {
+        while let Ok(Some(doc)) = cursor
+            .try_next()
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: String::from("Failed to fetch categories from database"),
+                source: Some(e),
+            })
+        {
             // categories.push(CategoryResponseObject::from(doc));
             categories.push(doc);
         }
@@ -487,7 +657,9 @@ impl CurseforgeService {
                 resource: String::from("Categories"),
                 detail: Some(format!(
                     "No categories found for gameId {} and classId {:?} and classOnly {:?}",
-                    game_id, class_id, class_only.unwrap_or(false)
+                    game_id,
+                    class_id,
+                    class_only.unwrap_or(false)
                 )),
             });
         }
