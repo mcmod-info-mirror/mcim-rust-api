@@ -237,6 +237,63 @@ async fn test_get_fingerprints_by_game_id_success() {
 }
 
 #[actix_web::test]
+async fn test_get_not_found_fingerprint() {
+    let app = init_service(create_test_app().await).await;
+    let not_found_fingerprints: Vec<i64> = vec![11451419810, 1234567890];
+    let payload = json!({
+        "fingerprints": not_found_fingerprints
+    });
+
+    let req = TestRequest::post()
+        .uri("/curseforge/v1/fingerprints")
+        .set_json(&json!(payload))
+        .to_request();
+
+    let resp = app.call(req).await.unwrap();
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+    let json_body = serde_json::from_str::<serde_json::Value>(&body)
+        .expect("Failed to parse JSON response");
+    // body.data.unmatchedFingerprints == not_found_fingerprints
+    let unmatched_fingerprints = json_body["data"]["unmatchedFingerprints"].as_array().unwrap()
+        .iter()
+        .map(|v| v.as_i64().unwrap())
+        .collect::<Vec<i64>>();
+    assert_eq!(unmatched_fingerprints, not_found_fingerprints, "Unmatched fingerprints do not match the expected values");
+}
+
+#[actix_web::test]
+async fn test_get_invalid_fingerprint() {
+    let app = init_service(create_test_app().await).await;
+    let not_found_fingerprints: Vec<i64> = vec![-2, -1];
+    let payload = json!({
+        "fingerprints": not_found_fingerprints
+    });
+
+    let req = TestRequest::post()
+        .uri("/curseforge/v1/fingerprints")
+        .set_json(&json!(payload))
+        .to_request();
+
+    let resp = app.call(req).await.unwrap();
+    let status = resp.status();
+    let body_bytes = to_bytes(resp.into_body()).await.unwrap();
+    let body = String::from_utf8_lossy(&body_bytes);
+    assert!(status.is_success(), "Status: {}, Body: {}", status, body);
+    let json_body = serde_json::from_str::<serde_json::Value>(&body)
+        .expect("Failed to parse JSON response");
+    // body.data.unmatchedFingerprints == not_found_fingerprints
+    let unmatched_fingerprints = json_body["data"]["unmatchedFingerprints"].as_array().unwrap()
+        .iter()
+        .map(|v| v.as_i64().unwrap())
+        .collect::<Vec<i64>>();
+    assert_eq!(unmatched_fingerprints, not_found_fingerprints, "Unmatched fingerprints do not match the expected values");
+}
+
+
+#[actix_web::test]
 async fn test_get_categories_success() {
     let app = init_service(create_test_app().await).await;
 
