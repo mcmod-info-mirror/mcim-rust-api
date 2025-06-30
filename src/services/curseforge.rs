@@ -37,6 +37,39 @@ impl CurseforgeService {
         Ok(())
     }
 
+    async fn add_fileids_into_queue(&self, file_ids: Vec<i32>) -> Result<(), ServiceError> {
+        let mut conn = self.redis.as_ref().clone();
+        let _ = conn
+            .sadd::<&str, &Vec<i32>, ()>("curseforge_fileids", &file_ids)
+            .await
+            .map_err(|e| -> ServiceError {
+                ServiceError::ExternalServiceError {
+                    service: "Redis".into(),
+                    message: format!("Failed to add fileIds to Redis queue: {}", e),
+                }
+            })?;
+        log::debug!("Added fileIds to Redis queue: {:?}", file_ids);
+        Ok(())
+    }
+
+    async fn add_fingerprints_into_queue(
+        &self,
+        fingerprints: Vec<i64>,
+    ) -> Result<(), ServiceError> {
+        let mut conn = self.redis.as_ref().clone();
+        let _ = conn
+            .sadd::<&str, &Vec<i64>, ()>("curseforge_fingerprints", &fingerprints)
+            .await
+            .map_err(|e| -> ServiceError {
+                ServiceError::ExternalServiceError {
+                    service: "Redis".into(),
+                    message: format!("Failed to add fingerprints to Redis queue: {}", e),
+                }
+            })?;
+        log::debug!("Added fingerprints to Redis queue: {:?}", fingerprints);
+        Ok(())
+    }
+
     async fn check_search_result(&self, data: &serde_json::Value) -> Result<(), ServiceError> {
         if data.is_null() || !data.is_object() {
             return Err(ServiceError::UnexpectedError(
@@ -96,10 +129,6 @@ impl CurseforgeService {
             .collect();
 
         if !not_found_mod_ids.is_empty() {
-            log::debug!(
-                "ModIds not found in database: {:?}, adding to queue for processing.",
-                not_found_mod_ids
-            );
             self.add_modids_into_queue(not_found_mod_ids).await?;
         } else {
             log::debug!("All Mods have been found in the database.");
@@ -295,14 +324,16 @@ impl CurseforgeService {
                 source: Some(e),
             })? {
             Some(file_data) => {
-                // let response = FileResponse { data: FileResponseObject::from(file_data) };
                 let response = FileResponse { data: file_data };
                 Ok(response)
             }
-            None => Err(ServiceError::NotFound {
-                resource: String::from("File"),
-                detail: Some(format!("File with fileId {} not found", file_id)),
-            }),
+            None => {
+                self.add_fileids_into_queue(vec![file_id]).await?;
+                Err(ServiceError::NotFound {
+                    resource: String::from("File"),
+                    detail: Some(format!("File with fileId {} not found", file_id)),
+                })
+            }
         }
     }
 
@@ -332,8 +363,20 @@ impl CurseforgeService {
                 source: Some(e),
             })
         {
-            // files.push(FileResponseObject::from(doc));
             files.push(doc);
+        }
+
+        // 检查是否有未找到的 file_id
+        let found_file_ids: Vec<i32> = files.iter().map(|f| f.id).collect();
+        let not_found_file_ids: Vec<i32> = file_ids
+            .iter()
+            .filter(|id| !found_file_ids.contains(id))
+            .cloned()
+            .collect();
+        if !not_found_file_ids.is_empty() {
+            self.add_fileids_into_queue(not_found_file_ids).await?;
+        } else {
+            log::debug!("All Files have been found in the database.");
         }
 
         if files.is_empty() {
@@ -345,6 +388,7 @@ impl CurseforgeService {
                 )),
             });
         }
+
         Ok(FilesResponse { data: files })
     }
 
@@ -442,7 +486,6 @@ impl CurseforgeService {
                     let file_data: File = bson::from_document(file_doc.clone()).map_err(|e| {
                         ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
                     })?;
-                    // files.push( FileResponseObject::from(file_data));
                     files.push(file_data);
                 }
             }
@@ -465,6 +508,11 @@ impl CurseforgeService {
         } else {
             (Vec::new(), 0)
         };
+        
+        // 有筛选条件很容易为空，不能当作 Mod 不存在
+        // if total_count == 0 {
+        //     self.add_modids_into_queue(vec![mod_id]).await?;
+        // }
 
         let result_count = files.len() as i32;
         Ok(ModFilesResponse {
@@ -532,16 +580,22 @@ impl CurseforgeService {
                 source: Some(e),
             })
         {
-            // fingerprint_results.push(FingerprintResponseObject::from(doc));
             fingerprint_results.push(doc);
         }
 
         let exact_fingerprints = fingerprint_results.iter().map(|f| f.id).collect();
 
-        let unmatched_fingerprints = fingerprints
+        let unmatched_fingerprints: Vec<i64> = fingerprints
             .into_iter()
             .filter(|f| !fingerprint_results.iter().any(|fp| fp.id == *f))
             .collect();
+
+        if unmatched_fingerprints.is_empty() {
+            log::debug!("All fingerprints have been found in the database.");
+        } else {
+            self.add_fingerprints_into_queue(unmatched_fingerprints.clone())
+                .await?;
+        }
 
         let response = FingerprintResponse {
             data: FingerprintResult {
