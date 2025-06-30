@@ -23,6 +23,9 @@ impl CurseforgeService {
     }
 
     async fn add_modids_into_queue(&self, mod_ids: Vec<i32>) -> Result<(), ServiceError> {
+        if mod_ids.is_empty() {
+            return Ok(());
+        }
         let mut conn = self.redis.as_ref().clone();
         let _ = conn
             .sadd::<&str, &Vec<i32>, ()>("curseforge_modids", &mod_ids)
@@ -38,6 +41,9 @@ impl CurseforgeService {
     }
 
     async fn add_fileids_into_queue(&self, file_ids: Vec<i32>) -> Result<(), ServiceError> {
+        if file_ids.is_empty() {
+            return Ok(());
+        }
         let mut conn = self.redis.as_ref().clone();
         let _ = conn
             .sadd::<&str, &Vec<i32>, ()>("curseforge_fileids", &file_ids)
@@ -56,6 +62,10 @@ impl CurseforgeService {
         &self,
         fingerprints: Vec<i64>,
     ) -> Result<(), ServiceError> {
+        if fingerprints.is_empty() {
+            return Ok(());
+        }
+
         let mut conn = self.redis.as_ref().clone();
         let _ = conn
             .sadd::<&str, &Vec<i64>, ()>("curseforge_fingerprints", &fingerprints)
