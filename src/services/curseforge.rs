@@ -218,7 +218,10 @@ impl CurseforgeService {
         })?;
 
         // 检查搜索结果，不存在则添加到队列
-        self.check_search_result(&search_result).await?;
+        let _ = match self.check_search_result(&search_result).await {
+            Ok(_) => log::debug!("Curseforge check_search_result completed successfully"),
+            Err(e) => log::error!("Curseforge check_search_result failed: {}", e),
+        };
 
         Ok(search_result)
     }

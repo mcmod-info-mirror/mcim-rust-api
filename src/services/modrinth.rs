@@ -340,11 +340,10 @@ impl ModrinthService {
             .map_err(|e| ServiceError::UnexpectedError(format!("Failed to parse JSON: {}", e)))?;
 
         // 检查有无未缓存的 Project
-        self.check_search_result(&search_result)
-            .await
-            .map_err(|e| {
-                ServiceError::UnexpectedError(format!("Failed to check search result: {}", e))
-            })?;
+        let _ = match self.check_search_result(&search_result).await {
+                Ok(_) => log::debug!("Search result check completed successfully"),
+                Err(e) => log::error!("Modrinth Search result check failed: {}", e),
+        };
 
         return Ok(search_result);
     }
