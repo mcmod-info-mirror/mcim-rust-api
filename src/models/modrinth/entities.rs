@@ -28,7 +28,7 @@ pub struct GalleryItem {
     pub description: Option<String>,
     #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
     pub created: DateTime<Utc>,
-    pub ordering: Option<i32>,
+    pub ordering: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
