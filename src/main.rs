@@ -5,12 +5,13 @@ pub mod routes;
 pub mod services;
 pub mod utils;
 
-use actix_web::{web, App, HttpServer, dev::ServiceRequest, middleware::Logger};
+use actix_web::{dev::ServiceRequest, middleware::Logger, web, App, HttpServer};
 use dotenvy::dotenv;
 use std::env;
 
 use crate::config::_redis::connect as connect_redis;
 use crate::config::database::connect as connect_mongo;
+use crate::config::AppState;
 use crate::errors::ApiError;
 use crate::routes::config as routes_config;
 
@@ -30,23 +31,34 @@ async fn main() -> std::io::Result<()> {
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let bind_address = format!("0.0.0.0:{}", port);
 
-
+    let app_state = AppState {
+        db: mongo_client,
+        redis_pool: redis_pool,
+        curseforge_api_url: env::var("CURSEFORGE_API_URL")
+            .unwrap_or_else(|_| "https://api.curseforge.com".to_string()),
+        modrinth_api_url: env::var("MODRINTH_API_URL")
+            .unwrap_or_else(|_| "https://api.modrinth.com".to_string()),
+        curseforge_api_key: env::var("CURSEFORGE_API_KEY").unwrap_or_else(|_| "".to_string()),
+        curseforge_file_cdn_url: env::var("CURSEFORGE_FILE_CDN_URL")
+            .unwrap_or_else(|_| "https://mediafilez.forgecdn.net".to_string()),
+        modrinth_file_cdn_url: env::var("MODRINTH_FILE_CDN_URL")
+            .unwrap_or_else(|_| "https://cdn.modrinth.com".to_string()),
+    };
+    let app_data = web::Data::new(app_state);
 
     let app = move || {
-        let logger =
-        Logger::new("%a \"%r\" \"%{RoutePattern}xi\" %s \"%{Referer}i\" \"%{User-Agent}i\" %D ms")
-            .custom_request_replace("RoutePattern", |req: &ServiceRequest| {
-                req.request()
-                    .match_pattern()
-                    .map(|s| s.to_string())
-                    .unwrap_or_else(|| "-".to_string())
-            });
+        let logger = Logger::new(
+            "%a \"%r\" \"%{RoutePattern}xi\" %s \"%{Referer}i\" \"%{User-Agent}i\" %D ms",
+        )
+        .custom_request_replace("RoutePattern", |req: &ServiceRequest| {
+            req.request()
+                .match_pattern()
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| "-".to_string())
+        });
 
         App::new()
-            .app_data(web::Data::new(mcim_rust_api::build_app_state(
-                mongo_client.clone(),
-                redis_pool.clone(),
-            )))
+            .app_data(app_data.clone())
             .app_data(
                 web::JsonConfig::default()
                     .error_handler(|err, _| ApiError::BadRequest(err.to_string()).into()),
