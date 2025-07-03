@@ -1,4 +1,4 @@
-use actix_web::{get, web, web::Redirect, Responder};
+use actix_web::{route, web, web::Redirect, Responder};
 
 use crate::config::AppState;
 
@@ -21,7 +21,11 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     description = "Curseforge File CDN endpoint",
     tag = "File CDN"
 )]
-#[get("/files/{file_id1}/{file_id2}/{file_name}")]
+#[route(
+    "/files/{file_id1}/{file_id2}/{file_name}",
+    method = "GET",
+    method = "HEAD"
+)]
 pub async fn get_curseforge_file(
     path: web::Path<(String, String, String)>,
     data: web::Data<AppState>,
@@ -53,7 +57,11 @@ pub async fn get_curseforge_file(
     description = "Modrinth File CDN endpoint",
     tag = "File CDN"
 )]
-#[get("/data/{project_id}/versions/{version_id}/{file_name}")]
+#[route(
+    "/data/{project_id}/versions/{version_id}/{file_name}",
+    method = "GET",
+    method = "HEAD"
+)]
 pub async fn get_modrinth_file(
     path: web::Path<(String, String, String)>,
     data: web::Data<AppState>,
