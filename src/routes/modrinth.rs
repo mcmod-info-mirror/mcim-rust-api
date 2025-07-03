@@ -274,7 +274,8 @@ pub async fn get_versions(
     get,
     path = "/modrinth/v2/version_file/{hash}",
     params(
-        ("hash" = String, Path, description = "Hash of the file, sha1 or sha512")
+        ("hash" = String, Path, description = "Hash of the file, sha1 or sha512"),
+        ("algorithm" = String, Query, description = "Hash algorithm used, sha1 or sha512")
     ),
     responses(
         (status = 200, description = "File found", body = Version)
