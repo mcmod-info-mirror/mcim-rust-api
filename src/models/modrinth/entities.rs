@@ -53,7 +53,7 @@ pub struct Project {
     pub project_type: Option<String>,
     pub downloads: Option<i64>,
     pub icon_url: Option<String>,
-    pub color: Option<i32>,
+    pub color: Option<u32>,
     pub thread_id: Option<String>,
     pub monetization_status: Option<String>,
     pub team: String,

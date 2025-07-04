@@ -51,7 +51,7 @@ pub struct SearchHit {
     pub server_side: String,
     pub gallery: Option<Vec<String>>,
     pub featured_gallery: Option<String>,
-    pub color: i32,
+    pub color: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
