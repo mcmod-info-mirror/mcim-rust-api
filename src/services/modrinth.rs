@@ -237,13 +237,18 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Project>("modrinth_projects");
+            .collection::<bson::Document>("modrinth_projects");
+
+        let projection = doc! { "_id": 1 };
+        let find_options = mongodb::options::FindOptions::builder()
+            .projection(projection)
+            .build();
 
         let filter = doc! { "_id": { "$in": &project_ids } };
 
         let mut cursor =
             collection
-                .find(filter, None)
+                .find(filter, find_options)
                 .await
                 .map_err(|e| ServiceError::DatabaseError {
                     message: format!("Failed to fetch project documents: {}", e),
@@ -260,7 +265,9 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            found_project_ids.push(doc.id);
+            if let Ok(id) = doc.get_str("_id") {
+                found_project_ids.push(id.to_string());
+            }
         }
 
         let not_found_project_ids: Vec<String> = project_ids

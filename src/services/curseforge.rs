@@ -109,18 +109,23 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Mod>("curseforge_mods");
-
+            .collection::<bson::Document>("curseforge_mods");
+        
+        let projection = doc! { "_id": 1 };
+        let find_options = mongodb::options::FindOptions::builder()
+            .projection(projection)
+            .build();
+        
         let mut cursor = collection
-            .find(doc! { "_id": { "$in": &mod_ids } }, None)
+            .find(doc! { "_id": { "$in": &mod_ids } }, find_options)
             .await
             .map_err(|e| ServiceError::DatabaseError {
                 message: "Failed to fetch mods from database".to_string(),
                 source: Some(e),
             })?;
-
+        
         let mut found_mod_ids = Vec::new();
-
+        
         while let Some(doc) = cursor
             .try_next()
             .await
@@ -129,7 +134,9 @@ impl CurseforgeService {
                 source: Some(e),
             })?
         {
-            found_mod_ids.push(doc.id);
+            if let Ok(id) = doc.get_i32("_id") {
+                found_mod_ids.push(id);
+            }
         }
 
         let not_found_mod_ids: Vec<i32> = mod_ids
