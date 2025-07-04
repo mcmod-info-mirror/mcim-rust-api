@@ -66,7 +66,7 @@ pub struct Project {
     pub approved: Option<DateTime<Utc>>,
     #[serde(deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize")]
     pub queued: Option<DateTime<Utc>>,
-    pub followers: i32,
+    pub followers: u32,
     pub license: Option<License>,
     pub versions: Option<Vec<String>>,
     pub game_versions: Option<Vec<String>>,

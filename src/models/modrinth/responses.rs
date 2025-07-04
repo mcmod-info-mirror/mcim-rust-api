@@ -41,7 +41,7 @@ pub struct SearchHit {
     pub display_categories: Option<Vec<String>>,
     pub versions: Vec<String>,
     pub downloads: i64,
-    pub follows: i32,
+    pub follows: u32,
     pub icon_url: String,
     pub date_created: DateTime<Utc>,
     pub date_modified: DateTime<Utc>,
