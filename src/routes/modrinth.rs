@@ -36,7 +36,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         (status = 200, description = "Modrinth Message")
     ),
     description = "Root endpoint for the Modrinth API",
-    tag = "Modrinth"
+    tag = "Modrinth",
+    operation_id = "modrinth_root"
 )]
 #[get("/")]
 pub async fn root() -> impl Responder {

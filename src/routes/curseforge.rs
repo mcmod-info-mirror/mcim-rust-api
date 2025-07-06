@@ -32,7 +32,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         (status = 200, description = "Curseforge Message"),
     ),
     description = "Root endpoint for the Curseforge API",
-    tag = "Curseforge"
+    tag = "Curseforge",
+    operation_id = "curseforge_root"
 )]
 #[get("/")]
 pub async fn root() -> impl Responder {
