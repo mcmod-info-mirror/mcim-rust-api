@@ -209,26 +209,28 @@ impl CurseforgeService {
                 message: format!("Failed to send request: {}", e),
             })?;
 
-        // 检查状态码
-        if !response.status().is_success() {
-            return Err(ServiceError::ExternalServiceError {
+        let status = response.status();
+        let bytes = response
+            .bytes()
+            .await
+            .map_err(|e| ServiceError::ExternalServiceError {
                 service: "Curseforge API".into(),
-                message: format!("Request failed with status code: {}", response.status()),
-            });
-        }
-
-        let search_result = response.json::<serde_json::Value>().await.map_err(|e| {
+                message: format!("Failed to read response body: {}", e),
+            })?;
+        let search_result: serde_json::Value = serde_json::from_slice(&bytes).map_err(|e| {
             ServiceError::ExternalServiceError {
                 service: "Curseforge API".into(),
-                message: format!("Failed to parse JSON: {}", e),
+                message: format!("Failed to parse JSON: {}, text: {}", e, String::from_utf8_lossy(&bytes)),
             }
         })?;
 
-        // 检查搜索结果，不存在则添加到队列
-        let _ = match self.check_search_result(&search_result).await {
-            Ok(_) => log::debug!("Curseforge check_search_result completed successfully"),
-            Err(e) => log::error!("Curseforge check_search_result failed: {}", e),
-        };
+        if status.is_success() {
+            // 检查有无未缓存的 Project
+            let _ = match self.check_search_result(&search_result).await {
+                Ok(_) => log::debug!("Curseforge check_search_result completed successfully"),
+                Err(e) => log::error!("Curseforge check_search_result failed: {}", e),
+            };
+        }
 
         Ok(search_result)
     }

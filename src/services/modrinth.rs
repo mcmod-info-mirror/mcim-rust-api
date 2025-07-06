@@ -333,24 +333,26 @@ impl ModrinthService {
             .map_err(|e| ServiceError::ExternalServiceError {
                 service: String::from("Modrinth API"),
                 message: format!("Failed to send request: {}", e),
-            });
+            })?;
 
-        // 如果出错直接返回错误
-        let response = match response {
-            Ok(res) => res,
-            Err(e) => return Err(e),
-        };
+        let status = response.status();
+        let bytes = response.bytes().await.map_err(|e| {
+            ServiceError::ExternalServiceError {
+                service: String::from("Modrinth API"),
+                message: format!("Failed to read response body: {}", e),
+            }
+        })?;
+        let search_result = serde_json::from_slice(&bytes).map_err(|e| {
+            ServiceError::UnexpectedError(format!("Failed to parse JSON: {}, text: {}", e, String::from_utf8_lossy(&bytes)))
+        })?;
 
-        let search_result = response
-            .json()
-            .await
-            .map_err(|e| ServiceError::UnexpectedError(format!("Failed to parse JSON: {}", e)))?;
-
-        // 检查有无未缓存的 Project
-        let _ = match self.check_search_result(&search_result).await {
+        if status.is_success() {
+            // 检查有无未缓存的 Project
+            let _ = match self.check_search_result(&search_result).await {
                 Ok(_) => log::debug!("Search result check completed successfully"),
                 Err(e) => log::error!("Modrinth Search result check failed: {}", e),
-        };
+            };
+        }
 
         return Ok(search_result);
     }
