@@ -31,7 +31,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 
 #[utoipa::path(
     get,
-    path = "/modrinth",
+    path = "/modrinth/",
     responses(
         (status = 200, description = "Modrinth Message")
     ),

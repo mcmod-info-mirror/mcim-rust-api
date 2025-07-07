@@ -27,7 +27,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 
 #[utoipa::path(
     get,
-    path = "/curseforge",
+    path = "/curseforge/",
     responses(
         (status = 200, description = "Curseforge Message"),
     ),
