@@ -7,6 +7,7 @@ pub mod utils;
 
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{dev::ServiceRequest, web, App, HttpServer};
+use actix_middleware_etag::{Etag};
 use dotenvy::dotenv;
 use std::env;
 
@@ -72,8 +73,9 @@ async fn main() -> std::io::Result<()> {
                 web::PathConfig::default()
                     .error_handler(|err, _| ApiError::BadRequest(err.to_string()).into()),
             )
-            .wrap(logger)
+            .wrap(Etag::default())
             .wrap(Compress::default())
+            .wrap(logger)
             .configure(routes_config)
     };
 
