@@ -110,12 +110,12 @@ impl CurseforgeService {
             .db
             .database(get_database_name().as_str())
             .collection::<bson::Document>("curseforge_mods");
-        
+
         let projection = doc! { "_id": 1 };
         let find_options = mongodb::options::FindOptions::builder()
             .projection(projection)
             .build();
-        
+
         let mut cursor = collection
             .find(doc! { "_id": { "$in": &mod_ids } }, find_options)
             .await
@@ -123,9 +123,9 @@ impl CurseforgeService {
                 message: "Failed to fetch mods from database".to_string(),
                 source: Some(e),
             })?;
-        
+
         let mut found_mod_ids = Vec::new();
-        
+
         while let Some(doc) = cursor
             .try_next()
             .await
@@ -217,12 +217,15 @@ impl CurseforgeService {
                 service: "Curseforge API".into(),
                 message: format!("Failed to read response body: {}", e),
             })?;
-        let search_result: serde_json::Value = serde_json::from_slice(&bytes).map_err(|e| {
-            ServiceError::ExternalServiceError {
+        let search_result: serde_json::Value =
+            serde_json::from_slice(&bytes).map_err(|e| ServiceError::ExternalServiceError {
                 service: "Curseforge API".into(),
-                message: format!("Failed to parse JSON: {}, text: {}", e, String::from_utf8_lossy(&bytes)),
-            }
-        })?;
+                message: format!(
+                    "Failed to parse JSON: {}, text: {}",
+                    e,
+                    String::from_utf8_lossy(&bytes)
+                ),
+            })?;
 
         if status.is_success() {
             // 检查有无未缓存的 Project
@@ -530,7 +533,7 @@ impl CurseforgeService {
         } else {
             (Vec::new(), 0)
         };
-        
+
         // 有筛选条件很容易为空，不能当作 Mod 不存在
         // if total_count == 0 {
         //     self.add_modids_into_queue(vec![mod_id]).await?;

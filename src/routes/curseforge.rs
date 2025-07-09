@@ -20,7 +20,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                 .service(get_mod_files)
                 .service(get_files_by_ids)
                 .service(get_fingerprints)
-                .service(get_fingerprints_by_game_id)
+                .service(get_fingerprints_by_game_id),
         ),
     );
 }

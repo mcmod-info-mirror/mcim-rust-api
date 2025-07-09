@@ -1,11 +1,12 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use chrono::{DateTime, Utc};
 
+use crate::models::curseforge::entities::{Author, FileIndex, Links, Logo, ScreenShot};
 
-use crate::models::curseforge::entities::{FileIndex, Author, Logo, Links, ScreenShot};
-
-use crate::models::curseforge::entities::{Mod, File, FileInfo, Category, CategoryInfo, Fingerprint};
+use crate::models::curseforge::entities::{
+    Category, CategoryInfo, File, FileInfo, Fingerprint, Mod,
+};
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct FingerprintResult {
@@ -149,8 +150,6 @@ pub struct FingerprintResponse {
     pub data: FingerprintResult,
 }
 
-
-
 // #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 // pub struct FileResponseObject {
 //     pub id: i32,
@@ -204,7 +203,6 @@ pub struct FingerprintResponse {
 
 //     pub sync_at: DateTime<Utc>,
 // }
-
 
 // impl From<File> for FileResponseObject {
 //     fn from(file: File) -> Self {
@@ -479,7 +477,7 @@ pub struct CategoriesResponse {
 //     pub parent_category_id: Option<i32>,
 //     #[serde(rename = "displayIndex")]
 //     pub display_index: i32,
-    
+
 //     pub sync_at: DateTime<Utc>,
 // }
 

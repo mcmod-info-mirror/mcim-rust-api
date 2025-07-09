@@ -204,12 +204,7 @@ pub async fn get_project_versions(
         .filter(|v| !v.is_empty());
 
     match service
-        .get_project_all_versions(
-            idslug.into_inner(),
-            loaders,
-            game_versions,
-            query.featured,
-        )
+        .get_project_all_versions(idslug.into_inner(), loaders, game_versions, query.featured)
         .await
     {
         Ok(versions) => Ok(web::Json(versions)),
