@@ -4,34 +4,16 @@ pub mod models;
 pub mod routes;
 pub mod services;
 pub mod utils;
+pub mod app;
 
 use dotenvy::dotenv;
 use std::env;
 
 use crate::config::AppState;
 
-pub fn build_app_state(
-    mongo_client: mongodb::Client,
-    redis_pool: std::sync::Arc<redis::aio::MultiplexedConnection>,
-) -> AppState {
-    dotenv().ok();
-    AppState {
-        db: mongo_client,
-        redis_pool,
-        curseforge_api_url: env::var("CURSEFORGE_API_URL")
-            .unwrap_or_else(|_| "https://api.curseforge.com".to_string()),
-        modrinth_api_url: env::var("MODRINTH_API_URL")
-            .unwrap_or_else(|_| "https://api.modrinth.com".to_string()),
-        curseforge_api_key: env::var("CURSEFORGE_API_KEY").unwrap_or_else(|_| "".to_string()),
-        curseforge_file_cdn_url: env::var("CURSEFORGE_FILE_CDN_URL")
-            .unwrap_or_else(|_| "https://mediafilez.forgecdn.net".to_string()),
-        modrinth_file_cdn_url: env::var("MODRINTH_FILE_CDN_URL")
-            .unwrap_or_else(|_| "https://cdn.modrinth.com".to_string()),
-    }
-}
 
 pub mod test_utils {
-    use crate::build_app_state;
+    use crate::app::create_app;
     use crate::routes::config;
     use actix_web::{web, App};
     use dotenvy::dotenv;
@@ -75,7 +57,7 @@ pub mod test_utils {
         let redis_client = init_test_redis().await;
 
         App::new()
-            .app_data(web::Data::new(build_app_state(mongo_client, redis_client)))
+            .app_data(web::Data::new(create_app(mongo_client, redis_client)))
             .configure(config)
     }
 }

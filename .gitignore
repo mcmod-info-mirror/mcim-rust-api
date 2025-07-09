@@ -14,3 +14,4 @@ target/
 *.pdb
 
 .env
+.lh

@@ -2,11 +2,12 @@ pub mod _redis;
 pub mod database;
 
 use redis::aio::MultiplexedConnection;
+use tokio_postgres::Client;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: mongodb::Client,
+    pub db: Arc<Client>,
     pub redis_pool: Arc<MultiplexedConnection>,
     pub curseforge_api_url: String,
     pub modrinth_api_url: String,
