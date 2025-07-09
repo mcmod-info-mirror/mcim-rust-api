@@ -5,9 +5,9 @@ pub mod routes;
 pub mod services;
 pub mod utils;
 
+use actix_middleware_etag::Etag;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{dev::ServiceRequest, web, App, HttpServer};
-use actix_middleware_etag::Etag;
 use dotenvy::dotenv;
 use std::env;
 
