@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use utoipa::{ToSchema};
+use utoipa::ToSchema;
 
 
 use bson::serde_helpers::{chrono_datetime_as_bson_datetime, chrono_datetime_as_bson_datetime_optional};

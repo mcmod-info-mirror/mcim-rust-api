@@ -1,5 +1,5 @@
 use serde::Serialize;
-use utoipa::{ToSchema};
+use utoipa::ToSchema;
 
 #[derive(Serialize, ToSchema)]
 pub struct StatisticsResponse {
