@@ -120,7 +120,7 @@ URL 参数：`modId`
 
 ## 部署
 
-首先你需要在 MongoDB 向 `mcim_backend` 导入 [MCIM Data](https://github.com/mcmod-info-mirror/data) 的数据，或者运行自行 [MCIM Sync](https://github.com/mcmod-info-mirror/mcim-sync) 进行抓取。你可以直接调用它完成 Modrinth 的抓取，但你很可能需要依靠用户请求来收集到 Curseforge 的 Mod，暂无方式可以抓取 Curseforge 的全部 Mod。
+首先你需要在 MongoDB 向 `mcim_backend` 导入 [MCIM Data](https://github.com/mcmod-info-mirror/data) 的数据，或者运行 [MCIM Sync](https://github.com/mcmod-info-mirror/mcim-sync) 自行抓取。你可以直接调用它来完成 Modrinth 的抓取，但你很可能需要依靠用户请求来收集 Curseforge 的 Mod，暂无方式可以抓取 Curseforge 的全部 Mod。
 
 然后用 Docker 部署 <https://hub.docker.com/r/z0z0r4/mcim-rust-api>，或者你可以自行构建，将环境变量填在 `.env` 直接运行。
 
