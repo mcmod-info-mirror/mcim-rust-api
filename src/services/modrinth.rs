@@ -246,14 +246,12 @@ impl ModrinthService {
 
         let filter = doc! { "_id": { "$in": &project_ids } };
 
-        let mut cursor =
-            collection
-                .find(filter, find_options)
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: format!("Failed to fetch project documents: {}", e),
-                    source: Some(e),
-                })?;
+        let mut cursor = collection.find(filter, find_options).await.map_err(|e| {
+            ServiceError::DatabaseError {
+                message: format!("Failed to fetch project documents: {}", e),
+                source: Some(e),
+            }
+        })?;
 
         let mut found_project_ids = Vec::new();
 
@@ -336,14 +334,19 @@ impl ModrinthService {
             })?;
 
         let status = response.status();
-        let bytes = response.bytes().await.map_err(|e| {
-            ServiceError::ExternalServiceError {
+        let bytes = response
+            .bytes()
+            .await
+            .map_err(|e| ServiceError::ExternalServiceError {
                 service: String::from("Modrinth API"),
                 message: format!("Failed to read response body: {}", e),
-            }
-        })?;
+            })?;
         let search_result = serde_json::from_slice(&bytes).map_err(|e| {
-            ServiceError::UnexpectedError(format!("Failed to parse JSON: {}, text: {}", e, String::from_utf8_lossy(&bytes)))
+            ServiceError::UnexpectedError(format!(
+                "Failed to parse JSON: {}, text: {}",
+                e,
+                String::from_utf8_lossy(&bytes)
+            ))
         })?;
 
         if status.is_success() {

@@ -5,7 +5,8 @@ use crate::models::translate::requests::{
     CurseForgeTranslationRequest, CurseforgeQuery, ModrinthQuery, ModrinthTranslationRequest,
 };
 use crate::models::translate::responses::{
-    CurseForgeTranslationResponse, ModrinthTranslationResponse};
+    CurseForgeTranslationResponse, ModrinthTranslationResponse,
+};
 use crate::services::translate::{CurseForgeService, ModrinthService};
 
 #[allow(deprecated)]
@@ -46,7 +47,6 @@ pub mod deprecated_routes {
         }
     }
 
-
     #[utoipa::path(
         get,
         path = "/translate/curseforge",
@@ -81,7 +81,7 @@ pub mod deprecated_routes {
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     use deprecated_routes::*;
-    
+
     cfg.service(
         web::scope("/translate")
             .service(get_modrinth_translation)
@@ -89,7 +89,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .service(get_curseforge_translation)
             .service(get_curseforge_translation_deprecated)
             .service(get_modrinth_translation_batch)
-            .service(get_curseforge_translation_batch)
+            .service(get_curseforge_translation_batch),
     );
 }
 

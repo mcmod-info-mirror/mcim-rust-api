@@ -1,4 +1,4 @@
-use actix_web::{Responder, HttpResponse};
+use actix_web::{HttpResponse, Responder};
 use utoipa::OpenApi;
 use utoipauto::utoipauto;
 

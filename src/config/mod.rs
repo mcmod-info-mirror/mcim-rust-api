@@ -1,8 +1,8 @@
-pub mod database;
 pub mod _redis;
+pub mod database;
 
-use std::sync::Arc;
 use redis::aio::MultiplexedConnection;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {

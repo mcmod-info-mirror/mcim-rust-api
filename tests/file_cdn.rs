@@ -1,5 +1,6 @@
 use actix_web::{
-    dev::Service, test::{init_service, TestRequest}
+    dev::Service,
+    test::{init_service, TestRequest},
 };
 use mcim_rust_api::test_utils::create_test_app;
 
@@ -23,7 +24,11 @@ async fn test_modrinth_file_cdn() {
         let resp = app.call(req).await.unwrap();
         let status = resp.status().as_u16();
         assert!((300..=400).contains(&status), "status code: {}", status);
-        assert!(resp.headers().get("Location").is_some(), "Location header missing for {}", url);
+        assert!(
+            resp.headers().get("Location").is_some(),
+            "Location header missing for {}",
+            url
+        );
     }
 }
 
@@ -35,6 +40,10 @@ async fn test_curseforge_file_cdn() {
         let resp = app.call(req).await.unwrap();
         let status = resp.status().as_u16();
         assert!((300..=400).contains(&status), "status code: {}", status);
-        assert!(resp.headers().get("Location").is_some(), "Location header missing for {}", url);
+        assert!(
+            resp.headers().get("Location").is_some(),
+            "Location header missing for {}",
+            url
+        );
     }
 }

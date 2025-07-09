@@ -1,11 +1,13 @@
 use actix_web::{
-    dev::Service, test::{init_service, TestRequest}, body::to_bytes
+    body::to_bytes,
+    dev::Service,
+    test::{init_service, TestRequest},
 };
 use serde_json::json;
 
 use mcim_rust_api::test_utils::create_test_app;
 
-static MOD_ID : i32 = 594678;
+static MOD_ID: i32 = 594678;
 static FILE_ID: i32 = 3913840;
 
 static CLASS_ID: i32 = 6;
@@ -13,8 +15,6 @@ const GAME_ID: i32 = 432;
 const MOD_IDS: [i32; 2] = [946010, 594678];
 const FILE_IDS: [i32; 2] = [3913840, 5976953];
 const FINGERPRINTS: [i32; 2] = [2070800629, 1904165976];
-
-
 
 #[actix_web::test]
 async fn test_search() {
@@ -89,7 +89,6 @@ async fn test_get_mods_success() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-
 }
 
 #[actix_web::test]
@@ -106,7 +105,6 @@ async fn test_get_mods_not_found() {
     let resp = app.call(req).await.unwrap();
 
     assert_eq!(resp.status(), 404);
-
 }
 
 #[actix_web::test]
@@ -122,7 +120,6 @@ async fn test_get_file_success() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-
 }
 
 #[actix_web::test]
@@ -144,7 +141,6 @@ async fn test_get_files_success() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-
 }
 
 #[actix_web::test]
@@ -168,7 +164,10 @@ async fn test_get_mod_files_with_filters() {
     let app = init_service(create_test_app().await).await;
 
     let req = TestRequest::get()
-        .uri(&format!("/curseforge/v1/mods/{}/files?gameVersion=1.16.5&modLoaderType=4&index=0&pageSize=20", MOD_IDS[0]))
+        .uri(&format!(
+            "/curseforge/v1/mods/{}/files?gameVersion=1.16.5&modLoaderType=4&index=0&pageSize=20",
+            MOD_IDS[0]
+        ))
         .to_request();
 
     let resp = app.call(req).await.unwrap();
@@ -176,7 +175,6 @@ async fn test_get_mod_files_with_filters() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-
 }
 
 #[actix_web::test]
@@ -184,7 +182,10 @@ async fn test_get_file_download_url() {
     let app = init_service(create_test_app().await).await;
 
     let req = TestRequest::get()
-        .uri(&format!("/curseforge/v1/mods/{}/files/{}/download-url", MOD_ID, FILE_ID))
+        .uri(&format!(
+            "/curseforge/v1/mods/{}/files/{}/download-url",
+            MOD_ID, FILE_ID
+        ))
         .to_request();
 
     let resp = app.call(req).await.unwrap();
@@ -212,7 +213,6 @@ async fn test_get_fingerprints_success() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-
 }
 
 #[actix_web::test]
@@ -233,7 +233,6 @@ async fn test_get_fingerprints_by_game_id_success() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-
 }
 
 #[actix_web::test]
@@ -254,14 +253,19 @@ async fn test_get_not_found_fingerprint() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-    let json_body = serde_json::from_str::<serde_json::Value>(&body)
-        .expect("Failed to parse JSON response");
+    let json_body =
+        serde_json::from_str::<serde_json::Value>(&body).expect("Failed to parse JSON response");
     // body.data.unmatchedFingerprints == not_found_fingerprints
-    let unmatched_fingerprints = json_body["data"]["unmatchedFingerprints"].as_array().unwrap()
+    let unmatched_fingerprints = json_body["data"]["unmatchedFingerprints"]
+        .as_array()
+        .unwrap()
         .iter()
         .map(|v| v.as_i64().unwrap())
         .collect::<Vec<i64>>();
-    assert_eq!(unmatched_fingerprints, not_found_fingerprints, "Unmatched fingerprints do not match the expected values");
+    assert_eq!(
+        unmatched_fingerprints, not_found_fingerprints,
+        "Unmatched fingerprints do not match the expected values"
+    );
 }
 
 #[actix_web::test]
@@ -282,16 +286,20 @@ async fn test_get_invalid_fingerprint() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-    let json_body = serde_json::from_str::<serde_json::Value>(&body)
-        .expect("Failed to parse JSON response");
+    let json_body =
+        serde_json::from_str::<serde_json::Value>(&body).expect("Failed to parse JSON response");
     // body.data.unmatchedFingerprints == not_found_fingerprints
-    let unmatched_fingerprints = json_body["data"]["unmatchedFingerprints"].as_array().unwrap()
+    let unmatched_fingerprints = json_body["data"]["unmatchedFingerprints"]
+        .as_array()
+        .unwrap()
         .iter()
         .map(|v| v.as_i64().unwrap())
         .collect::<Vec<i64>>();
-    assert_eq!(unmatched_fingerprints, not_found_fingerprints, "Unmatched fingerprints do not match the expected values");
+    assert_eq!(
+        unmatched_fingerprints, not_found_fingerprints,
+        "Unmatched fingerprints do not match the expected values"
+    );
 }
-
 
 #[actix_web::test]
 async fn test_get_categories_success() {
@@ -306,7 +314,6 @@ async fn test_get_categories_success() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-
 }
 
 #[actix_web::test]
@@ -314,7 +321,10 @@ async fn test_get_categories_with_class_id_filter_success() {
     let app = init_service(create_test_app().await).await;
 
     let req = TestRequest::get()
-        .uri(&format!("/curseforge/v1/categories?gameId={}&classId={}", GAME_ID, CLASS_ID))
+        .uri(&format!(
+            "/curseforge/v1/categories?gameId={}&classId={}",
+            GAME_ID, CLASS_ID
+        ))
         .to_request();
 
     let resp = app.call(req).await.unwrap();
@@ -322,7 +332,6 @@ async fn test_get_categories_with_class_id_filter_success() {
     let body_bytes = to_bytes(resp.into_body()).await.unwrap();
     let body = String::from_utf8_lossy(&body_bytes);
     assert!(status.is_success(), "Status: {}, Body: {}", status, body);
-
 }
 
 #[actix_web::test]
@@ -330,7 +339,10 @@ async fn test_get_categories_with_class_only_filters() {
     let app = init_service(create_test_app().await).await;
 
     let req = TestRequest::get()
-        .uri(&format!("/curseforge/v1/categories?gameId={}&classOnly=true", GAME_ID))
+        .uri(&format!(
+            "/curseforge/v1/categories?gameId={}&classOnly=true",
+            GAME_ID
+        ))
         .to_request();
 
     let resp = app.call(req).await.unwrap();
