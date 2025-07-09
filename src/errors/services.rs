@@ -1,6 +1,6 @@
+use mongodb::error::Error as MongoError;
 use std::error::Error as StdError;
 use std::fmt::{Display, Formatter};
-use mongodb::error::Error as MongoError;
 
 #[derive(Debug)]
 pub enum ServiceError {
@@ -77,4 +77,3 @@ impl From<serde_json::Error> for ServiceError {
         ServiceError::UnexpectedError(format!("JSON serialization error: {}", err))
     }
 }
-

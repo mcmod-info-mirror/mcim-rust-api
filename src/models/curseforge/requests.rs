@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use utoipa::ToSchema;
-use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct SearchQuery {
@@ -38,14 +38,12 @@ pub struct SearchQuery {
     pub page_size: Option<i32>,
 }
 
-
 impl Display for SearchQuery {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "SearchQuery {{ game_id: {:?}, class_id: {:?}, category_id: {:?}, category_ids: {:?}, game_version: {:?}, game_versions: {:?}, search_filter: {:?}, sort_field: {:?}, sort_order: {:?}, mod_loader_type: {:?}, mod_loader_types: {:?}, game_version_type_id: {:?}, author_id: {:?}, primary_author_id: {:?}, slug: {:?}, index: {:?}, page_size: {:?} }}",
             self.game_id, self.class_id, self.category_id, self.category_ids, self.game_version, self.game_versions, self.search_filter, self.sort_field, self.sort_order, self.mod_loader_type, self.mod_loader_types, self.game_version_type_id, self.author_id, self.primary_author_id, self.slug, self.index, self.page_size)
     }
 }
-
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct ModsBody {
@@ -54,7 +52,6 @@ pub struct ModsBody {
     #[serde(rename = "filterPcOnly")]
     pub filter_pc_only: Option<bool>,
 }
-
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct ModFilesQuery {
@@ -67,7 +64,6 @@ pub struct ModFilesQuery {
     pub page_size: Option<i32>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct FileIdsBody {
     #[serde(rename = "fileIds")]
@@ -76,7 +72,7 @@ pub struct FileIdsBody {
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct FingerprintsBody {
-    pub fingerprints: Vec<i64>
+    pub fingerprints: Vec<i64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]

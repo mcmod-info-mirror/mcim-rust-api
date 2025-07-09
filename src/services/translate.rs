@@ -3,8 +3,8 @@ use futures::stream::StreamExt;
 use mongodb::Client;
 
 use crate::config::database::get_database_name;
-use crate::models::translate::entities::{CurseForgeTranslation, ModrinthTranslation};
 use crate::errors::ServiceError;
+use crate::models::translate::entities::{CurseForgeTranslation, ModrinthTranslation};
 
 pub struct ModrinthService {
     pub db: Client,
@@ -35,9 +35,7 @@ impl ModrinthService {
             .find_one(doc! { "_id": project_id }, None)
             .await?
         {
-            Some(doc) => {
-                Ok(Some(doc))
-            }
+            Some(doc) => Ok(Some(doc)),
             None => Ok(None),
         }
     }
@@ -47,7 +45,7 @@ impl ModrinthService {
         project_ids: Vec<String>,
     ) -> Result<Vec<ModrinthTranslation>, ServiceError> {
         if project_ids.is_empty() {
-            return Err(ServiceError::InvalidInput  {
+            return Err(ServiceError::InvalidInput {
                 field: String::from("project_ids"),
                 reason: String::from("Project IDs cannot be empty"),
             });
@@ -67,10 +65,12 @@ impl ModrinthService {
                 Ok(doc) => {
                     results.push(doc);
                 }
-                Err(e) => return Err(ServiceError::DatabaseError {
-                    message: e.to_string(),
-                    source: Some(e),
-                }),
+                Err(e) => {
+                    return Err(ServiceError::DatabaseError {
+                        message: e.to_string(),
+                        source: Some(e),
+                    })
+                }
             }
         }
 
@@ -126,7 +126,10 @@ impl CurseForgeService {
         mod_id: i32,
     ) -> Result<Option<CurseForgeTranslation>, ServiceError> {
         if mod_id <= 0 {
-            return Err(ServiceError::InvalidInput { field: String::from("mod_id"), reason: String::from("Mod ID must be a positive integer") });
+            return Err(ServiceError::InvalidInput {
+                field: String::from("mod_id"),
+                reason: String::from("Mod ID must be a positive integer"),
+            });
         }
 
         let collection = self
@@ -135,9 +138,7 @@ impl CurseForgeService {
             .collection::<CurseForgeTranslation>("curseforge_translated");
 
         match collection.find_one(doc! { "_id": mod_id }, None).await? {
-            Some(doc) => {
-                Ok(Some(doc))
-            }
+            Some(doc) => Ok(Some(doc)),
             None => Ok(None),
         }
     }
@@ -165,12 +166,14 @@ impl CurseForgeService {
         while let Some(doc) = cursor.next().await {
             match doc {
                 Ok(doc) => {
-                        results.push(doc);
+                    results.push(doc);
                 }
-                Err(e) => return Err(ServiceError::DatabaseError {
-                    message: e.to_string(),
-                    source: Some(e),
-                }),
+                Err(e) => {
+                    return Err(ServiceError::DatabaseError {
+                        message: e.to_string(),
+                        source: Some(e),
+                    })
+                }
             }
         }
 

@@ -1,6 +1,5 @@
 use serde::Deserialize;
 
-
 #[derive(Deserialize)]
 pub struct StatisticsQuery {
     pub curseforge: Option<bool>,

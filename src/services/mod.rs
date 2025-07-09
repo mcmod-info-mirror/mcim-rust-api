@@ -1,7 +1,7 @@
-pub mod modrinth;
-pub mod curseforge;
-pub mod translate;
 pub mod common;
+pub mod curseforge;
+pub mod modrinth;
+pub mod translate;
 
 #[derive(Debug)]
 pub enum ServiceError {

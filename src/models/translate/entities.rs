@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
 use chrono::DateTime;
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 
 use bson::serde_helpers::chrono_datetime_as_bson_datetime;
 

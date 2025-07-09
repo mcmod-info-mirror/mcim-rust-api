@@ -51,7 +51,6 @@ pub struct AlgorithmItems {
     pub algorithm: String,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct ProjectVersionQuery {
     pub game_versions: Option<String>,
