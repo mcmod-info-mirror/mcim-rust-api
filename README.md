@@ -25,7 +25,7 @@ API 支持 [Curseforge](https://curseforge.com/) 和 [Modrinth](https://modrinth
 
 ## 接入
 
-本镜像可能会添加 UA 白名单，请在使用前提交启动器的 UA [启动器信息](https://github.com/mcmod-info-mirror/mcim/issues/4)。
+本镜像可能会添加 UA 白名单，请在使用前提交启动器的 UA [启动器信息](https://github.com/mcmod-info-mirror/mcim-rust-api/issues/12)。
 
 ## 使用
 
