@@ -1,11 +1,11 @@
 use actix_web::{get, post, web, Responder};
 
-use crate::utils::app::AppState;
 use crate::errors::ApiError;
 use crate::models::modrinth::entities::*;
 use crate::models::modrinth::requests::*;
 use crate::models::modrinth::responses::*;
 use crate::services::modrinth::ModrinthService;
+use crate::utils::app::AppState;
 use crate::utils::redis_cache::{cacheable_json, create_key};
 
 pub fn config(cfg: &mut web::ServiceConfig) {

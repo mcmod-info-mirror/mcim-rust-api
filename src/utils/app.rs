@@ -1,6 +1,6 @@
 use redis::aio::MultiplexedConnection;
-use std::sync::Arc;
 use std::env;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {
