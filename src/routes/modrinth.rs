@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, Responder};
 
-use crate::config::AppState;
+use crate::utils::app::AppState;
 use crate::errors::ApiError;
 use crate::models::modrinth::entities::*;
 use crate::models::modrinth::requests::*;

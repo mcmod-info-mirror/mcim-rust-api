@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, Responder};
 
-use crate::config::AppState;
+use crate::utils::app::AppState;
 use crate::errors::{ApiError, ServiceError};
 use crate::models::curseforge::requests::*;
 use crate::models::curseforge::responses::*;

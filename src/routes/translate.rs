@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 
-use crate::config::AppState;
+use crate::utils::app::AppState;
 use crate::models::translate::requests::{
     CurseForgeTranslationRequest, CurseforgeQuery, ModrinthQuery, ModrinthTranslationRequest,
 };

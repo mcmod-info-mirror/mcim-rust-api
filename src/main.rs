@@ -13,7 +13,7 @@ use std::env;
 
 use crate::config::_redis::connect as connect_redis;
 use crate::config::database::connect as connect_mongo;
-use crate::config::AppState;
+use crate::utils::app::build_app_state;
 use crate::errors::ApiError;
 use crate::routes::config as routes_config;
 
@@ -33,20 +33,9 @@ async fn main() -> std::io::Result<()> {
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let bind_address = format!("0.0.0.0:{}", port);
 
-    let app_state = AppState {
-        db: mongo_client,
-        redis_pool: redis_pool,
-        curseforge_api_url: env::var("CURSEFORGE_API_URL")
-            .unwrap_or_else(|_| "https://api.curseforge.com".to_string()),
-        modrinth_api_url: env::var("MODRINTH_API_URL")
-            .unwrap_or_else(|_| "https://api.modrinth.com".to_string()),
-        curseforge_api_key: env::var("CURSEFORGE_API_KEY").unwrap_or_else(|_| "".to_string()),
-        curseforge_file_cdn_url: env::var("CURSEFORGE_FILE_CDN_URL")
-            .unwrap_or_else(|_| "https://mediafilez.forgecdn.net".to_string()),
-        modrinth_file_cdn_url: env::var("MODRINTH_FILE_CDN_URL")
-            .unwrap_or_else(|_| "https://cdn.modrinth.com".to_string()),
-    };
+    let app_state = build_app_state(mongo_client, redis_pool);
     let app_data = web::Data::new(app_state);
+
 
     let app = move || {
         let logger = Logger::new(

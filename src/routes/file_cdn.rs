@@ -1,6 +1,6 @@
 use actix_web::{route, web, web::Redirect, Responder};
 
-use crate::config::AppState;
+use crate::utils::app::AppState;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(get_curseforge_file).service(get_modrinth_file);

@@ -1,6 +1,6 @@
 use actix_web::{get, web, Responder};
 
-use crate::config::AppState;
+use crate::utils::app::AppState;
 use crate::errors::ApiError;
 use crate::models::common::requests::StatisticsQuery;
 use crate::models::common::responses::StatisticsResponse;
