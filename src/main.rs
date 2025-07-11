@@ -13,9 +13,9 @@ use std::env;
 
 use crate::config::_redis::connect as connect_redis;
 use crate::config::database::connect as connect_mongo;
-use crate::utils::app::build_app_state;
 use crate::errors::ApiError;
 use crate::routes::config as routes_config;
+use crate::utils::app::build_app_state;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -35,7 +35,6 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = build_app_state(mongo_client, redis_pool);
     let app_data = web::Data::new(app_state);
-
 
     let app = move || {
         let logger = Logger::new(

@@ -1,10 +1,10 @@
 use actix_web::{get, post, web, Responder};
 
-use crate::utils::app::AppState;
 use crate::errors::{ApiError, ServiceError};
 use crate::models::curseforge::requests::*;
 use crate::models::curseforge::responses::*;
 use crate::services::curseforge::CurseforgeService;
+use crate::utils::app::AppState;
 use crate::utils::redis_cache::{cacheable_json, create_key};
 
 pub fn config(cfg: &mut web::ServiceConfig) {

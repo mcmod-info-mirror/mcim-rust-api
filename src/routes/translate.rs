@@ -1,6 +1,5 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 
-use crate::utils::app::AppState;
 use crate::models::translate::requests::{
     CurseForgeTranslationRequest, CurseforgeQuery, ModrinthQuery, ModrinthTranslationRequest,
 };
@@ -8,6 +7,7 @@ use crate::models::translate::responses::{
     CurseForgeTranslationResponse, ModrinthTranslationResponse,
 };
 use crate::services::translate::{CurseForgeService, ModrinthService};
+use crate::utils::app::AppState;
 
 #[allow(deprecated)]
 pub mod deprecated_routes {

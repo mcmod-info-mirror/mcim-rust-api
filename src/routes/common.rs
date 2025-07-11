@@ -1,10 +1,10 @@
 use actix_web::{get, web, Responder};
 
-use crate::utils::app::AppState;
 use crate::errors::ApiError;
 use crate::models::common::requests::StatisticsQuery;
 use crate::models::common::responses::StatisticsResponse;
 use crate::services::common::get_statistics_info;
+use crate::utils::app::AppState;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(root).service(get_statistics);
