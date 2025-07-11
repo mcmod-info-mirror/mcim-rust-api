@@ -12,10 +12,11 @@ use dotenvy::dotenv;
 use std::env;
 
 use crate::config::_redis::connect as connect_redis;
-use crate::config::database::connect as connect_mongo;
-use crate::utils::app::build_app_state;
+use crate::config::mongo::connect as connect_mongo;
+use crate::config::postgres::connect as connect_postgres;
 use crate::errors::ApiError;
 use crate::routes::config as routes_config;
+use crate::utils::app::build_app_state;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -28,14 +29,16 @@ async fn main() -> std::io::Result<()> {
     // 配置MongoDB连接
     let mongo_client = connect_mongo().await.expect("Failed to connect to MongoDB");
     let redis_pool = connect_redis().await.expect("Failed to connect to Redis");
+    let pgpool = connect_postgres()
+        .await
+        .expect("Failed to connect to PostgreSQL");
 
     // 获取服务器端口，默认为 8080
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let bind_address = format!("0.0.0.0:{}", port);
 
-    let app_state = build_app_state(mongo_client, redis_pool);
+    let app_state = build_app_state(mongo_client, pgpool, redis_pool);
     let app_data = web::Data::new(app_state);
-
 
     let app = move || {
         let logger = Logger::new(

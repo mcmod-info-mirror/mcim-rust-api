@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::config::database::get_database_name;
+use crate::config::mongo::get_database_name;
 
 use crate::errors::ServiceError;
 
@@ -16,7 +16,7 @@ async fn get_collection_count(
     let count = collection
         .estimated_document_count(None)
         .await
-        .map_err(|e| ServiceError::DatabaseError {
+        .map_err(|e| ServiceError::MongoDBError {
             message: format!(
                 "Failed to get collection count for {}: {}",
                 collection_name, e

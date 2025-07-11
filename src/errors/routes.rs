@@ -38,8 +38,11 @@ impl ApiError {
 impl From<ServiceError> for ApiError {
     fn from(err: ServiceError) -> Self {
         match err {
-            ServiceError::DatabaseError { message, .. } => {
-                ApiError::InternalServerError(format!("Database error: {}", message))
+            ServiceError::MongoDBError { message, .. } => {
+                ApiError::InternalServerError(format!("MongoDB error: {}", message))
+            }
+            ServiceError::SqlxError { message, .. } => {
+                ApiError::InternalServerError(format!("SQLx error: {}", message))
             }
             ServiceError::NotFound { resource, detail } => {
                 let msg = match detail {

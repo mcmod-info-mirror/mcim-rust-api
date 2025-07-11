@@ -1,10 +1,12 @@
 use redis::aio::MultiplexedConnection;
 use std::sync::Arc;
+use sqlx::PgPool;
 use std::env;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: mongodb::Client,
+    pub mongodb: mongodb::Client,
+    pub pgpool: PgPool,
     pub redis_pool: Arc<MultiplexedConnection>,
     pub curseforge_api_url: String,
     pub modrinth_api_url: String,
@@ -15,11 +17,13 @@ pub struct AppState {
 
 pub fn build_app_state(
     mongo_client: mongodb::Client,
-    redis_pool: std::sync::Arc<redis::aio::MultiplexedConnection>,
+    pgpool: PgPool,
+    redis_pool: Arc<redis::aio::MultiplexedConnection>,
 ) -> AppState {
     AppState {
-        db: mongo_client,
-        redis_pool,
+        mongodb: mongo_client,
+        pgpool: pgpool,
+        redis_pool: redis_pool,
         curseforge_api_url: env::var("CURSEFORGE_API_URL")
             .unwrap_or_else(|_| "https://api.curseforge.com".to_string()),
         modrinth_api_url: env::var("MODRINTH_API_URL")

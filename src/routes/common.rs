@@ -58,7 +58,7 @@ async fn get_statistics(
         query.curseforge.unwrap_or(true),
         query.modrinth.unwrap_or(true),
         query.translate.unwrap_or(true),
-        &data.db,
+        &data.mongodb,
     )
     .await
     {

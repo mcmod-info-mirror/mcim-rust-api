@@ -27,6 +27,8 @@ env_logger = "0.11.8"
 log = "0.4"
 urlencoding = "2.1.3"
 actix-middleware-etag = "0.4.4"
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "postgres", "chrono"] }
+tokio = "1.46.1"
 
 [dependencies.redis]
 version = "0.31.0"

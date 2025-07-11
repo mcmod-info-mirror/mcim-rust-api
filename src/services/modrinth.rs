@@ -6,7 +6,7 @@ use redis::AsyncCommands;
 use reqwest::Client;
 use std::sync::Arc;
 
-use crate::config::database::get_database_name;
+use crate::config::mongo::get_database_name;
 use crate::errors::ServiceError;
 use crate::models::modrinth::*;
 
@@ -247,7 +247,7 @@ impl ModrinthService {
         let filter = doc! { "_id": { "$in": &project_ids } };
 
         let mut cursor = collection.find(filter, find_options).await.map_err(|e| {
-            ServiceError::DatabaseError {
+            ServiceError::MongoDBError {
                 message: format!("Failed to fetch project documents: {}", e),
                 source: Some(e),
             }
@@ -258,7 +258,7 @@ impl ModrinthService {
         while let Some(doc) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: format!("Failed to fetch project documents: {}", e),
                 source: Some(e),
             })?
@@ -475,7 +475,7 @@ impl ModrinthService {
             collection
                 .find(filter, None)
                 .await
-                .map_err(|e| ServiceError::DatabaseError {
+                .map_err(|e| ServiceError::MongoDBError {
                     message: format!("Failed to fetch project documents: {}", e),
                     source: Some(e),
                 })?;
@@ -485,7 +485,7 @@ impl ModrinthService {
         while let Some(doc) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: format!("Failed to fetch project documents: {}", e),
                 source: Some(e),
             })?
@@ -613,7 +613,7 @@ impl ModrinthService {
         while let Some(doc) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: format!("Failed to fetch version documents: {}", e),
                 source: Some(e),
             })?
@@ -689,7 +689,7 @@ impl ModrinthService {
         while let Some(doc) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: format!("Failed to fetch version documents: {}", e),
                 source: Some(e),
             })?
@@ -817,7 +817,7 @@ impl ModrinthService {
             files_cursor
                 .try_next()
                 .await
-                .map_err(|e| ServiceError::DatabaseError {
+                .map_err(|e| ServiceError::MongoDBError {
                     message: format!("Failed to fetch file documents: {}", e),
                     source: Some(e),
                 })?
@@ -985,7 +985,7 @@ impl ModrinthService {
         if let Some(doc) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: format!("Failed to fetch version document: {}", e),
                 source: Some(e),
             })?
@@ -1078,7 +1078,7 @@ impl ModrinthService {
         while let Some(doc) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: format!("Failed to fetch version documents: {}", e),
                 source: Some(e),
             })?
@@ -1141,14 +1141,14 @@ impl ModrinthService {
             collection
                 .find(doc! {}, None)
                 .await
-                .map_err(|e| ServiceError::DatabaseError {
+                .map_err(|e| ServiceError::MongoDBError {
                     message: e.to_string(),
                     source: Some(e),
                 })?;
 
         let categories: Vec<Category> =
             cursor.try_collect::<Vec<Category>>().await.map_err(|e| {
-                ServiceError::DatabaseError {
+                ServiceError::MongoDBError {
                     message: e.to_string(),
                     source: Some(e),
                 }
@@ -1167,7 +1167,7 @@ impl ModrinthService {
             collection
                 .find(doc! {}, None)
                 .await
-                .map_err(|e| ServiceError::DatabaseError {
+                .map_err(|e| ServiceError::MongoDBError {
                     message: e.to_string(),
                     source: Some(e),
                 })?;
@@ -1176,7 +1176,7 @@ impl ModrinthService {
             cursor
                 .try_collect()
                 .await
-                .map_err(|e| ServiceError::DatabaseError {
+                .map_err(|e| ServiceError::MongoDBError {
                     message: e.to_string(),
                     source: Some(e),
                 })?;
@@ -1194,7 +1194,7 @@ impl ModrinthService {
             collection
                 .find(doc! {}, None)
                 .await
-                .map_err(|e| ServiceError::DatabaseError {
+                .map_err(|e| ServiceError::MongoDBError {
                     message: e.to_string(),
                     source: Some(e),
                 })?;
@@ -1203,7 +1203,7 @@ impl ModrinthService {
             cursor
                 .try_collect()
                 .await
-                .map_err(|e| ServiceError::DatabaseError {
+                .map_err(|e| ServiceError::MongoDBError {
                     message: e.to_string(),
                     source: Some(e),
                 })?;

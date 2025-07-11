@@ -102,7 +102,7 @@ pub struct File {
     pub file_type: Option<String>,
     pub version_id: String,
     pub project_id: String,
-    pub file_cdn_cached: Option<bool>,
+    // pub file_cdn_cached: Option<bool>,
 
     #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
     pub sync_at: DateTime<Utc>,

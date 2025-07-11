@@ -7,7 +7,8 @@ use crate::models::translate::requests::{
 use crate::models::translate::responses::{
     CurseForgeTranslationResponse, ModrinthTranslationResponse,
 };
-use crate::services::translate::{CurseForgeService, ModrinthService};
+// use crate::services::translate::{CurseForgeService, ModrinthService};
+use crate::services::translate_sqlx::{CurseForgeService, ModrinthService};
 
 #[allow(deprecated)]
 pub mod deprecated_routes {
@@ -38,7 +39,8 @@ pub mod deprecated_routes {
             return HttpResponse::BadRequest().body("Project ID cannot be empty");
         }
 
-        let service = ModrinthService::new(data.db.clone());
+        // let service = ModrinthService::new(data.mongodb.clone());
+        let service = ModrinthService::new(data.pgpool.clone());
 
         match service.get_translation(&project_id).await {
             Ok(Some(translation)) => HttpResponse::Ok().json(translation),
@@ -69,7 +71,8 @@ pub mod deprecated_routes {
     ) -> impl Responder {
         let mod_id = query.mod_id;
 
-        let service = CurseForgeService::new(data.db.clone());
+        // let service = CurseForgeService::new(data.mongodb.clone());
+        let service = CurseForgeService::new(data.pgpool.clone());
 
         match service.get_translation(mod_id).await {
             Ok(Some(translation)) => HttpResponse::Ok().json(translation),
@@ -117,7 +120,8 @@ async fn get_modrinth_translation(
         return HttpResponse::BadRequest().body("Project ID cannot be empty");
     }
 
-    let service = ModrinthService::new(data.db.clone());
+    // let service = ModrinthService::new(data.mongodb.clone());
+    let service = ModrinthService::new(data.pgpool.clone());
 
     match service.get_translation(&project_id).await {
         Ok(Some(translation)) => HttpResponse::Ok().json(translation),
@@ -147,7 +151,8 @@ async fn get_curseforge_translation(
 ) -> impl Responder {
     let mod_id = path.into_inner();
 
-    let service = CurseForgeService::new(data.db.clone());
+    // let service = CurseForgeService::new(data.mongodb.clone());
+    let service = CurseForgeService::new(data.pgpool.clone());
 
     match service.get_translation(mod_id).await {
         Ok(Some(translation)) => HttpResponse::Ok().json(translation),
@@ -173,7 +178,8 @@ async fn get_modrinth_translation_batch(
     body: web::Json<ModrinthTranslationRequest>,
 ) -> impl Responder {
     let project_ids = body.project_ids.clone();
-    let service = ModrinthService::new(data.db.clone());
+    // let service = ModrinthService::new(data.mongodb.clone());
+    let service = ModrinthService::new(data.pgpool.clone());
 
     match service.get_translations_batch(project_ids).await {
         Ok(translation) => HttpResponse::Ok().json(translation),
@@ -198,7 +204,8 @@ async fn get_curseforge_translation_batch(
     body: web::Json<CurseForgeTranslationRequest>,
 ) -> impl Responder {
     let mod_ids = body.modids.clone();
-    let service = CurseForgeService::new(data.db.clone());
+    // let service = CurseForgeService::new(data.mongodb.clone());
+    let service = CurseForgeService::new(data.pgpool.clone());
 
     match service.get_translations_batch(mod_ids).await {
         Ok(translation) => HttpResponse::Ok().json(translation),

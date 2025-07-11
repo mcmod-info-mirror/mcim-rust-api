@@ -2,7 +2,7 @@ use bson::doc;
 use futures::stream::StreamExt;
 use mongodb::Client;
 
-use crate::config::database::get_database_name;
+use crate::config::mongo::get_database_name;
 use crate::errors::ServiceError;
 use crate::models::translate::entities::{CurseForgeTranslation, ModrinthTranslation};
 
@@ -66,7 +66,7 @@ impl ModrinthService {
                     results.push(doc);
                 }
                 Err(e) => {
-                    return Err(ServiceError::DatabaseError {
+                    return Err(ServiceError::MongoDBError {
                         message: e.to_string(),
                         source: Some(e),
                     })
@@ -169,7 +169,7 @@ impl CurseForgeService {
                     results.push(doc);
                 }
                 Err(e) => {
-                    return Err(ServiceError::DatabaseError {
+                    return Err(ServiceError::MongoDBError {
                         message: e.to_string(),
                         source: Some(e),
                     })
@@ -179,38 +179,4 @@ impl CurseForgeService {
 
         Ok(results)
     }
-
-    // fn convert_document_to_response(
-    //     &self,
-    //     doc: Document,
-    // ) -> Result<CurseForgeTranslationResponse, ServiceError> {
-    //     let translated = doc
-    //         .get_str("translated")
-    //         .map_err(|_| ServiceError::UnexpectedError(String::from("Missing translated field")))?
-    //         .to_string();
-
-    //     let original = doc
-    //         .get_str("original")
-    //         .map_err(|_| ServiceError::UnexpectedError(String::from("Missing original field")))?
-    //         .to_string();
-
-    //     let translated_at = match doc.get_datetime("translated_at") {
-    //         Ok(bson_dt) => {
-    //             let chrono_dt = bson_dt.to_chrono();
-    //             chrono_dt.format("%Y-%m-%d %H:%M:%S").to_string()
-    //         }
-    //         Err(_) => return Err(ServiceError::UnexpectedError(String::from("Invalid translated_at field"))),
-    //     };
-
-    //     let mod_id = doc
-    //         .get_i32("_id")
-    //         .map_err(|_| ServiceError::UnexpectedError(String::from("Missing mod_id field")))?;
-
-    //     Ok(CurseForgeTranslationResponse {
-    //         modid: mod_id,
-    //         translated,
-    //         original,
-    //         translated_at,
-    //     })
-    // }
 }

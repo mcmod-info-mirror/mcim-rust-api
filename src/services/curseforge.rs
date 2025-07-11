@@ -6,7 +6,7 @@ use redis::AsyncCommands;
 use reqwest::Client;
 use std::sync::Arc;
 
-use crate::config::database::get_database_name;
+use crate::config::mongo::get_database_name;
 use crate::errors::ServiceError;
 use crate::models::curseforge::entities::{Category, File, Fingerprint, Mod};
 use crate::models::curseforge::requests::SearchQuery;
@@ -119,7 +119,7 @@ impl CurseforgeService {
         let mut cursor = collection
             .find(doc! { "_id": { "$in": &mod_ids } }, find_options)
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: "Failed to fetch mods from database".to_string(),
                 source: Some(e),
             })?;
@@ -129,7 +129,7 @@ impl CurseforgeService {
         while let Some(doc) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: "Failed to fetch mods from database".to_string(),
                 source: Some(e),
             })?
@@ -290,7 +290,7 @@ impl CurseforgeService {
         while let Some(doc) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: "Failed to fetch mods from database".to_string(),
                 source: Some(e),
             })?
@@ -344,7 +344,7 @@ impl CurseforgeService {
         match collection
             .find_one(doc! { "_id": file_id }, None)
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: "Failed to fetch file by ID".to_string(),
                 source: Some(e),
             })? {
@@ -383,7 +383,7 @@ impl CurseforgeService {
         while let Ok(Some(doc)) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: String::from("Failed to fetch files from database"),
                 source: Some(e),
             })
@@ -485,7 +485,7 @@ impl CurseforgeService {
         ];
 
         let mut cursor = collection.aggregate(pipeline, None).await.map_err(|e| {
-            ServiceError::DatabaseError {
+            ServiceError::MongoDBError {
                 message: String::from("Failed to aggregate mod files"),
                 source: Some(e),
             }
@@ -494,7 +494,7 @@ impl CurseforgeService {
         let result = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: String::from("Failed to fetch mod files"),
                 source: Some(e),
             });
@@ -600,7 +600,7 @@ impl CurseforgeService {
         while let Ok(Some(doc)) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: String::from("Failed to fetch fingerprints from database"),
                 source: Some(e),
             })
@@ -659,7 +659,7 @@ impl CurseforgeService {
             collection
                 .find(filter, None)
                 .await
-                .map_err(|e| ServiceError::DatabaseError {
+                .map_err(|e| ServiceError::MongoDBError {
                     message: String::from("Failed to fetch categories from database"),
                     source: Some(e),
                 })?;
@@ -668,7 +668,7 @@ impl CurseforgeService {
         while let Ok(Some(doc)) = cursor
             .try_next()
             .await
-            .map_err(|e| ServiceError::DatabaseError {
+            .map_err(|e| ServiceError::MongoDBError {
                 message: String::from("Failed to fetch categories from database"),
                 source: Some(e),
             })

@@ -12,14 +12,23 @@ pub mod test_utils {
     use dotenvy::dotenv;
     use mongodb::{options::ClientOptions, Client};
     use redis::aio::MultiplexedConnection;
+    use sqlx::{postgres::PgPoolOptions, PgPool};
     use std::sync::Arc;
 
-    pub async fn init_test_db() -> Client {
+    pub async fn init_test_mongodb() -> Client {
         let client_options = ClientOptions::parse("mongodb://localhost:27017")
             .await
             .expect("Failed to parse MongoDB connection string");
 
         Client::with_options(client_options).expect("Failed to initialize MongoDB client")
+    }
+
+    pub async fn init_postgres() -> PgPool {
+        PgPoolOptions::new()
+            .max_connections(10)
+            .connect("postgres://postgres:password@localhost:5432/mcim_backend")
+            .await
+            .expect("Failed to connect to the database")
     }
 
     pub async fn init_test_redis() -> Arc<MultiplexedConnection> {
@@ -46,11 +55,16 @@ pub mod test_utils {
     > {
         dotenv().ok();
 
-        let mongo_client = init_test_db().await;
+        let mongo_client = init_test_mongodb().await;
         let redis_client = init_test_redis().await;
+        let pgpool = init_postgres().await;
 
         App::new()
-            .app_data(web::Data::new(build_app_state(mongo_client, redis_client)))
+            .app_data(web::Data::new(build_app_state(
+                mongo_client,
+                pgpool,
+                redis_client,
+            )))
             .configure(config)
     }
 }

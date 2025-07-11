@@ -2,6 +2,7 @@ pub mod common;
 pub mod curseforge;
 pub mod modrinth;
 pub mod translate;
+pub mod translate_sqlx;
 
 #[derive(Debug)]
 pub enum ServiceError {

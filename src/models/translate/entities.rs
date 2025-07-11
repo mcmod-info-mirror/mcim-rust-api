@@ -1,27 +1,20 @@
-use chrono::DateTime;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 
-use bson::serde_helpers::chrono_datetime_as_bson_datetime;
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, FromRow)]
 pub struct ModrinthTranslation {
-    #[serde(alias = "_id")]
     pub project_id: String,
     pub translated: String,
     pub original: String,
-
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
     pub translated_at: DateTime<Utc>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, FromRow)]
 pub struct CurseForgeTranslation {
-    #[serde(rename = "modId", alias = "_id")]
+    #[serde(rename = "modId")]
     pub mod_id: i32,
     pub translated: String,
     pub original: String,
-
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
     pub translated_at: DateTime<Utc>,
 }

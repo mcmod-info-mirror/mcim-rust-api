@@ -75,7 +75,7 @@ async fn search_mods_cached(
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
     let redis_pool = data.redis_pool.clone();
-    let db = data.db.clone();
+    let db = data.mongodb.clone();
     let curseforge_api_url = data.curseforge_api_url.clone();
     let curseforge_api_key = data.curseforge_api_key.clone();
 
@@ -139,7 +139,7 @@ async fn get_mod(
 ) -> Result<impl Responder, ApiError> {
     let mod_id = path.into_inner();
 
-    let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
+    let service = CurseforgeService::new(data.mongodb.clone(), data.redis_pool.clone());
 
     match service.get_mod(mod_id).await {
         Ok(Some(mod_data)) => Ok(web::Json(mod_data)),
@@ -169,7 +169,7 @@ async fn get_mods(
     body: web::Json<ModsBody>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
+    let service = CurseforgeService::new(data.mongodb.clone(), data.redis_pool.clone());
 
     match service.get_mods(body.mod_ids.clone()).await {
         Ok(mods) => Ok(web::Json(mods)),
@@ -202,7 +202,7 @@ async fn get_mod_files(
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
     let mod_id = path.into_inner();
-    let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
+    let service = CurseforgeService::new(data.mongodb.clone(), data.redis_pool.clone());
 
     match service
         .get_mod_files(
@@ -241,7 +241,7 @@ async fn get_file_download_url(
 ) -> Result<impl Responder, ApiError> {
     let (mod_id, file_id) = path.into_inner();
 
-    let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
+    let service = CurseforgeService::new(data.mongodb.clone(), data.redis_pool.clone());
 
     match service.get_file_download_url(mod_id, file_id).await {
         Ok(url) => Ok(web::Json(url)),
@@ -271,7 +271,7 @@ async fn get_file(
 ) -> Result<impl Responder, ApiError> {
     let (_, file_id) = path.into_inner();
 
-    let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
+    let service = CurseforgeService::new(data.mongodb.clone(), data.redis_pool.clone());
 
     match service.get_file(file_id).await {
         Ok(file_data) => Ok(web::Json(file_data)),
@@ -296,7 +296,7 @@ async fn get_files_by_ids(
     body: web::Json<FileIdsBody>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
+    let service = CurseforgeService::new(data.mongodb.clone(), data.redis_pool.clone());
 
     match service.get_files(body.file_ids.clone()).await {
         Ok(files) => Ok(web::Json(files)),
@@ -321,7 +321,7 @@ async fn get_fingerprints(
     body: web::Json<FingerprintsBody>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
+    let service = CurseforgeService::new(data.mongodb.clone(), data.redis_pool.clone());
 
     match service
         .get_fingerprints(body.fingerprints.clone(), None)
@@ -355,7 +355,7 @@ async fn get_fingerprints_by_game_id(
 ) -> Result<impl Responder, ApiError> {
     let game_id = path.into_inner();
 
-    let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
+    let service = CurseforgeService::new(data.mongodb.clone(), data.redis_pool.clone());
 
     match service
         .get_fingerprints(body.fingerprints.clone(), Some(game_id))
@@ -386,7 +386,7 @@ async fn get_categories(
     query: web::Query<CategoriesQuery>,
     data: web::Data<AppState>,
 ) -> Result<impl Responder, ApiError> {
-    let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
+    let service = CurseforgeService::new(data.mongodb.clone(), data.redis_pool.clone());
 
     match service
         .get_categories(query.game_id, query.class_id, query.class_only)
