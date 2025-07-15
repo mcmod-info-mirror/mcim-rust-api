@@ -38,7 +38,7 @@ async fn main() -> std::io::Result<()> {
 
     let app = move || {
         let logger = Logger::new(
-            "%a \"%r\" \"%{RoutePattern}xi\" %s \"%{Referer}i\" \"%{User-Agent}i\" %D ms",
+            "%{r}a \"%r\" \"%{RoutePattern}xi\" %s \"%{Referer}i\" \"%{User-Agent}i\" %D ms",
         )
         .custom_request_replace("RoutePattern", |req: &ServiceRequest| {
             req.request()
