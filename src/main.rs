@@ -8,6 +8,7 @@ pub mod utils;
 use actix_middleware_etag::Etag;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{dev::ServiceRequest, web, App, HttpServer};
+use actix_web_prom::{PrometheusMetrics, PrometheusMetricsBuilder};
 use dotenvy::dotenv;
 use std::env;
 
@@ -36,6 +37,12 @@ async fn main() -> std::io::Result<()> {
     let app_state = build_app_state(mongo_client, redis_pool);
     let app_data = web::Data::new(app_state);
 
+    let prometheus = PrometheusMetricsBuilder::new("api")
+        .endpoint("/metrics")
+        .mask_unmatched_patterns("UNKNOWN")
+        .build()
+        .unwrap();
+
     let app = move || {
         let logger = Logger::new(
             "%{r}a \"%r\" \"%{RoutePattern}xi\" %s \"%{Referer}i\" \"%{User-Agent}i\" %D ms",
@@ -63,6 +70,7 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(Etag::default())
             .wrap(Compress::default())
+            .wrap(prometheus.clone())
             .wrap(logger)
             .configure(routes_config)
     };
