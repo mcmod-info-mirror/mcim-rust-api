@@ -4,9 +4,7 @@ use utoipa::ToSchema;
 
 use crate::models::curseforge::entities::{Author, FileIndex, Links, Logo, ScreenShot};
 
-use crate::models::curseforge::entities::{
-    Category, CategoryInfo, File, FileInfo, Mod,
-};
+use crate::models::curseforge::entities::{Category, CategoryInfo, File, FileInfo, Mod};
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct FingerprintResult {
@@ -31,7 +29,6 @@ pub struct SingleFingerprintResponse {
 
     pub sync_at: DateTime<Utc>,
 }
-
 
 // #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 // pub struct _FileSortableGameVersions {
