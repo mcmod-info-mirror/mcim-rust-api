@@ -610,6 +610,18 @@ impl CurseforgeService {
 
         let exact_fingerprints = fingerprint_results.iter().map(|f| f.id).collect();
 
+        // 用 SingleFingerprintResponse, 将 id 设置为 fingerprint.file.modId
+        // https://github.com/Meloong-Git/PCL/issues/6656
+        let exact_matches = fingerprint_results
+            .iter()
+            .map(|f| SingleFingerprintResponse {
+                id: f.file.mod_id,
+                file: f.file.clone(),
+                latest_files: f.latest_files.clone(),
+                sync_at: f.sync_at,
+            })
+            .collect::<Vec<_>>();
+
         let unmatched_fingerprints: Vec<i64> = fingerprints
             .into_iter()
             .filter(|f| !fingerprint_results.iter().any(|fp| fp.id == *f))
@@ -624,8 +636,8 @@ impl CurseforgeService {
 
         let response = FingerprintResponse {
             data: FingerprintResult {
-                is_cache_built: true,
-                exact_matches: fingerprint_results,
+                is_cache_built: true, // 默认值，没见过 false
+                exact_matches: exact_matches,
                 exact_fingerprints: exact_fingerprints,
                 installed_fingerprints: Vec::new(),
                 unmatched_fingerprints: unmatched_fingerprints,

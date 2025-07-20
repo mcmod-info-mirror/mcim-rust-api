@@ -5,7 +5,7 @@ use utoipa::ToSchema;
 use crate::models::curseforge::entities::{Author, FileIndex, Links, Logo, ScreenShot};
 
 use crate::models::curseforge::entities::{
-    Category, CategoryInfo, File, FileInfo, Fingerprint, Mod,
+    Category, CategoryInfo, File, FileInfo, Mod,
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -13,8 +13,7 @@ pub struct FingerprintResult {
     #[serde(rename = "isCacheBuilt")]
     pub is_cache_built: bool,
     #[serde(rename = "exactMatches")]
-    // pub exact_matches: Vec<FingerprintResponseObject>,
-    pub exact_matches: Vec<Fingerprint>,
+    pub exact_matches: Vec<SingleFingerprintResponse>,
     #[serde(rename = "exactFingerprints")]
     pub exact_fingerprints: Vec<i64>,
     #[serde(rename = "installedFingerprints")]
@@ -22,6 +21,17 @@ pub struct FingerprintResult {
     #[serde(rename = "unmatchedFingerprints")]
     pub unmatched_fingerprints: Vec<i64>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+pub struct SingleFingerprintResponse {
+    pub id: i32,
+    pub file: FileInfo,
+    #[serde(rename = "latestFiles")]
+    pub latest_files: Vec<FileInfo>,
+
+    pub sync_at: DateTime<Utc>,
+}
+
 
 // #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 // pub struct _FileSortableGameVersions {
