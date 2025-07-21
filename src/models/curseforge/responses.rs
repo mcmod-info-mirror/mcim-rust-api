@@ -125,7 +125,6 @@ pub struct FingerprintResponse {
     pub data: FingerprintResult,
 }
 
-
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct CategoriesResponse {
     pub data: Vec<Category>,
