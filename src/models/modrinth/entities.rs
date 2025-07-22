@@ -1,26 +1,25 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
 
 use bson::serde_helpers::{
     chrono_datetime_as_bson_datetime, chrono_datetime_as_bson_datetime_optional,
 };
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DonationUrl {
     pub id: Option<String>,
     pub platform: Option<String>,
     pub url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct License {
     pub id: Option<String>,
     pub name: Option<String>,
     pub url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GalleryItem {
     pub url: String,
     pub featured: bool,
@@ -31,7 +30,7 @@ pub struct GalleryItem {
     pub ordering: Option<i64>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Project {
     #[serde(alias = "_id")]
     pub id: String,
@@ -77,7 +76,7 @@ pub struct Project {
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Dependencies {
     pub version_id: Option<String>,
     pub project_id: Option<String>,
@@ -85,13 +84,13 @@ pub struct Dependencies {
     pub dependency_type: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Hashes {
     pub sha512: String,
     pub sha1: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct File {
     #[serde(alias = "_id")]
     pub hashes: Hashes,
@@ -108,7 +107,7 @@ pub struct File {
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FileInfo {
     pub hashes: Hashes,
     pub url: String,
@@ -118,7 +117,7 @@ pub struct FileInfo {
     pub file_type: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Version {
     #[serde(alias = "_id")]
     pub id: String,
@@ -144,7 +143,7 @@ pub struct Version {
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Category {
     pub icon: String,
     pub name: String,
@@ -155,7 +154,7 @@ pub struct Category {
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Loader {
     pub icon: String,
     pub name: String,
@@ -164,7 +163,7 @@ pub struct Loader {
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GameVersion {
     pub version: String,
     pub version_type: String,

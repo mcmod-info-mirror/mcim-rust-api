@@ -5,10 +5,12 @@ use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
 use reqwest::Client;
 use std::sync::Arc;
+use std::collections::HashMap;
 
 use crate::config::database::get_database_name;
 use crate::errors::ServiceError;
-use crate::models::modrinth::*;
+use crate::models::modrinth::entities as db;
+use crate::models::modrinth::responses::*;
 
 pub struct ModrinthService {
     db: Mongo_Client,
@@ -374,7 +376,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Project>("modrinth_projects");
+            .collection::<db::Project>("modrinth_projects");
 
         match collection
             .find_one(
@@ -392,7 +394,7 @@ impl ModrinthService {
                     log::warn!("Failed to cache project mapping: {}", e);
                 }
 
-                Ok(Some(doc))
+                Ok(Some(doc.into()))
             }
             // None => Err(ServiceError::NotFound {
             //     resource: String::from("Modrinth Project"),
@@ -458,7 +460,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Project>("modrinth_projects");
+            .collection::<db::Project>("modrinth_projects");
 
         // 构建查询条件：包含已解析的project_id和剩余的待查询项
         let mut all_items_to_query = resolved_project_ids;
@@ -480,7 +482,7 @@ impl ModrinthService {
                     source: Some(e),
                 })?;
 
-        let mut projects = Vec::new();
+        let mut projects: Vec<Project> = Vec::new();
 
         while let Some(doc) = cursor
             .try_next()
@@ -495,7 +497,7 @@ impl ModrinthService {
                 log::warn!("Failed to cache project mapping for {}: {}", doc.id, e);
             }
 
-            projects.push(doc);
+            projects.push(doc.into());
         }
 
         // 将未找到的 Project 添加到队列
@@ -512,7 +514,11 @@ impl ModrinthService {
         } else {
             let not_found_items: Vec<String> = all_items_to_query
                 .iter()
-                .filter(|item| !projects.iter().any(|p| p.id == **item || p.slug == **item))
+                .filter(|item| {
+                    !projects
+                        .iter()
+                        .any(|p: &Project| p.id == **item || p.slug == **item)
+                })
                 .cloned()
                 .collect();
 
@@ -587,7 +593,7 @@ impl ModrinthService {
         let version_collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Version>("modrinth_versions");
+            .collection::<db::Version>("modrinth_versions");
 
         let mut filter = doc! { "project_id": &project_id };
 
@@ -618,7 +624,7 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            versions.push(doc);
+            versions.push(doc.into());
         }
 
         if versions.is_empty() {
@@ -645,13 +651,13 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Version>("modrinth_versions");
+            .collection::<db::Version>("modrinth_versions");
 
         match collection
             .find_one(doc! { "_id": &version_id }, None)
             .await?
         {
-            Some(doc) => Ok(Some(doc)),
+            Some(doc) => Ok(Some(doc.into())),
             None => {
                 self.add_version_ids_into_queue(vec![version_id.clone()])
                     .await?;
@@ -678,13 +684,13 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Version>("modrinth_versions");
+            .collection::<db::Version>("modrinth_versions");
 
         let filter = doc! { "_id": { "$in": &version_ids } };
 
         let mut cursor = collection.find(filter, None).await?;
 
-        let mut versions = Vec::new();
+        let mut versions: Vec<Version> = Vec::new();
 
         while let Some(doc) = cursor
             .try_next()
@@ -694,7 +700,7 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            versions.push(doc);
+            versions.push(doc.into());
         }
 
         if versions.is_empty() {
@@ -750,7 +756,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<File>("modrinth_files");
+            .collection::<db::File>("modrinth_files");
 
         let filter = doc! { format!("_id.{}", algorithm): &hash };
 
@@ -805,7 +811,7 @@ impl ModrinthService {
         let files_collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<File>("modrinth_files");
+            .collection::<db::File>("modrinth_files");
 
         let hash_field = format!("_id.{}", &algorithm);
         let files_filter = doc! { &hash_field: { "$in": &hashes } };
@@ -876,8 +882,7 @@ impl ModrinthService {
         }
 
         // 创建哈希值到版本的映射
-        let mut result: std::collections::HashMap<String, Version> =
-            std::collections::HashMap::new();
+        let mut result: HashMap<String, Version> = HashMap::new();
 
         for version in versions {
             if let Some(first_file) = version.files.first() {
@@ -886,7 +891,7 @@ impl ModrinthService {
                     "sha512" => &first_file.hashes.sha512,
                     _ => continue,
                 };
-                result.insert(hash_value.clone(), version);
+                result.insert(hash_value.clone(), version.into());
             }
         }
 
@@ -990,8 +995,8 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            match bson::from_document::<Version>(doc) {
-                Ok(version) => Ok(Some(version)),
+            match bson::from_document::<db::Version>(doc) {
+                Ok(version) => Ok(Some(version.into())),
                 Err(e) => Err(ServiceError::UnexpectedError(format!(
                     "Failed to deserialize Version: {}",
                     e
@@ -1073,7 +1078,7 @@ impl ModrinthService {
         ]);
 
         let mut cursor = files_collection.aggregate(pipeline, None).await?;
-        let mut result = std::collections::HashMap::new();
+        let mut result: HashMap<String, Version> = HashMap::new();
 
         while let Some(doc) = cursor
             .try_next()
@@ -1086,9 +1091,9 @@ impl ModrinthService {
             if let (Some(bson::Bson::String(hash_value)), Some(bson::Bson::Document(detail_doc))) =
                 (doc.get("_id"), doc.get("detail"))
             {
-                match bson::from_document::<Version>(detail_doc.clone()) {
+                match bson::from_document::<db::Version>(detail_doc.clone()) {
                     Ok(version) => {
-                        result.insert(hash_value.clone(), version);
+                        result.insert(hash_value.clone(), version.into());
                     }
                     Err(e) => {
                         return Err(ServiceError::UnexpectedError(format!(
@@ -1135,7 +1140,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Category>("modrinth_categories");
+            .collection::<db::Category>("modrinth_categories");
 
         let cursor =
             collection
@@ -1146,13 +1151,16 @@ impl ModrinthService {
                     source: Some(e),
                 })?;
 
-        let categories: Vec<Category> =
-            cursor.try_collect::<Vec<Category>>().await.map_err(|e| {
-                ServiceError::DatabaseError {
+        let db_categories: Vec<db::Category> =
+            cursor
+                .try_collect()
+                .await
+                .map_err(|e| ServiceError::DatabaseError {
                     message: e.to_string(),
                     source: Some(e),
-                }
-            })?;
+                })?;
+
+        let categories: Vec<Category> = db_categories.into_iter().map(Into::into).collect();
 
         Ok(categories)
     }
@@ -1161,7 +1169,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<Loader>("modrinth_loaders");
+            .collection::<db::Loader>("modrinth_loaders");
 
         let cursor =
             collection
@@ -1172,7 +1180,7 @@ impl ModrinthService {
                     source: Some(e),
                 })?;
 
-        let loaders: Vec<Loader> =
+        let db_loaders: Vec<db::Loader> =
             cursor
                 .try_collect()
                 .await
@@ -1180,6 +1188,8 @@ impl ModrinthService {
                     message: e.to_string(),
                     source: Some(e),
                 })?;
+
+        let loaders: Vec<Loader> = db_loaders.into_iter().map(Into::into).collect();
 
         Ok(loaders)
     }
@@ -1188,7 +1198,7 @@ impl ModrinthService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<GameVersion>("modrinth_game_versions");
+            .collection::<db::GameVersion>("modrinth_game_versions");
 
         let cursor =
             collection
@@ -1199,7 +1209,7 @@ impl ModrinthService {
                     source: Some(e),
                 })?;
 
-        let game_versions: Vec<GameVersion> =
+        let db_game_versions: Vec<db::GameVersion> =
             cursor
                 .try_collect()
                 .await
@@ -1207,6 +1217,9 @@ impl ModrinthService {
                     message: e.to_string(),
                     source: Some(e),
                 })?;
+
+        let game_versions: Vec<GameVersion> =
+            db_game_versions.into_iter().map(Into::into).collect();
 
         Ok(game_versions)
     }
