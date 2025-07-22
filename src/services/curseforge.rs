@@ -9,7 +9,9 @@ use std::sync::Arc;
 
 use crate::config::database::get_database_name;
 use crate::errors::ServiceError;
-use crate::models::curseforge::entities::{Category as DBCategory, File as DBFile, Fingerprint as DBFingerprint, Mod as DBMod};
+use crate::models::curseforge::entities::{
+    Category as DBCategory, File as DBFile, Fingerprint as DBFingerprint, Mod as DBMod,
+};
 use crate::models::curseforge::requests::SearchQuery;
 use crate::models::curseforge::responses::*;
 
@@ -330,7 +332,9 @@ impl CurseforgeService {
         }
 
         let response_mods = mods.into_iter().map(|m| m.into()).collect();
-        Ok(ModsResponse { data: response_mods })
+        Ok(ModsResponse {
+            data: response_mods,
+        })
     }
 
     pub async fn get_file(&self, file_id: i32) -> Result<FileResponse, ServiceError> {
@@ -354,7 +358,9 @@ impl CurseforgeService {
                 source: Some(e),
             })? {
             Some(file_data) => {
-                let response = FileResponse { data: file_data.into() };
+                let response = FileResponse {
+                    data: file_data.into(),
+                };
                 Ok(response)
             }
             None => {
@@ -421,7 +427,9 @@ impl CurseforgeService {
 
         // Ok(FilesResponse { data: files })
         let response_files = files.into_iter().map(|f| f.into()).collect();
-        Ok(FilesResponse { data: response_files })
+        Ok(FilesResponse {
+            data: response_files,
+        })
     }
 
     pub async fn get_mod_files(
@@ -626,7 +634,12 @@ impl CurseforgeService {
             .map(|f| Fingerprint {
                 id: f.file.mod_id,
                 file: f.file.clone().into(),
-                latest_files: f.latest_files.clone().into_iter().map(|lf| lf.into()).collect(),
+                latest_files: f
+                    .latest_files
+                    .clone()
+                    .into_iter()
+                    .map(|lf| lf.into())
+                    .collect(),
                 sync_at: f.sync_at,
             })
             .collect::<Vec<_>>();
@@ -711,6 +724,8 @@ impl CurseforgeService {
             });
         }
 
-        Ok(CategoriesResponse { data: categories.into_iter().map(|c| c.into()).collect() })
+        Ok(CategoriesResponse {
+            data: categories.into_iter().map(|c| c.into()).collect(),
+        })
     }
 }

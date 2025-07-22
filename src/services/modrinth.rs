@@ -4,8 +4,8 @@ use mongodb::{bson::Document, Client as Mongo_Client};
 use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
 use reqwest::Client;
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::config::database::get_database_name;
 use crate::errors::ServiceError;

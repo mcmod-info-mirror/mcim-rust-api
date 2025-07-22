@@ -8,7 +8,6 @@ use crate::services::modrinth::ModrinthService;
 use crate::utils::app::AppState;
 use crate::utils::redis_cache::{cacheable_json, create_key};
 
-
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/modrinth").service(root).service(
