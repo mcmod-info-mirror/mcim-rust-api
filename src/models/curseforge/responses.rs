@@ -325,7 +325,8 @@ pub struct FileIndex {
     pub release_type: Option<i32>,
     #[serde(rename = "gameVersionTypeId")]
     pub game_version_type_id: Option<i32>,
-    #[serde(rename = "modLoader", skip_serializing_if = "Option::is_none")] // https://github.com/Meloong-Git/PCL/issues/6656#issuecomment-3121181878
+    #[serde(rename = "modLoader", skip_serializing_if = "Option::is_none")]
+    // https://github.com/Meloong-Git/PCL/issues/6656#issuecomment-3121181878
     pub mod_loader: Option<i32>,
 }
 
