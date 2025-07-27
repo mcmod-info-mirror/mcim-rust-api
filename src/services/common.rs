@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::config::database::get_database_name;
+use crate::db::database::get_database_name;
 use crate::errors::ServiceError;
 use crate::models::common::responses::StatisticsResponse;
 

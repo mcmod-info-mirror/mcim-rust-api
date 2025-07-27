@@ -1,4 +1,4 @@
-pub mod config;
+pub mod db;
 pub mod errors;
 pub mod models;
 pub mod routes;
@@ -12,8 +12,8 @@ use actix_web_prom::PrometheusMetricsBuilder;
 use dotenvy::dotenv;
 use std::env;
 
-use crate::config::_redis::connect as connect_redis;
-use crate::config::database::connect as connect_mongo;
+use crate::db::_redis::connect as connect_redis;
+use crate::db::database::connect as connect_mongo;
 use crate::errors::ApiError;
 use crate::routes::config as routes_config;
 use crate::utils::app::build_app_state;

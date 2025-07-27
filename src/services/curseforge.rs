@@ -7,7 +7,7 @@ use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::config::database::get_database_name;
+use crate::db::database::get_database_name;
 use crate::errors::ServiceError;
 use crate::models::curseforge::entities::{Category as DBCategory, File as DBFile, Mod as DBMod};
 use crate::models::curseforge::requests::SearchQuery;
