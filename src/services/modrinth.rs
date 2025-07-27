@@ -374,12 +374,10 @@ impl ModrinthService {
             .collection::<db::Project>("modrinth_projects");
 
         match collection
-            .find_one(
-                doc! { "$or": [
-                    { "_id": &project_id_or_slug },
-                    { "slug": &project_id_or_slug }
-                ] },
-            )
+            .find_one(doc! { "$or": [
+                { "_id": &project_id_or_slug },
+                { "slug": &project_id_or_slug }
+            ] })
             .await?
         {
             Some(doc) => {
@@ -647,10 +645,7 @@ impl ModrinthService {
             .database(get_database_name().as_str())
             .collection::<db::Version>("modrinth_versions");
 
-        match collection
-            .find_one(doc! { "_id": &version_id })
-            .await?
-        {
+        match collection.find_one(doc! { "_id": &version_id }).await? {
             Some(doc) => Ok(Some(doc.into())),
             None => {
                 self.add_version_ids_into_queue(vec![version_id.clone()])
@@ -1136,14 +1131,13 @@ impl ModrinthService {
             .database(get_database_name().as_str())
             .collection::<db::Category>("modrinth_categories");
 
-        let cursor =
-            collection
-                .find(doc! {})
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: e.to_string(),
-                    source: Some(e),
-                })?;
+        let cursor = collection
+            .find(doc! {})
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: e.to_string(),
+                source: Some(e),
+            })?;
 
         let db_categories: Vec<db::Category> =
             cursor
@@ -1165,14 +1159,13 @@ impl ModrinthService {
             .database(get_database_name().as_str())
             .collection::<db::Loader>("modrinth_loaders");
 
-        let cursor =
-            collection
-                .find(doc! {})
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: e.to_string(),
-                    source: Some(e),
-                })?;
+        let cursor = collection
+            .find(doc! {})
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: e.to_string(),
+                source: Some(e),
+            })?;
 
         let db_loaders: Vec<db::Loader> =
             cursor
@@ -1194,14 +1187,13 @@ impl ModrinthService {
             .database(get_database_name().as_str())
             .collection::<db::GameVersion>("modrinth_game_versions");
 
-        let cursor =
-            collection
-                .find(doc! {})
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: e.to_string(),
-                    source: Some(e),
-                })?;
+        let cursor = collection
+            .find(doc! {})
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: e.to_string(),
+                source: Some(e),
+            })?;
 
         let db_game_versions: Vec<db::GameVersion> =
             cursor

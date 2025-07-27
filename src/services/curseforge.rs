@@ -282,9 +282,7 @@ impl CurseforgeService {
             .database(get_database_name().as_str())
             .collection::<DBMod>("curseforge_mods");
 
-        let mut cursor = collection
-            .find(doc! { "_id": { "$in": &mod_ids } })
-            .await?;
+        let mut cursor = collection.find(doc! { "_id": { "$in": &mod_ids } }).await?;
 
         let mut mods = Vec::new();
 
@@ -494,12 +492,14 @@ impl CurseforgeService {
             },
         ];
 
-        let mut cursor = collection.aggregate(pipeline).await.map_err(|e| {
-            ServiceError::DatabaseError {
-                message: String::from("Failed to aggregate mod files"),
-                source: Some(e),
-            }
-        })?;
+        let mut cursor =
+            collection
+                .aggregate(pipeline)
+                .await
+                .map_err(|e| ServiceError::DatabaseError {
+                    message: String::from("Failed to aggregate mod files"),
+                    source: Some(e),
+                })?;
 
         let result = cursor
             .try_next()
@@ -634,9 +634,7 @@ impl CurseforgeService {
             .database(get_database_name().as_str())
             .collection::<DBMod>("curseforge_mods");
 
-        let mut cursor = collection
-            .find(doc! { "_id": { "$in": &mod_ids } })
-            .await?;
+        let mut cursor = collection.find(doc! { "_id": { "$in": &mod_ids } }).await?;
 
         while let Ok(Some(doc)) = cursor
             .try_next()

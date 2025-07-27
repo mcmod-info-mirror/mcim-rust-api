@@ -13,16 +13,17 @@ async fn get_collection_count(
         .collection::<mongodb::bson::Document>(collection_name);
 
     // 如果 $collStats 失败，回退到 estimated_document_count
-    let count = collection
-        .estimated_document_count()
-        .await
-        .map_err(|e| ServiceError::DatabaseError {
-            message: format!(
-                "Failed to get collection count for {}: {}",
-                collection_name, e
-            ),
-            source: Some(e.into()),
-        })?;
+    let count =
+        collection
+            .estimated_document_count()
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: format!(
+                    "Failed to get collection count for {}: {}",
+                    collection_name, e
+                ),
+                source: Some(e.into()),
+            })?;
     Ok(count)
 }
 
