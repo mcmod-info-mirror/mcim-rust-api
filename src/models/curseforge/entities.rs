@@ -238,17 +238,17 @@ pub struct Mod {
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-pub struct Fingerprint {
-    #[serde(alias = "_id")]
-    pub id: i64,
-    pub file: FileInfo,
-    #[serde(rename = "latestFiles")]
-    pub latest_files: Vec<FileInfo>,
+// #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+// pub struct Fingerprint {
+//     #[serde(alias = "_id")]
+//     pub id: i64,
+//     pub file: FileInfo,
+//     #[serde(rename = "latestFiles")]
+//     pub latest_files: Vec<FileInfo>,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
-    pub sync_at: DateTime<Utc>,
-}
+//     #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+//     pub sync_at: DateTime<Utc>,
+// }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct FileDependencies {

@@ -9,9 +9,7 @@ use std::sync::Arc;
 
 use crate::config::database::get_database_name;
 use crate::errors::ServiceError;
-use crate::models::curseforge::entities::{
-    Category as DBCategory, File as DBFile, Fingerprint as DBFingerprint, Mod as DBMod,
-};
+use crate::models::curseforge::entities::{Category as DBCategory, File as DBFile, Mod as DBMod};
 use crate::models::curseforge::requests::SearchQuery;
 use crate::models::curseforge::responses::*;
 
@@ -603,16 +601,16 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<DBFingerprint>("curseforge_fingerprints");
+            .collection::<DBFile>("curseforge_files");
 
         // 可选 game_id 参数用于过滤
-        let mut filter = doc! { "_id": { "$in": &fingerprints } };
+        let mut filter = doc! { "fileFingerprint": { "$in": &fingerprints } };
         if let Some(game_id) = game_id {
-            filter.insert("file.gameId", game_id);
+            filter.insert("gameId", game_id);
         }
 
         let mut cursor = collection.find(filter, None).await?;
-        let mut fingerprint_results = Vec::new();
+        let mut file_results: Vec<File> = Vec::new();
 
         while let Ok(Some(doc)) = cursor
             .try_next()
@@ -622,31 +620,67 @@ impl CurseforgeService {
                 source: Some(e),
             })
         {
-            fingerprint_results.push(doc);
+            file_results.push(doc.into());
         }
 
-        let exact_fingerprints = fingerprint_results.iter().map(|f| f.id).collect();
-
-        // 将 id 设置为 fingerprint.file.modId
-        // https://github.com/Meloong-Git/PCL/issues/6656
-        let exact_matches = fingerprint_results
+        let exact_fingerprints = file_results
             .iter()
-            .map(|f| Fingerprint {
-                id: f.file.mod_id,
-                file: f.file.clone().into(),
-                latest_files: f
-                    .latest_files
-                    .clone()
+            .filter_map(|f| f.file_fingerprint)
+            .collect();
+
+        // 查询 Mod，获取 latestFiles
+        let mod_ids = file_results.iter().map(|f| f.mod_id).collect::<Vec<_>>();
+        let mut mod_latest_files_results: HashMap<i32, Vec<FileInfo>> = HashMap::new();
+        
+        let collection = self
+            .db
+            .database(get_database_name().as_str())
+            .collection::<DBMod>("curseforge_mods");
+
+        let mut cursor = collection
+            .find(doc! { "_id": { "$in": &mod_ids } }, None)
+            .await?;
+
+        while let Ok(Some(doc)) =
+            cursor
+                .try_next()
+                .await
+                .map_err(|e| ServiceError::DatabaseError {
+                    message: String::from("Failed to fetch mods from database"),
+                    source: Some(e),
+                })
+        {
+            mod_latest_files_results.insert(
+                doc.id,
+                doc.latest_files
+                    .unwrap()
                     .into_iter()
-                    .map(|lf| lf.into())
+                    .map(|f| f.into())
                     .collect(),
-                sync_at: f.sync_at,
-            })
-            .collect::<Vec<_>>();
+            );
+        }
 
         let unmatched_fingerprints: Vec<i64> = fingerprints
             .into_iter()
-            .filter(|f| !fingerprint_results.iter().any(|fp| fp.id == *f))
+            .filter(|f| {
+                !file_results
+                    .iter()
+                    .any(|file| file.file_fingerprint == Some(*f))
+            })
+            .collect();
+
+        // 将 id 设置为 fingerprint.file.modId
+        // https://github.com/Meloong-Git/PCL/issues/6656
+        let exact_matches = file_results
+            .into_iter()
+            .map(|f| Fingerprint {
+                id: f.mod_id,
+                latest_files: mod_latest_files_results
+                    .get(&f.mod_id)
+                    .cloned()
+                    .unwrap_or_default(),
+                file: f,
+            })
             .collect();
 
         if unmatched_fingerprints.is_empty() {

@@ -216,12 +216,9 @@ pub struct Mod {
 
 pub struct Fingerprint {
     pub id: i32,
-    pub file: FileInfo,
+    pub file: File,
     #[serde(rename = "latestFiles")]
     pub latest_files: Vec<FileInfo>,
-
-    #[serde(default = "Utc::now")]
-    pub sync_at: DateTime<Utc>,
 }
 
 // --- Re-usable sub-structs (mirrored from entities) ---
@@ -336,7 +333,7 @@ pub struct FingerprintResult {
     #[serde(rename = "isCacheBuilt")]
     pub is_cache_built: bool,
     #[serde(rename = "exactMatches")]
-    pub exact_matches: Vec<Fingerprint>, // Changed from SingleFingerprintResponse
+    pub exact_matches: Vec<Fingerprint>,
     #[serde(rename = "exactFingerprints")]
     pub exact_fingerprints: Vec<i64>,
     #[serde(rename = "installedFingerprints")]
@@ -608,16 +605,16 @@ impl From<db::Mod> for Mod {
     }
 }
 
-impl From<db::Fingerprint> for Fingerprint {
-    fn from(db_model: db::Fingerprint) -> Self {
-        Self {
-            id: db_model.file.mod_id, // Use mod_id as id
-            file: db_model.file.into(),
-            latest_files: db_model.latest_files.into_iter().map(Into::into).collect(),
-            sync_at: db_model.sync_at,
-        }
-    }
-}
+// impl From<db::Fingerprint> for Fingerprint {
+//     fn from(db_model: db::Fingerprint) -> Self {
+//         Self {
+//             id: db_model.file.mod_id, // Use mod_id as id
+//             file: db_model.file,
+//             latest_files: db_model.latest_files.into_iter().map(Into::into).collect(),
+//             sync_at: db_model.sync_at,
+//         }
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
