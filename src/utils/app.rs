@@ -1,7 +1,7 @@
 use redis::aio::MultiplexedConnection;
+use reqwest::Client;
 use std::env;
 use std::sync::Arc;
-use reqwest::Client;
 
 #[derive(Clone)]
 pub struct AppState {
