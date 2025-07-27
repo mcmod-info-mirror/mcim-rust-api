@@ -631,7 +631,7 @@ impl CurseforgeService {
         // 查询 Mod，获取 latestFiles
         let mod_ids = file_results.iter().map(|f| f.mod_id).collect::<Vec<_>>();
         let mut mod_latest_files_results: HashMap<i32, Vec<FileInfo>> = HashMap::new();
-        
+
         let collection = self
             .db
             .database(get_database_name().as_str())
@@ -641,14 +641,13 @@ impl CurseforgeService {
             .find(doc! { "_id": { "$in": &mod_ids } }, None)
             .await?;
 
-        while let Ok(Some(doc)) =
-            cursor
-                .try_next()
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: String::from("Failed to fetch mods from database"),
-                    source: Some(e),
-                })
+        while let Ok(Some(doc)) = cursor
+            .try_next()
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: String::from("Failed to fetch mods from database"),
+                source: Some(e),
+            })
         {
             mod_latest_files_results.insert(
                 doc.id,
