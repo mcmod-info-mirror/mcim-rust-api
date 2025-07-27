@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::config::database::get_database_name;
-use crate::models::common::responses::StatisticsResponse;
 use crate::errors::ServiceError;
+use crate::models::common::responses::StatisticsResponse;
 
 async fn get_collection_count(
     db: &mongodb::Client,

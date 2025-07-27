@@ -5,7 +5,9 @@ use mongodb::Client;
 use crate::config::database::get_database_name;
 use crate::errors::ServiceError;
 use crate::models::translate::entities::{CurseForgeTranslation, ModrinthTranslation};
-use crate::models::translate::responses::{CurseForgeTranslationResponse, ModrinthTranslationResponse};
+use crate::models::translate::responses::{
+    CurseForgeTranslationResponse, ModrinthTranslationResponse,
+};
 
 pub struct ModrinthService {
     pub db: Client,
