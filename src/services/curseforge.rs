@@ -157,6 +157,7 @@ impl CurseforgeService {
 
     pub async fn search_mods(
         &self,
+        client: &Client,
         query: &SearchQuery,
         curseforge_api_url: &str,
         curseforge_api_key: &str,
@@ -199,7 +200,7 @@ impl CurseforgeService {
         add_param!(primary_author_id, "primaryAuthorId", transform);
         add_param!(slug, "slug");
 
-        let response = Client::new()
+        let response = client
             .get(format!("{}/v1/mods/search", curseforge_api_url))
             .header("x-api-key", curseforge_api_key)
             .query(&params)

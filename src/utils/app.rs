@@ -1,6 +1,7 @@
 use redis::aio::MultiplexedConnection;
 use std::env;
 use std::sync::Arc;
+use reqwest::Client;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -11,6 +12,7 @@ pub struct AppState {
     pub curseforge_api_key: String,
     pub curseforge_file_cdn_url: String,
     pub modrinth_file_cdn_url: String,
+    pub http_client: Client, // 共享的 HTTP 客户端
 }
 
 pub fn build_app_state(
@@ -29,5 +31,6 @@ pub fn build_app_state(
             .unwrap_or_else(|_| "https://mediafilez.forgecdn.net".to_string()),
         modrinth_file_cdn_url: env::var("MODRINTH_FILE_CDN_URL")
             .unwrap_or_else(|_| "https://cdn.modrinth.com".to_string()),
+        http_client: Client::new(), // 创建一个共享的 HTTP 客户端
     }
 }

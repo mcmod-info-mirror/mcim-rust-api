@@ -68,6 +68,7 @@ pub async fn search_cached(
     let redis_pool = data.redis_pool.clone();
     let db = data.db.clone();
     let modrinth_api_url = data.modrinth_api_url.clone();
+    let http_client = data.http_client.clone();
 
     let key = create_key(
         "GET".to_string(),
@@ -84,6 +85,7 @@ pub async fn search_cached(
                 let service = ModrinthService::new(db, redis_pool);
                 service
                     .search(
+                        &http_client,
                         query.query,
                         query.facets,
                         query.offset,

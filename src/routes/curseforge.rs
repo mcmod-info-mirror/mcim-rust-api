@@ -78,6 +78,7 @@ async fn search_mods_cached(
     let db = data.db.clone();
     let curseforge_api_url = data.curseforge_api_url.clone();
     let curseforge_api_key = data.curseforge_api_key.clone();
+    let http_client = data.http_client.clone();
 
     let key = create_key(
         "GET".to_string(),
@@ -93,7 +94,7 @@ async fn search_mods_cached(
             let service = CurseforgeService::new(db.clone(), redis_pool);
             Box::pin(async move {
                 service
-                    .search_mods(&query, &curseforge_api_url, &curseforge_api_key)
+                    .search_mods(&http_client, &query, &curseforge_api_url, &curseforge_api_key)
                     .await
                     .map_err(Into::into)
             })

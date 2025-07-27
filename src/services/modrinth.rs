@@ -19,7 +19,10 @@ pub struct ModrinthService {
 
 impl ModrinthService {
     pub fn new(db: Mongo_Client, redis: Arc<MultiplexedConnection>) -> Self {
-        Self { db, redis }
+        Self { 
+            db, 
+            redis,
+        }
     }
 
     // 缓存 project_id <-> slug 映射
@@ -288,6 +291,7 @@ impl ModrinthService {
 
     pub async fn search(
         &self,
+        client: &Client,
         query: Option<String>,
         facets: Option<String>,
         offset: Option<i32>,
@@ -295,7 +299,6 @@ impl ModrinthService {
         index: Option<String>,
         modrinth_api_url: &str,
     ) -> Result<serde_json::Value, ServiceError> {
-        let client = Client::new();
         let api_url = format!("{}/v2/search", modrinth_api_url);
 
         // 验证 index 在 SearchIndex 内
