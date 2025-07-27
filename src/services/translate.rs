@@ -34,10 +34,7 @@ impl ModrinthService {
             .database(get_database_name().as_str())
             .collection::<ModrinthTranslation>("modrinth_translated");
 
-        match collection
-            .find_one(doc! { "_id": project_id })
-            .await?
-        {
+        match collection.find_one(doc! { "_id": project_id }).await? {
             Some(doc) => Ok(Some(doc.into())),
             None => Ok(None),
         }
