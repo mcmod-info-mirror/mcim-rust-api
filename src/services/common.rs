@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::config::database::get_database_name;
-
+use crate::models::common::responses::StatisticsResponse;
 use crate::errors::ServiceError;
 
 async fn get_collection_count(
@@ -31,10 +31,9 @@ pub async fn get_statistics_info(
     curseforge: bool,
     translate: bool,
     db: &mongodb::Client,
-) -> Result<serde_json::Value, ServiceError> {
-    let mut statistics = HashMap::new();
+) -> Result<StatisticsResponse, ServiceError> {
+    let mut modrinth_statistics = HashMap::new();
     if modrinth {
-        let mut modrinth_statistics = HashMap::new();
         let modrinth_projects_count = get_collection_count(db, "modrinth_projects").await?;
         modrinth_statistics.insert("project".to_string(), modrinth_projects_count);
 
@@ -43,12 +42,10 @@ pub async fn get_statistics_info(
 
         let modrinth_files_count = get_collection_count(db, "modrinth_files").await?;
         modrinth_statistics.insert("file".to_string(), modrinth_files_count);
-
-        statistics.insert("modrinth".to_string(), modrinth_statistics);
     }
 
+    let mut curseforge_statistics = HashMap::new();
     if curseforge {
-        let mut curseforge_statistics = HashMap::new();
         let curseforge_mods_count = get_collection_count(db, "curseforge_mods").await?;
         curseforge_statistics.insert("mod".to_string(), curseforge_mods_count);
 
@@ -58,18 +55,20 @@ pub async fn get_statistics_info(
         // let curseforge_fingerprints_count =
         //     get_collection_count(db, "curseforge_fingerprints").await?;
         // curseforge_statistics.insert("fingerprint".to_string(), curseforge_fingerprints_count);
-        statistics.insert("curseforge".to_string(), curseforge_statistics);
     }
 
+    let mut translate_statistics = HashMap::new();
     if translate {
-        let mut translate_statistics = HashMap::new();
         let curseforge_translate_count = get_collection_count(db, "curseforge_translated").await?;
         translate_statistics.insert("curseforge".to_string(), curseforge_translate_count);
 
         let modrinth_translate_count = get_collection_count(db, "modrinth_translated").await?;
         translate_statistics.insert("modrinth".to_string(), modrinth_translate_count);
-        statistics.insert("translate".to_string(), translate_statistics);
     }
 
-    Ok(serde_json::json!(statistics))
+    Ok(StatisticsResponse {
+        curseforge: Some(curseforge_statistics),
+        modrinth: Some(modrinth_statistics),
+        translate: Some(translate_statistics),
+    })
 }
