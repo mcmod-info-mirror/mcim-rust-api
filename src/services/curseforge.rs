@@ -112,13 +112,9 @@ impl CurseforgeService {
             .database(get_database_name().as_str())
             .collection::<bson::Document>("curseforge_mods");
 
-        let projection = doc! { "_id": 1 };
-        let find_options = mongodb::options::FindOptions::builder()
-            .projection(projection)
-            .build();
-
         let mut cursor = collection
-            .find(doc! { "_id": { "$in": &mod_ids } }, find_options)
+            .find(doc! { "_id": { "$in": &mod_ids } })
+            .projection(doc! { "_id": 1 })
             .await
             .map_err(|e| ServiceError::DatabaseError {
                 message: "Failed to fetch mods from database".to_string(),
@@ -253,7 +249,7 @@ impl CurseforgeService {
             .database(get_database_name().as_str())
             .collection::<DBMod>("curseforge_mods");
 
-        match collection.find_one(doc! { "_id": mod_id }, None).await? {
+        match collection.find_one(doc! { "_id": mod_id }).await? {
             Some(mod_data) => {
                 // let response = ModResponse { data: mod_data };
                 let response = ModResponse {
@@ -287,7 +283,7 @@ impl CurseforgeService {
             .collection::<DBMod>("curseforge_mods");
 
         let mut cursor = collection
-            .find(doc! { "_id": { "$in": &mod_ids } }, None)
+            .find(doc! { "_id": { "$in": &mod_ids } })
             .await?;
 
         let mut mods = Vec::new();
@@ -350,7 +346,7 @@ impl CurseforgeService {
             .collection::<DBFile>("curseforge_files");
 
         match collection
-            .find_one(doc! { "_id": file_id }, None)
+            .find_one(doc! { "_id": file_id })
             .await
             .map_err(|e| ServiceError::DatabaseError {
                 message: "Failed to fetch file by ID".to_string(),
@@ -386,7 +382,7 @@ impl CurseforgeService {
             .collection::<DBFile>("curseforge_files");
 
         let mut cursor = collection
-            .find(doc! { "_id": { "$in": &file_ids } }, None)
+            .find(doc! { "_id": { "$in": &file_ids } })
             .await?;
 
         let mut files = Vec::new();
@@ -498,7 +494,7 @@ impl CurseforgeService {
             },
         ];
 
-        let mut cursor = collection.aggregate(pipeline, None).await.map_err(|e| {
+        let mut cursor = collection.aggregate(pipeline).await.map_err(|e| {
             ServiceError::DatabaseError {
                 message: String::from("Failed to aggregate mod files"),
                 source: Some(e),
@@ -610,7 +606,7 @@ impl CurseforgeService {
             filter.insert("gameId", game_id);
         }
 
-        let mut cursor = collection.find(filter, None).await?;
+        let mut cursor = collection.find(filter).await?;
         let mut file_results: Vec<File> = Vec::new();
 
         while let Ok(Some(doc)) = cursor
@@ -639,7 +635,7 @@ impl CurseforgeService {
             .collection::<DBMod>("curseforge_mods");
 
         let mut cursor = collection
-            .find(doc! { "_id": { "$in": &mod_ids } }, None)
+            .find(doc! { "_id": { "$in": &mod_ids } })
             .await?;
 
         while let Ok(Some(doc)) = cursor
@@ -727,7 +723,7 @@ impl CurseforgeService {
 
         let mut cursor =
             collection
-                .find(filter, None)
+                .find(filter)
                 .await
                 .map_err(|e| ServiceError::DatabaseError {
                     message: String::from("Failed to fetch categories from database"),

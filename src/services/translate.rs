@@ -35,7 +35,7 @@ impl ModrinthService {
             .collection::<ModrinthTranslation>("modrinth_translated");
 
         match collection
-            .find_one(doc! { "_id": project_id }, None)
+            .find_one(doc! { "_id": project_id })
             .await?
         {
             Some(doc) => Ok(Some(doc.into())),
@@ -60,7 +60,7 @@ impl ModrinthService {
             .collection::<ModrinthTranslation>("modrinth_translated");
 
         let filter = doc! { "_id": { "$in": project_ids } };
-        let mut cursor = collection.find(filter, None).await?;
+        let mut cursor = collection.find(filter).await?;
         let mut results = Vec::new();
 
         while let Some(doc) = cursor.next().await {
@@ -106,7 +106,7 @@ impl CurseForgeService {
             .database(&get_database_name().as_str())
             .collection::<CurseForgeTranslation>("curseforge_translated");
 
-        match collection.find_one(doc! { "_id": mod_id }, None).await? {
+        match collection.find_one(doc! { "_id": mod_id }).await? {
             Some(doc) => Ok(Some(doc.into())),
             None => Ok(None),
         }
@@ -129,7 +129,7 @@ impl CurseForgeService {
             .collection::<CurseForgeTranslation>("curseforge_translated");
 
         let filter = doc! { "_id": { "$in": mod_ids } };
-        let mut cursor = collection.find(filter, None).await?;
+        let mut cursor = collection.find(filter).await?;
         let mut results = Vec::new();
 
         while let Some(doc) = cursor.next().await {

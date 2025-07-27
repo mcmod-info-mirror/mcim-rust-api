@@ -19,10 +19,7 @@ pub struct ModrinthService {
 
 impl ModrinthService {
     pub fn new(db: Mongo_Client, redis: Arc<MultiplexedConnection>) -> Self {
-        Self { 
-            db, 
-            redis,
-        }
+        Self { db, redis }
     }
 
     // 缓存 project_id <-> slug 映射
@@ -244,19 +241,14 @@ impl ModrinthService {
             .database(get_database_name().as_str())
             .collection::<bson::Document>("modrinth_projects");
 
-        let projection = doc! { "_id": 1 };
-        let find_options = mongodb::options::FindOptions::builder()
-            .projection(projection)
-            .build();
-
-        let filter = doc! { "_id": { "$in": &project_ids } };
-
-        let mut cursor = collection.find(filter, find_options).await.map_err(|e| {
-            ServiceError::DatabaseError {
+        let mut cursor = collection
+            .find(doc! { "_id": { "$in": &project_ids } })
+            .projection(doc! { "_id": 1 })
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
                 message: format!("Failed to fetch project documents: {}", e),
                 source: Some(e),
-            }
-        })?;
+            })?;
 
         let mut found_project_ids = Vec::new();
 
@@ -387,7 +379,6 @@ impl ModrinthService {
                     { "_id": &project_id_or_slug },
                     { "slug": &project_id_or_slug }
                 ] },
-                None,
             )
             .await?
         {
@@ -478,7 +469,7 @@ impl ModrinthService {
 
         let mut cursor =
             collection
-                .find(filter, None)
+                .find(filter)
                 .await
                 .map_err(|e| ServiceError::DatabaseError {
                     message: format!("Failed to fetch project documents: {}", e),
@@ -615,7 +606,7 @@ impl ModrinthService {
             filter.insert("loaders", doc! { "$elemMatch": { "$in": loaders } });
         }
 
-        let mut cursor = version_collection.find(filter, None).await?;
+        let mut cursor = version_collection.find(filter).await?;
 
         let mut versions = Vec::new();
 
@@ -657,7 +648,7 @@ impl ModrinthService {
             .collection::<db::Version>("modrinth_versions");
 
         match collection
-            .find_one(doc! { "_id": &version_id }, None)
+            .find_one(doc! { "_id": &version_id })
             .await?
         {
             Some(doc) => Ok(Some(doc.into())),
@@ -691,7 +682,7 @@ impl ModrinthService {
 
         let filter = doc! { "_id": { "$in": &version_ids } };
 
-        let mut cursor = collection.find(filter, None).await?;
+        let mut cursor = collection.find(filter).await?;
 
         let mut versions: Vec<Version> = Vec::new();
 
@@ -763,7 +754,7 @@ impl ModrinthService {
 
         let filter = doc! { format!("_id.{}", algorithm): &hash };
 
-        match collection.find_one(filter, None).await? {
+        match collection.find_one(filter).await? {
             Some(doc) => {
                 // 缓存 hash -> version_id 映射
                 if let Err(e) = self
@@ -819,7 +810,7 @@ impl ModrinthService {
         let hash_field = format!("_id.{}", &algorithm);
         let files_filter = doc! { &hash_field: { "$in": &hashes } };
 
-        let mut files_cursor = files_collection.find(files_filter, None).await?;
+        let mut files_cursor = files_collection.find(files_filter).await?;
         let mut files = Vec::new();
 
         while let Some(doc) =
@@ -988,7 +979,7 @@ impl ModrinthService {
             doc! { "$limit": 1 },
         ]);
 
-        let mut cursor = files_collection.aggregate(pipeline, None).await?;
+        let mut cursor = files_collection.aggregate(pipeline).await?;
 
         if let Some(doc) = cursor
             .try_next()
@@ -1080,7 +1071,7 @@ impl ModrinthService {
             }},
         ]);
 
-        let mut cursor = files_collection.aggregate(pipeline, None).await?;
+        let mut cursor = files_collection.aggregate(pipeline).await?;
         let mut result: HashMap<String, Version> = HashMap::new();
 
         while let Some(doc) = cursor
@@ -1147,7 +1138,7 @@ impl ModrinthService {
 
         let cursor =
             collection
-                .find(doc! {}, None)
+                .find(doc! {})
                 .await
                 .map_err(|e| ServiceError::DatabaseError {
                     message: e.to_string(),
@@ -1176,7 +1167,7 @@ impl ModrinthService {
 
         let cursor =
             collection
-                .find(doc! {}, None)
+                .find(doc! {})
                 .await
                 .map_err(|e| ServiceError::DatabaseError {
                     message: e.to_string(),
@@ -1205,7 +1196,7 @@ impl ModrinthService {
 
         let cursor =
             collection
-                .find(doc! {}, None)
+                .find(doc! {})
                 .await
                 .map_err(|e| ServiceError::DatabaseError {
                     message: e.to_string(),

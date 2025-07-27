@@ -10,7 +10,7 @@ pub async fn connect() -> Result<Client, Box<dyn std::error::Error>> {
     // 测试连接
     client
         .database("admin")
-        .run_command(mongodb::bson::doc! {"ping": 1}, None)
+        .run_command(mongodb::bson::doc! {"ping": 1})
         .await?;
 
     log::info!("Connected to MongoDB successfully!");
