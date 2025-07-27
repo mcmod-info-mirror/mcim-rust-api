@@ -55,9 +55,9 @@ pub async fn get_statistics_info(
         let curseforge_files_count = get_collection_count(db, "curseforge_files").await?;
         curseforge_statistics.insert("file".to_string(), curseforge_files_count);
 
-        let curseforge_fingerprints_count =
-            get_collection_count(db, "curseforge_fingerprints").await?;
-        curseforge_statistics.insert("fingerprint".to_string(), curseforge_fingerprints_count);
+        // let curseforge_fingerprints_count =
+        //     get_collection_count(db, "curseforge_fingerprints").await?;
+        // curseforge_statistics.insert("fingerprint".to_string(), curseforge_fingerprints_count);
         statistics.insert("curseforge".to_string(), curseforge_statistics);
     }
 
