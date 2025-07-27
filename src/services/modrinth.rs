@@ -19,10 +19,7 @@ pub struct ModrinthService {
 
 impl ModrinthService {
     pub fn new(db: Mongo_Client, redis: Arc<MultiplexedConnection>) -> Self {
-        Self { 
-            db, 
-            redis,
-        }
+        Self { db, redis }
     }
 
     // 缓存 project_id <-> slug 映射
