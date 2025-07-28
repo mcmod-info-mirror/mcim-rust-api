@@ -632,9 +632,12 @@ impl CurseforgeService {
         let collection = self
             .db
             .database(get_database_name().as_str())
-            .collection::<DBMod>("curseforge_mods");
+            .collection::<bson::Document>("curseforge_mods");
 
-        let mut cursor = collection.find(doc! { "_id": { "$in": &mod_ids } }).await?;
+        let mut cursor = collection
+            .find(doc! { "_id": { "$in": &mod_ids } })
+            .projection(doc! { "_id": 1, "latestFiles": 1 })
+            .await?;
 
         while let Ok(Some(doc)) = cursor
             .try_next()
@@ -644,14 +647,38 @@ impl CurseforgeService {
                 source: Some(e),
             })
         {
-            mod_latest_files_results.insert(
-                doc.id,
-                doc.latest_files
-                    .unwrap()
-                    .into_iter()
-                    .map(|f| f.into())
-                    .collect(),
-            );
+            let mod_id = doc
+                .get_i32("_id")
+                .map_err(|_| ServiceError::DatabaseError {
+                    message: format!("Mod document missing _id field: {:?}", doc),
+                    source: None,
+                })?;
+
+            let latest_files: Vec<FileInfo> = doc
+                .get_array("latestFiles")
+                .map_err(|e| ServiceError::DatabaseError {
+                    message: format!("Failed to get latestFiles array for mod {}: {}", mod_id, e),
+                    source: None,
+                })?
+                .iter()
+                .map(|file| {
+                    file.as_document()
+                        .ok_or_else(|| ServiceError::DatabaseError {
+                            message: format!("Invalid document in latestFiles for mod {}", mod_id),
+                            source: None,
+                        })
+                        .and_then(|file_doc| {
+                            bson::from_document::<crate::models::curseforge::entities::FileInfo>(file_doc.clone())
+                                .map_err(|e| ServiceError::DatabaseError {
+                                    message: format!("Failed to parse FileInfo document for mod {}: {}", mod_id, e),
+                                    source: Some(e.into()),
+                                })
+                        })
+                        .map(|file_info| file_info.into())
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            
+            mod_latest_files_results.insert(mod_id, latest_files);
         }
 
         let unmatched_fingerprints: Vec<i64> = fingerprints
