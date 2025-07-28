@@ -275,7 +275,7 @@ impl ModrinthService {
             self.add_project_ids_into_queue(not_found_project_ids)
                 .await?;
         } else {
-            log::debug!("All projects have been found in the database.");
+            log::trace!("All projects have been found in the database.");
         }
 
         Ok(())
@@ -349,7 +349,7 @@ impl ModrinthService {
         if status.is_success() {
             // 检查有无未缓存的 Project
             let _ = match self.check_search_result(&search_result).await {
-                Ok(_) => log::debug!("Search result check completed successfully"),
+                Ok(_) => log::trace!("Search result check completed successfully"),
                 Err(e) => log::error!("Modrinth Search result check failed: {}", e),
             };
         }
@@ -427,7 +427,7 @@ impl ModrinthService {
             } else {
                 // 可能是slug，尝试从缓存获取对应的project_id
                 if let Some(cached_project_id) = self.get_cached_project_id(&item).await {
-                    log::debug!(
+                    log::trace!(
                         "Found cached project_id {} for slug {}",
                         cached_project_id,
                         item
@@ -442,7 +442,7 @@ impl ModrinthService {
 
         // 如果所有项目都从缓存中找到了对应的project_id，直接按project_id查询
         if remaining_items.is_empty() && !resolved_project_ids.is_empty() {
-            log::debug!(
+            log::trace!(
                 "All items resolved from cache, querying {} project_ids directly",
                 resolved_project_ids.len()
             );
@@ -515,9 +515,13 @@ impl ModrinthService {
                 .collect();
 
             if !not_found_items.is_empty() {
+                log::trace!(
+                    "Unmatched project_ids or slugs found: {:?}, added to Redis queue for processing.",
+                    not_found_items
+                );
                 self.add_project_ids_into_queue(not_found_items).await?;
             } else {
-                log::debug!("All requested projects found in the database.");
+                log::trace!("All requested projects found in the database.");
             }
         }
 
@@ -546,7 +550,7 @@ impl ModrinthService {
         {
             // 看起来像是 project_id，尝试获取对应的 slug
             if let Some(slug) = self.get_cached_slug(&project_id_or_slug).await {
-                log::debug!(
+                log::trace!(
                     "Found cached slug {} for project_id {}",
                     slug,
                     project_id_or_slug
@@ -556,7 +560,7 @@ impl ModrinthService {
         } else {
             // 看起来像是 slug，尝试获取对应的 project_id
             if let Some(cached_id) = self.get_cached_project_id(&project_id_or_slug).await {
-                log::debug!(
+                log::trace!(
                     "Found cached project_id {} for slug {}",
                     cached_id,
                     project_id_or_slug
@@ -712,7 +716,7 @@ impl ModrinthService {
                 self.add_version_ids_into_queue(not_found_version_ids)
                     .await?;
             } else {
-                log::debug!("All requested versions found in the database.");
+                log::trace!("All requested versions found in the database.");
             }
         }
 
@@ -733,7 +737,7 @@ impl ModrinthService {
 
         // 优化: 首先尝试从缓存获取 version_id
         if let Some(cached_version_id) = self.get_cached_version_id(&algorithm, &hash).await {
-            log::debug!(
+            log::trace!(
                 "Found cached version_id {} for {}:{}",
                 cached_version_id,
                 algorithm,
@@ -907,7 +911,7 @@ impl ModrinthService {
             self.add_hashes_into_queue(algorithm.clone(), not_found_hashes)
                 .await?;
         } else {
-            log::debug!("All requested hashes found in the database.");
+            log::trace!("All requested hashes found in the database.");
         }
 
         Ok(MutilFilesResponse {
@@ -1116,7 +1120,7 @@ impl ModrinthService {
                 self.add_hashes_into_queue(algorithm.clone(), not_found_hashes)
                     .await?;
             } else {
-                log::debug!("All requested hashes found in the database.");
+                log::trace!("All requested hashes found in the database.");
             }
         }
 

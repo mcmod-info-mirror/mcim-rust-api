@@ -145,7 +145,7 @@ impl CurseforgeService {
         if !not_found_mod_ids.is_empty() {
             self.add_modids_into_queue(not_found_mod_ids).await?;
         } else {
-            log::debug!("All Mods have been found in the database.");
+            log::trace!("All Mods have been found in the database.");
         }
 
         Ok(())
@@ -228,7 +228,7 @@ impl CurseforgeService {
         if status.is_success() {
             // 检查有无未缓存的 Project
             let _ = match self.check_search_result(&search_result).await {
-                Ok(_) => log::debug!("Curseforge check_search_result completed successfully"),
+                Ok(_) => log::trace!("Curseforge check_search_result completed successfully"),
                 Err(e) => log::error!("Curseforge check_search_result failed: {}", e),
             };
         }
@@ -321,7 +321,7 @@ impl CurseforgeService {
             );
             self.add_modids_into_queue(not_found_mod_ids).await?;
         } else {
-            log::debug!("All Mods have been found in the database.");
+            log::trace!("All Mods have been found in the database.");
         }
 
         let response_mods = mods.into_iter().map(|m| m.into()).collect();
@@ -405,7 +405,7 @@ impl CurseforgeService {
         if !not_found_file_ids.is_empty() {
             self.add_fileids_into_queue(not_found_file_ids).await?;
         } else {
-            log::debug!("All Files have been found in the database.");
+            log::trace!("All Files have been found in the database.");
         }
 
         if files.is_empty() {
@@ -705,10 +705,14 @@ impl CurseforgeService {
             .collect();
 
         if unmatched_fingerprints.is_empty() {
-            log::debug!("All fingerprints have been found in the database.");
+            log::trace!("All fingerprints have been found in the database.");
         } else {
             self.add_fingerprints_into_queue(unmatched_fingerprints.clone())
                 .await?;
+            log::debug!(
+                "Unmatched fingerprints found: {:?}, added to Redis queue for processing.",
+                unmatched_fingerprints
+            );
         }
 
         let response = FingerprintResponse {
