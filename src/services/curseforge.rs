@@ -668,16 +668,21 @@ impl CurseforgeService {
                             source: None,
                         })
                         .and_then(|file_doc| {
-                            bson::from_document::<crate::models::curseforge::entities::FileInfo>(file_doc.clone())
-                                .map_err(|e| ServiceError::DatabaseError {
-                                    message: format!("Failed to parse FileInfo document for mod {}: {}", mod_id, e),
-                                    source: Some(e.into()),
-                                })
+                            bson::from_document::<crate::models::curseforge::entities::FileInfo>(
+                                file_doc.clone(),
+                            )
+                            .map_err(|e| ServiceError::DatabaseError {
+                                message: format!(
+                                    "Failed to parse FileInfo document for mod {}: {}",
+                                    mod_id, e
+                                ),
+                                source: Some(e.into()),
+                            })
                         })
                         .map(|file_info| file_info.into())
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            
+
             mod_latest_files_results.insert(mod_id, latest_files);
         }
 
