@@ -208,6 +208,17 @@ impl CurseforgeService {
             })?;
 
         let status = response.status();
+        if !status.is_success() {
+            return Err(ServiceError::ExternalServiceError {
+                service: "Curseforge API".into(),
+                message: format!(
+                    "Request failed with status: {}, response: {}",
+                    status,
+                    response.text().await.unwrap_or_else(|_| "No response text".to_string())
+                ),
+            });
+        }
+
         let bytes = response
             .bytes()
             .await
@@ -225,13 +236,11 @@ impl CurseforgeService {
                 ),
             })?;
 
-        if status.is_success() {
-            // 检查有无未缓存的 Project
-            let _ = match self.check_search_result(&search_result).await {
-                Ok(_) => log::trace!("Curseforge check_search_result completed successfully"),
-                Err(e) => log::error!("Curseforge check_search_result failed: {}", e),
-            };
-        }
+        // 检查有无未缓存的 Project
+        let _ = match self.check_search_result(&search_result).await {
+            Ok(_) => log::trace!("Curseforge check_search_result completed successfully"),
+            Err(e) => log::error!("Curseforge check_search_result failed: {}", e),
+        };
 
         Ok(search_result)
     }
