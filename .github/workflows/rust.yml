@@ -125,10 +125,10 @@ jobs:
       - name: Build Rust Binary
         run: | 
           cargo build --release --verbose --bin mcim-rust-api
-          cargo build --verbose --bin mcim-rust-api-debug
+          cargo build --verbose --bin mcim-rust-api
           mkdir -p build_output
-          cp target/release/mcim-rust-api build_output/
-          cp target/debug/mcim-rust-api-debug build_output/
+          cp target/release/mcim-rust-api build_output/mcim-rust-api
+          cp target/debug/mcim-rust-api build_output/mcim-rust-api-debug
 
       - name: Upload Rust Binary Artifact
         uses: actions/upload-artifact@v4
