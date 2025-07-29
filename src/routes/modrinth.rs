@@ -49,7 +49,7 @@ pub async fn root() -> impl Responder {
     path = "/modrinth/v2/search",
     params(
         ("query" = Option<String>, Query, description = "Search query", example = "sodium"),
-        ("facets" = Option<String>, Query, description = "Facets to filter results", example = "[['categories:forge'],['versions:1.17.1'],['project_type:mod'],['license:mit']]"),
+        ("facets" = Option<String>, Query, description = "Facets to filter results", example = "[[\"categories:forge\"],[\"versions:1.17.1\"],[\"project_type:mod\"],[\"license:mit\"]]"),
         ("offset" = Option<i32>, Query, description = "Offset for pagination", example = "0"),
         ("limit" = Option<i32>, Query, description = "Limit for pagination", example = "10"),
         ("index" = Option<String>, Query, description = "Index to sort", example = "relevance")
@@ -123,7 +123,7 @@ pub async fn search_cached(
     get,
     path = "/modrinth/v2/project/{project_id}",
     params(
-        ("project_id" = String, Path, description = "ID of the game to filter project"),
+        ("project_id" = String, Path, description = "ID of the game to filter project", example = "sodium"),
     ),
     responses(
         (status = 200, description = "Project found", body = Project)
@@ -147,7 +147,7 @@ pub async fn get_project(
     get,
     path = "/modrinth/v2/projects",
     params(
-        ("ids" = String, Query, description = "The IDs and/or slugs of the projects", example = "['AABBCCDD', 'EEFFGGHH]'")
+        ("ids" = String, Query, description = "The IDs and/or slugs of the projects", example = "[\"sodium\", \"fabric-api\"]")
     ),
     responses(
         (status = 200, description = "Projects Found", body = Vec<Project>),
@@ -177,7 +177,7 @@ pub async fn get_projects(
     get,
     path = "/modrinth/v2/project/{project_id}/version",
     params(
-        ("project_id" = String, Path, description = "ID or slug of the project")
+        ("project_id" = String, Path, description = "ID or slug of the project", example = "sodium")
     ),
     responses(
         (status = 200, description = "Project versions found", body = Vec<Version>)
@@ -218,7 +218,7 @@ pub async fn get_project_versions(
     get,
     path = "/modrinth/v2/version/{version_id}",
     params(
-        ("version_id" = String, Path, description = "ID of the version")
+        ("version_id" = String, Path, description = "ID of the version", example = "ygf8cVZg")
     ),
     responses(
         (status = 200, description = "Version found", body = Version)
@@ -242,7 +242,7 @@ pub async fn get_version(
     get,
     path = "/modrinth/v2/versions",
     params(
-        ("ids" = String, Query, description = "The IDs of the versions", example = "['AABBCCDD', 'EEFFGGHH]'")
+        ("ids" = String, Query, description = "The IDs of the versions", example = "[\"RncWhTxD\", \"ygf8cVZg\"]")
     ),
     responses(
         (status = 200, description = "Versions found", body = Vec<Version>)
@@ -272,8 +272,8 @@ pub async fn get_versions(
     get,
     path = "/modrinth/v2/version_file/{hash}",
     params(
-        ("hash" = String, Path, description = "Hash of the file, sha1 or sha512"),
-        ("algorithm" = String, Query, description = "Hash algorithm used, sha1 or sha512")
+        ("hash" = String, Path, description = "Hash of the file, sha1 or sha512", example = "d67e66ea4bb2409997b636dae4203d33764cdcc8"),
+        ("algorithm" = String, Query, description = "Hash algorithm used, sha1 or sha512", example = "sha1")
     ),
     responses(
         (status = 200, description = "File found", body = Version)
@@ -327,8 +327,8 @@ pub async fn get_version_files(
     path = "/modrinth/v2/version_file/{hash}/update",
     request_body = UpdateItems,
     params(
-        ("hash" = String, Path, description = "Hash of the file, sha1 or sha512"),
-        ("algorithm" = String, Query, description = "Hash algorithm used, sha1 or sha512")
+        ("hash" = String, Path, description = "Hash of the file, sha1 or sha512", example = "d67e66ea4bb2409997b636dae4203d33764cdcc8"),
+        ("algorithm" = String, Query, description = "Hash algorithm used, sha1 or sha512", example = "sha1")
     ),
     responses(
         (status = 200, description = "File updated", body = Version)
@@ -361,6 +361,7 @@ pub async fn update_version_file(
 #[utoipa::path(
     post,
     path = "/modrinth/v2/version_files/update",
+    request_body = MultiUpdateItems,
     responses(
         (status = 200, description = "Versions Found", body = Vec<Version>)
     ),

@@ -128,7 +128,7 @@ async fn search_mods_cached(
     get,
     path = "/curseforge/v1/mods/{mod_id}",
     params(
-        ("mod_id" = i32, Path, description = "ID of the mod to retrieve")
+        ("mod_id" = i32, Path, description = "ID of the mod to retrieve", example = 238222)
     ),
     responses(
         (status = 200, description = "Mod found", body = ModResponse),
@@ -187,11 +187,11 @@ async fn get_mods(
     get,
     path = "/curseforge/v1/mods/{mod_id}/files",
     params(
-        ("mod_id" = i32, Path, description = "ID of the mod to retrieve files for"),
+        ("mod_id" = i32, Path, description = "ID of the mod to retrieve files for", example = 238222),
         ("gameVersion" = Option<String>, Query, description = "Game version filter (optional)"),
         ("modLoaderType" = Option<String>, Query, description = "Mod loader type filter (optional)"),
-        ("index" = Option<i32>, Query, description = "Index for pagination (optional)"),
-        ("pageSize" = Option<i32>, Query, description = "Page size for pagination (optional)")
+        ("index" = Option<i32>, Query, description = "Index for pagination (optional)", example = 0),
+        ("pageSize" = Option<i32>, Query, description = "Page size for pagination (optional)", example = 50)
     ),
     responses(
         (status = 200, description = "Files found", body = Vec<FileResponse>),

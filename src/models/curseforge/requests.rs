@@ -48,6 +48,7 @@ impl Display for SearchQuery {
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct ModsBody {
     #[serde(rename = "modIds")]
+    #[schema(default = "[238222]")]
     pub mod_ids: Vec<i32>,
     #[serde(rename = "filterPcOnly")]
     pub filter_pc_only: Option<bool>,
@@ -67,19 +68,23 @@ pub struct ModFilesQuery {
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct FileIdsBody {
     #[serde(rename = "fileIds")]
+    #[schema(default = "[6614392]")]
     pub file_ids: Vec<i32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct FingerprintsBody {
+    #[schema(default = "[510490952]")]
     pub fingerprints: Vec<i64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct CategoriesQuery {
     #[serde(rename = "gameId")]
+    #[schema(default = 432)]
     pub game_id: i32,
     #[serde(rename = "classId")]
+    #[schema(default = 6)]
     pub class_id: Option<i32>,
     #[serde(rename = "classOnly")]
     pub class_only: Option<bool>,

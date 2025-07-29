@@ -23,21 +23,29 @@ impl Display for SearchQuery {
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct HashesQuery {
+    #[schema(default = "[\"d67e66ea4bb2409997b636dae4203d33764cdcc8\"]")]
     pub hashes: Vec<String>,
+    #[schema(default = "sha1")]
     pub algorithm: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct UpdateItems {
+    #[schema(default = "[\"fabric\"]")]
     pub loaders: Vec<String>,
+    #[schema(default = "[\"1.16.5\"]")]
     pub game_versions: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct MultiUpdateItems {
+    #[schema(default = "[\"d67e66ea4bb2409997b636dae4203d33764cdcc8\"]")]
     pub hashes: Vec<String>,
+    #[schema(default = "sha1")]
     pub algorithm: String,
+    #[schema(default = "[\"fabric\"]")]
     pub loaders: Vec<String>,
+    #[schema(default = "[\"1.16.5\"]")]
     pub game_versions: Vec<String>,
 }
 
@@ -48,6 +56,7 @@ pub struct ProjectIds {
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct AlgorithmItems {
+    #[schema(default = "[\"sha512\"]")]
     pub algorithm: String,
 }
 
