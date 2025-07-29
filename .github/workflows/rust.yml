@@ -125,14 +125,16 @@ jobs:
       - name: Build Rust Binary
         run: | 
           cargo build --release --verbose --bin mcim-rust-api
+          cargo build --debug --verbose --bin mcim-rust-api-debug
           mkdir -p build_output
           cp target/release/mcim-rust-api build_output/
+          cp target/debug/mcim-rust-api-debug build_output/
 
       - name: Upload Rust Binary Artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact
-          path: target/release/mcim-rust-api
+          path: build_output/
 
       - name: Extract Docker image metadata
         id: meta
