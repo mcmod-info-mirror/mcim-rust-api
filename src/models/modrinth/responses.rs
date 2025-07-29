@@ -12,11 +12,31 @@ pub struct DonationUrl {
     pub url: Option<String>,
 }
 
+impl From<db::DonationUrl> for DonationUrl {
+    fn from(donation_url: db::DonationUrl) -> Self {
+        DonationUrl {
+            id: donation_url.id,
+            platform: donation_url.platform,
+            url: donation_url.url,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct License {
     pub id: Option<String>,
     pub name: Option<String>,
     pub url: Option<String>,
+}
+
+impl From<db::License> for License {
+    fn from(license: db::License) -> Self {
+        License {
+            id: license.id,
+            name: license.name,
+            url: license.url,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -27,6 +47,19 @@ pub struct GalleryItem {
     pub description: Option<String>,
     pub created: DateTime<Utc>,
     pub ordering: Option<i64>,
+}
+
+impl From<db::GalleryItem> for GalleryItem {
+    fn from(gallery_item: db::GalleryItem) -> Self {
+        GalleryItem {
+            url: gallery_item.url,
+            featured: gallery_item.featured,
+            title: gallery_item.title,
+            description: gallery_item.description,
+            created: gallery_item.created,
+            ordering: gallery_item.ordering,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -131,10 +164,29 @@ pub struct Dependencies {
     pub dependency_type: String,
 }
 
+impl From<db::Dependencies> for Dependencies {
+    fn from(dependency: db::Dependencies) -> Self {
+        Dependencies {
+            version_id: dependency.version_id,
+            project_id: dependency.project_id,
+            file_name: dependency.file_name,
+            dependency_type: dependency.dependency_type,
+        }
+    }
+}
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct Hashes {
     pub sha512: String,
     pub sha1: String,
+}
+
+impl From<db::Hashes> for Hashes {
+    fn from(hashes: db::Hashes) -> Self {
+        Hashes {
+            sha512: hashes.sha512,
+            sha1: hashes.sha1,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -286,25 +338,25 @@ impl From<db::GameVersion> for GameVersion {
     }
 }
 
-macro_rules! impl_from_db {
-    ($db_type:ty, $resp_type:ty) => {
-        impl From<$db_type> for $resp_type {
-            fn from(db_model: $db_type) -> Self {
-                // This is a bit of a trick to convert between two structs with identical fields.
-                // It serializes the source and deserializes into the target.
-                // This requires both structs to have compatible serde implementations.
-                // A manual field-by-field copy is safer if fields differ.
-                serde_json::from_value(serde_json::to_value(db_model).unwrap()).unwrap()
-            }
-        }
-    };
-}
+// macro_rules! impl_from_db {
+//     ($db_type:ty, $resp_type:ty) => {
+//         impl From<$db_type> for $resp_type {
+//             fn from(db_model: $db_type) -> Self {
+//                 // This is a bit of a trick to convert between two structs with identical fields.
+//                 // It serializes the source and deserializes into the target.
+//                 // This requires both structs to have compatible serde implementations.
+//                 // A manual field-by-field copy is safer if fields differ.
+//                 serde_json::from_value(serde_json::to_value(db_model).unwrap()).unwrap()
+//             }
+//         }
+//     };
+// }
 
-impl_from_db!(db::DonationUrl, DonationUrl);
-impl_from_db!(db::License, License);
-impl_from_db!(db::GalleryItem, GalleryItem);
-impl_from_db!(db::Dependencies, Dependencies);
-impl_from_db!(db::Hashes, Hashes);
+// impl_from_db!(db::DonationUrl, DonationUrl);
+// impl_from_db!(db::License, License);
+// impl_from_db!(db::GalleryItem, GalleryItem);
+// impl_from_db!(db::Dependencies, Dependencies);
+// impl_from_db!(db::Hashes, Hashes);
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 pub struct MutilFilesResponse {

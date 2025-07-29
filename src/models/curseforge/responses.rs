@@ -260,8 +260,6 @@ pub struct Author {
     pub id: i32,
     pub name: String,
     pub url: Option<String>,
-    #[serde(rename = "avatarUrl")]
-    pub avatar_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -417,29 +415,130 @@ pub struct CategoriesResponse {
 // --- Conversions from DB Entity to Response Model ---
 
 // Macro to reduce boilerplate for simple struct conversions
-macro_rules! impl_from_db {
-    ($db_type:ty, $resp_type:ty) => {
-        impl From<$db_type> for $resp_type {
-            fn from(db_model: $db_type) -> Self {
-                // This is a bit of a trick to convert between two structs with identical fields.
-                // It serializes the source and deserializes into the target.
-                // This requires both structs to have compatible serde implementations.
-                // A manual field-by-field copy is safer if fields differ.
-                serde_json::from_value(serde_json::to_value(db_model).unwrap()).unwrap()
-            }
+// macro_rules! impl_from_db {
+//     ($db_type:ty, $resp_type:ty) => {
+//         impl From<$db_type> for $resp_type {
+//             fn from(db_model: $db_type) -> Self {
+//                 // This is a bit of a trick to convert between two structs with identical fields.
+//                 // It serializes the source and deserializes into the target.
+//                 // This requires both structs to have compatible serde implementations.
+//                 // A manual field-by-field copy is safer if fields differ.
+//                 serde_json::from_value(serde_json::to_value(db_model).unwrap()).unwrap()
+//             }
+//         }
+//     };
+// }
+
+// impl_from_db!(db::FileDependencies, FileDependencies);
+// impl_from_db!(db::FileSortableGameVersions, FileSortableGameVersions);
+// impl_from_db!(db::Hash, Hash);
+// impl_from_db!(db::Author, Author);
+// impl_from_db!(db::Logo, Logo);
+// impl_from_db!(db::Links, Links);
+// impl_from_db!(db::ScreenShot, ScreenShot);
+// impl_from_db!(db::Module, Module);
+// impl_from_db!(db::FileIndex, FileIndex);
+
+// --- Hand-written From implementations to replace inefficient macro ---
+
+impl From<db::FileDependencies> for FileDependencies {
+    fn from(db_model: db::FileDependencies) -> Self {
+        Self {
+            mod_id: db_model.mod_id,
+            relation_type: db_model.relation_type,
         }
-    };
+    }
 }
 
-impl_from_db!(db::FileDependencies, FileDependencies);
-impl_from_db!(db::FileSortableGameVersions, FileSortableGameVersions);
-impl_from_db!(db::Hash, Hash);
-impl_from_db!(db::Author, Author);
-impl_from_db!(db::Logo, Logo);
-impl_from_db!(db::Links, Links);
-impl_from_db!(db::ScreenShot, ScreenShot);
-impl_from_db!(db::Module, Module);
-impl_from_db!(db::FileIndex, FileIndex);
+impl From<db::FileSortableGameVersions> for FileSortableGameVersions {
+    fn from(db_model: db::FileSortableGameVersions) -> Self {
+        Self {
+            game_version_name: db_model.game_version_name,
+            game_version_padded: db_model.game_version_padded,
+            game_version: db_model.game_version,
+            game_version_release_date: db_model.game_version_release_date,
+            game_version_type_id: db_model.game_version_type_id,
+        }
+    }
+}
+
+impl From<db::Hash> for Hash {
+    fn from(db_model: db::Hash) -> Self {
+        Self {
+            value: db_model.value,
+            algo: db_model.algo,
+        }
+    }
+}
+
+impl From<db::Author> for Author {
+    fn from(db_model: db::Author) -> Self {
+        Self {
+            id: db_model.id,
+            name: db_model.name,
+            url: db_model.url,
+        }
+    }
+}
+
+impl From<db::Logo> for Logo {
+    fn from(db_model: db::Logo) -> Self {
+        Self {
+            id: db_model.id,
+            mod_id: db_model.mod_id,
+            title: db_model.title,
+            description: db_model.description,
+            thumbnail_url: db_model.thumbnail_url,
+            url: db_model.url,
+        }
+    }
+}
+
+impl From<db::Links> for Links {
+    fn from(db_model: db::Links) -> Self {
+        Self {
+            website_url: db_model.website_url,
+            wiki_url: db_model.wiki_url,
+            issues_url: db_model.issues_url,
+            source_url: db_model.source_url,
+        }
+    }
+}
+
+impl From<db::ScreenShot> for ScreenShot {
+    fn from(db_model: db::ScreenShot) -> Self {
+        Self {
+            id: db_model.id,
+            mod_id: db_model.mod_id,
+            title: db_model.title,
+            description: db_model.description,
+            thumbnail_url: db_model.thumbnail_url,
+            url: db_model.url,
+        }
+    }
+}
+
+impl From<db::Module> for Module {
+    fn from(db_model: db::Module) -> Self {
+        Self {
+            name: db_model.name,
+            fingerprint: db_model.fingerprint,
+        }
+    }
+}
+
+impl From<db::FileIndex> for FileIndex {
+    fn from(db_model: db::FileIndex) -> Self {
+        Self {
+            game_version: db_model.game_version,
+            file_id: db_model.file_id,
+            filename: db_model.filename,
+            release_type: db_model.release_type,
+            game_version_type_id: db_model.game_version_type_id,
+            mod_loader: db_model.mod_loader,
+        }
+    }
+}
 
 impl From<db::Category> for Category {
     fn from(db_model: db::Category) -> Self {
