@@ -1,10 +1,46 @@
-# x-logging: &default-logging
-#   driver: "local"
-#   options:
-#     max-size: "20m"
-#     max-file: "3"
+x-mcim-rust-api-logging: &mcim-rust-api-loki-logging
+  driver: loki
+  options:
+    loki-url: "http://localhost:3100/loki/api/v1/push"
+    max-size: "20m"
+    max-file: "3"
+    keep-file: "true"
+    loki-pipeline-stages: |
+      - regex:
+          expression: '^\[(?P<time>[^ ]+) (?P<level>[A-Z]+)[^\]]*\] (?P<message>.*)'
 
-x-logging: &loki-logging
+      - labels:
+          level:
+      - match:
+          selector: '{level="INFO"}'
+          stages:
+            - regex:
+                source: "message"
+                expression: '^(?P<ip>\S+) "(?P<method>\S+) (?P<path>\S+) (?P<protocol>[^"]+)" "(?P<url_template>[^"]+)" (?P<status>\d+) "(?P<referer>[^"]*)" "(?P<user_agent>[^"]+)" (?P<duration_ms>[\d.]+) ms'
+            - labels:
+                method:
+                status:
+                referer:
+                user_agent:
+                url_template:
+                ip:
+
+x-mongo-logging: &mongo-loki-logging
+  driver: loki
+  options:
+    loki-url: "http://localhost:3100/loki/api/v1/push"
+    max-size: "20m"
+    max-file: "3"
+    keep-file: "true"
+    loki-pipeline-stages: |
+      - json:
+          expressions:
+            level: record.level.name
+
+      - labels:
+          level: level
+
+x-redis-logging: &redis-loki-logging
   driver: loki
   options:
     loki-url: "http://localhost:3100/loki/api/v1/push"
@@ -14,27 +50,21 @@ x-logging: &loki-logging
 
 services:
   mongodb:
-    # 容器的名称为 mongo
     container_name: mongo
-    # 使用的镜像名称
     image: mongo:latest
-    # 当 docker 服务启动后，自动启动 mongodb 容器
     restart: always
-    # 对外映射的端口
     ports:
       - 27017:27017
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
-    # 宿主机硬盘目录映射容器内的存放数据的目录
     volumes:
       - /data/db:/data/db
       - ./config/mongod.conf:/etc/mongod.conf
 
     command:
       - "--bind_ip_all"
-    # logging: *default-logging
-    logging: *loki-logging
+    logging: *mongo-loki-logging
     deploy:
       resources:
         limits:
@@ -48,8 +78,7 @@ services:
     ports:
       - 6379:6379
     restart: always
-    # logging: *default-logging
-    logging: *loki-logging
+    logging: *redis-loki-logging
     volumes: 
       - ./config/redis.conf:/etc/redis/redis.conf
     command: redis-server /etc/redis/redis.conf
@@ -62,10 +91,7 @@ services:
 
   mcim-rust-api:
     container_name: mcim-rust-api
-    image: z0z0r4/mcim-rust-api:main
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
+    image: z0z0r4/mcim-rust-api:latest
     ports:
       - 8080:8080
     restart: always
@@ -79,8 +105,7 @@ services:
       CURSEFORGE_API_URL: "https://api.curseforge.com"
       MODRINTH_API_URL: "https://api.modrinth.com"
       CURSEFORGE_API_KEY: "your_curseforge_api_key"
-    # logging: *default-logging
-    logging: *loki-logging
+    logging: *mcim-rust-api-loki-logging
     deploy:
       resources:
         limits:
