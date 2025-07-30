@@ -2,9 +2,28 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'data/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'justfile'
+      - '.github/workflows/**'
+
   pull_request:
-    branches: [ "main" ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'data/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'justfile'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 env:
@@ -113,7 +132,7 @@ jobs:
   build_and_docker:
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
