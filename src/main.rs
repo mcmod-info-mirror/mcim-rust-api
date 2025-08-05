@@ -6,10 +6,12 @@ pub mod services;
 pub mod utils;
 
 use actix_middleware_etag::Etag;
+use actix_web::dev::Service;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{dev::ServiceRequest, web, App, HttpServer};
 use actix_web_prom::PrometheusMetricsBuilder;
 use dotenvy::dotenv;
+use prometheus::{IntCounterVec, Opts};
 use std::env;
 
 use crate::db::_redis::connect as connect_redis;
@@ -37,11 +39,29 @@ async fn main() -> std::io::Result<()> {
     let app_state = build_app_state(mongo_client, redis_pool);
     let app_data = web::Data::new(app_state);
 
+    // Prometheus Metrics 初始化
     let prometheus = PrometheusMetricsBuilder::new("api")
         .endpoint("/metrics")
         .mask_unmatched_patterns("UNKNOWN")
         .build()
         .unwrap();
+
+    // 自定义指标：统计 User-Agent
+    let opts = Opts::new(
+        "http_requests_user_agent",
+        "Number of HTTP requests by User-Agent",
+    )
+    .namespace("api");
+
+    let user_agent_counter = IntCounterVec::new(opts, &["user_agent"]).unwrap();
+
+    prometheus
+        .registry
+        .register(Box::new(user_agent_counter.clone()))
+        .unwrap();
+
+    // 将 counter 存入 AppData 供中间件使用
+    let user_agent_counter_data = web::Data::new(user_agent_counter);
 
     let app = move || {
         let logger = Logger::new(
@@ -68,6 +88,22 @@ async fn main() -> std::io::Result<()> {
                 web::PathConfig::default()
                     .error_handler(|err, _| ApiError::BadRequest(err.to_string()).into()),
             )
+            .app_data(user_agent_counter_data.clone())
+            .wrap_fn(|req, srv| {
+                // 提取 User-Agent
+                let user_agent = req
+                    .headers()
+                    .get("User-Agent")
+                    .and_then(|hv| hv.to_str().ok())
+                    .unwrap_or("unknown")
+                    .to_string();
+
+                // 获取 counter 并增加
+                let counter = req.app_data::<web::Data<IntCounterVec>>().unwrap();
+                counter.with_label_values(&[&user_agent]).inc();
+
+                srv.call(req)
+            })
             .wrap(Etag::default())
             .wrap(Compress::default())
             .wrap(prometheus.clone())
