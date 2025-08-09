@@ -21,7 +21,7 @@ impl ModrinthService {
     pub async fn get_translation(
         &self,
         project_id: &str,
-    ) -> Result<Option<ModrinthTranslationResponse>, ServiceError> {
+    ) -> Result<ModrinthTranslationResponse, ServiceError> {
         if project_id.trim().is_empty() {
             return Err(ServiceError::InvalidInput {
                 field: String::from("project_id"),
@@ -35,8 +35,11 @@ impl ModrinthService {
             .collection::<ModrinthTranslation>("modrinth_translated");
 
         match collection.find_one(doc! { "_id": project_id }).await? {
-            Some(doc) => Ok(Some(doc.into())),
-            None => Ok(None),
+            Some(doc) => Ok(doc.into()),
+            None => Err(ServiceError::NotFound {
+                resource: String::from("Modrinth translation"),
+                detail: Some(format!("Project ID {}", project_id)),
+            }),
         }
     }
 
@@ -90,7 +93,7 @@ impl CurseForgeService {
     pub async fn get_translation(
         &self,
         mod_id: i32,
-    ) -> Result<Option<CurseForgeTranslationResponse>, ServiceError> {
+    ) -> Result<CurseForgeTranslationResponse, ServiceError> {
         if mod_id <= 0 {
             return Err(ServiceError::InvalidInput {
                 field: String::from("mod_id"),
@@ -104,8 +107,11 @@ impl CurseForgeService {
             .collection::<CurseForgeTranslation>("curseforge_translated");
 
         match collection.find_one(doc! { "_id": mod_id }).await? {
-            Some(doc) => Ok(Some(doc.into())),
-            None => Ok(None),
+            Some(doc) => Ok(doc.into()),
+            None => Err(ServiceError::NotFound {
+                resource: String::from("CurseForge translation"),
+                detail: Some(format!("Mod ID {}", mod_id)),
+            }),
         }
     }
 

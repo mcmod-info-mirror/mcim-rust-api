@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, Responder};
 
 use crate::models::translate::requests::{
     CurseForgeTranslationRequest, CurseforgeQuery, ModrinthQuery, ModrinthTranslationRequest,
@@ -8,6 +8,7 @@ use crate::models::translate::responses::{
 };
 use crate::services::translate::{CurseForgeService, ModrinthService};
 use crate::utils::app::AppState;
+use crate::errors::ApiError;
 
 #[allow(deprecated)]
 pub mod deprecated_routes {
@@ -32,18 +33,14 @@ pub mod deprecated_routes {
     pub(super) async fn get_modrinth_translation_deprecated(
         query: web::Query<ModrinthQuery>,
         data: web::Data<AppState>,
-    ) -> impl Responder {
+    ) -> Result<impl Responder, ApiError> {
         let project_id = query.project_id.clone();
-        if project_id.is_empty() {
-            return HttpResponse::BadRequest().body("Project ID cannot be empty");
-        }
 
         let service = ModrinthService::new(data.db.clone());
 
         match service.get_translation(&project_id).await {
-            Ok(Some(translation)) => HttpResponse::Ok().json(translation),
-            Ok(None) => HttpResponse::NotFound().body("Translation not found"),
-            Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+            Ok(translation) => Ok(web::Json(translation)),
+            Err(e) => Err(ApiError::from(e)),
         }
     }
 
@@ -66,15 +63,14 @@ pub mod deprecated_routes {
     pub(super) async fn get_curseforge_translation_deprecated(
         query: web::Query<CurseforgeQuery>,
         data: web::Data<AppState>,
-    ) -> impl Responder {
+    ) -> Result<impl Responder, ApiError> {
         let mod_id = query.mod_id;
 
         let service = CurseForgeService::new(data.db.clone());
 
         match service.get_translation(mod_id).await {
-            Ok(Some(translation)) => HttpResponse::Ok().json(translation),
-            Ok(None) => HttpResponse::NotFound().body("Translation not found"),
-            Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+            Ok(translation) => Ok(web::Json(translation)),
+            Err(e) => Err(ApiError::from(e)),
         }
     }
 }
@@ -111,18 +107,14 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 async fn get_modrinth_translation(
     path: web::Path<String>,
     data: web::Data<AppState>,
-) -> impl Responder {
+) -> Result<impl Responder, ApiError> {
     let project_id = path.into_inner();
-    if project_id.is_empty() {
-        return HttpResponse::BadRequest().body("Project ID cannot be empty");
-    }
 
     let service = ModrinthService::new(data.db.clone());
 
     match service.get_translation(&project_id).await {
-        Ok(Some(translation)) => HttpResponse::Ok().json(translation),
-        Ok(None) => HttpResponse::NotFound().body("Translation not found"),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(translation) => Ok(web::Json(translation)),
+        Err(e) => Err(ApiError::from(e)),
     }
 }
 
@@ -144,15 +136,14 @@ async fn get_modrinth_translation(
 async fn get_curseforge_translation(
     path: web::Path<i32>,
     data: web::Data<AppState>,
-) -> impl Responder {
+) -> Result<impl Responder, ApiError> {
     let mod_id = path.into_inner();
 
     let service = CurseForgeService::new(data.db.clone());
 
     match service.get_translation(mod_id).await {
-        Ok(Some(translation)) => HttpResponse::Ok().json(translation),
-        Ok(None) => HttpResponse::NotFound().body("Translation not found"),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(translation) => Ok(web::Json(translation)),
+        Err(e) => Err(ApiError::from(e)),
     }
 }
 
@@ -171,13 +162,13 @@ async fn get_curseforge_translation(
 async fn get_modrinth_translation_batch(
     data: web::Data<AppState>,
     body: web::Json<ModrinthTranslationRequest>,
-) -> impl Responder {
+) -> Result<impl Responder, ApiError> {
     let project_ids = body.project_ids.clone();
     let service = ModrinthService::new(data.db.clone());
 
     match service.get_translations_batch(project_ids).await {
-        Ok(translation) => HttpResponse::Ok().json(translation),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(translation) => Ok(web::Json(translation)),
+        Err(e) => Err(ApiError::from(e)),
     }
 }
 
@@ -196,12 +187,12 @@ async fn get_modrinth_translation_batch(
 async fn get_curseforge_translation_batch(
     data: web::Data<AppState>,
     body: web::Json<CurseForgeTranslationRequest>,
-) -> impl Responder {
+) -> Result<impl Responder, ApiError> {
     let mod_ids = body.modids.clone();
     let service = CurseForgeService::new(data.db.clone());
 
     match service.get_translations_batch(mod_ids).await {
-        Ok(translation) => HttpResponse::Ok().json(translation),
-        Err(e) => HttpResponse::InternalServerError().body(format!("Service error: {:?}", e)),
+        Ok(translation) => Ok(web::Json(translation)),
+        Err(e) => Err(ApiError::from(e)),
     }
 }
