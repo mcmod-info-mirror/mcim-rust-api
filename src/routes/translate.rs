@@ -1,5 +1,6 @@
 use actix_web::{get, post, web, Responder};
 
+use crate::errors::ApiError;
 use crate::models::translate::requests::{
     CurseForgeTranslationRequest, CurseforgeQuery, ModrinthQuery, ModrinthTranslationRequest,
 };
@@ -8,7 +9,6 @@ use crate::models::translate::responses::{
 };
 use crate::services::translate::{CurseForgeService, ModrinthService};
 use crate::utils::app::AppState;
-use crate::errors::ApiError;
 
 #[allow(deprecated)]
 pub mod deprecated_routes {
