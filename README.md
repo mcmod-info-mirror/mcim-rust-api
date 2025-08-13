@@ -43,7 +43,10 @@ MCIM 几乎完美兼容官方的 API 结构，可以直接替换 URL，方便迁
 ### Curseforge
 
 - `api.curseforge.com` -> `mod.mcimirror.top/curseforge`
-- `edge.forgecdn.net` or `mediafilez.forgecdn.net` -> `mod.mcimirror.top`
+- `edge.forgecdn.net` -> `mod.mcimirror.top`
+
+注意：你不应该 `mediafilez.forgecdn.net` ->  `mod.mcimirror.top`
+ 
 
 ## 缓存相关
 
