@@ -26,7 +26,7 @@ import-data:
     mongoimport --db mcim_backend --collection curseforge_files --file ./data/curseforge_files.json --jsonArray --drop
     # mongoimport --db mcim_backend --collection curseforge_fingerprints --file ./data/curseforge_fingerprints.json --jsonArray --drop
     mongoimport --db mcim_backend --collection curseforge_categories --file ./data/curseforge_categories.json --jsonArray --drop
-    mongoimport --db mcim_backend --collection file_cdn_files --file ./data/file_cdn_files.json --jsonArray --drop
+    # mongoimport --db mcim_backend --collection file_cdn_files --file ./data/file_cdn_files.json --jsonArray --drop
     mongoimport --db mcim_backend --collection modrinth_translated --file ./data/modrinth_translated.json --jsonArray --drop
     mongoimport --db mcim_backend --collection curseforge_translated --file ./data/curseforge_translated.json --jsonArray --drop
 
