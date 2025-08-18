@@ -1,4 +1,5 @@
 use actix_web::{get, web, Responder};
+use serde::Serialize;
 
 use crate::errors::ApiError;
 use crate::models::common::requests::StatisticsQuery;
@@ -6,8 +7,18 @@ use crate::models::common::responses::StatisticsResponse;
 use crate::services::common::get_statistics_info;
 use crate::utils::app::AppState;
 
+include!(concat!(env!("OUT_DIR"), "/build_info.rs"));
+
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(root).service(get_statistics);
+}
+
+#[derive(Serialize)]
+struct VersionInfo {
+    version: &'static str,
+    commit: &'static str,
+    branch: &'static str,
+    build_time: &'static str,
 }
 
 #[utoipa::path(
@@ -21,6 +32,12 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 )]
 #[get("/")]
 async fn root() -> impl Responder {
+    let build_info = VersionInfo {
+        version: VERSION,
+        commit: GIT_COMMIT,
+        branch: GIT_BRANCH,
+        build_time: BUILD_TIME,
+    };
     web::Json(serde_json::json!({
         "Status": "https://status.mcimirror.top",
         "Docs": [
@@ -30,6 +47,12 @@ async fn root() -> impl Responder {
         "contact": {
             "Email": "z0z0r4@outlook.com",
             "QQ": "3531890582"
+        },
+        "build": {
+            "version": build_info.version,
+            "commit": build_info.commit,
+            "branch": build_info.branch,
+            "build_time": build_info.build_time,
         }
     }))
 }
