@@ -13,7 +13,7 @@ pub struct Category {
     pub game_id: i32,
     pub name: String,
     pub slug: Option<String>,
-    pub url: String,
+    pub url: Option<String>,
     #[serde(rename = "iconUrl")]
     pub icon_url: String,
     #[serde(rename = "dateModified")]

@@ -16,7 +16,7 @@ pub struct Category {
     pub slug: Option<String>,
     pub url: String,
     #[serde(rename = "iconUrl")]
-    pub icon_url: String,
+    pub icon_url: Option<String>,
     #[serde(
         rename = "dateModified",
         deserialize_with = "chrono_datetime_as_bson_datetime::deserialize"
