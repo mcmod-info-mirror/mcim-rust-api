@@ -5,7 +5,8 @@
         "translated": "YUNG's模组系列的库文件。",
         "translated_at": {
             "$date": "2025-02-02T08:53:28.684Z"
-        }
+        },
+        "need_to_update": false
     },
     {
         "_id": "Wnxd13zP",
@@ -13,6 +14,7 @@
         "translated": "将经验球聚集在一起以减少游戏卡顿。",
         "translated_at": {
             "$date": "2025-02-02T08:53:28.684Z"
-        }
+        },
+        "need_to_update": false
     }
 ]

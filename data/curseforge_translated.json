@@ -5,7 +5,8 @@
         "translated": "查看物品和配方",
         "translated_at": {
             "$date": "2025-02-02T10:01:52.805Z"
-        }
+        },
+        "need_to_update": false
     },
     {
         "_id": 1004027,
@@ -13,6 +14,7 @@
         "translated": "为术的激活提供更多按键选择",
         "translated_at": {
             "$date": "2025-02-02T09:47:09.623Z"
-        }
+        },
+        "need_to_update": false
     }
 ]
