@@ -8,8 +8,10 @@ use bson::serde_helpers::chrono_datetime_as_bson_datetime;
 pub struct ModrinthTranslation {
     #[serde(alias = "_id")]
     pub project_id: String,
-    pub translated: String,
-    pub original: String,
+    pub translated: Option<String>,
+    pub original: Option<String>,
+
+    pub need_to_update: bool,
 
     #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
     pub translated_at: DateTime<Utc>,
@@ -19,8 +21,10 @@ pub struct ModrinthTranslation {
 pub struct CurseForgeTranslation {
     #[serde(rename = "modId", alias = "_id")]
     pub mod_id: i32,
-    pub translated: String,
-    pub original: String,
+    pub translated: Option<String>,
+    pub original: Option<String>,
+
+    pub need_to_update: bool,
 
     #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
     pub translated_at: DateTime<Utc>,

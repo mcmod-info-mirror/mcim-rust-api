@@ -35,7 +35,19 @@ impl ModrinthService {
             .collection::<ModrinthTranslation>("modrinth_translated");
 
         match collection.find_one(doc! { "_id": project_id }).await? {
-            Some(doc) => Ok(doc.into()),
+            Some(doc) => {
+                // translated is null
+                if doc.translated.is_none() {
+                    return Err(ServiceError::NotFound {
+                        resource: String::from("Modrinth translation"),
+                        detail: Some(format!(
+                            "Translation for Project ID {} is not available",
+                            project_id
+                        )),
+                    });
+                }
+                Ok(doc.into())
+            }
             None => Err(ServiceError::NotFound {
                 resource: String::from("Modrinth translation"),
                 detail: Some(format!("Project ID {}", project_id)),
@@ -66,6 +78,9 @@ impl ModrinthService {
         while let Some(doc) = cursor.next().await {
             match doc {
                 Ok(doc) => {
+                    if doc.translated.is_none() {
+                        continue; // Skip entries without translations
+                    }
                     results.push(doc.into());
                 }
                 Err(e) => {
@@ -107,7 +122,18 @@ impl CurseForgeService {
             .collection::<CurseForgeTranslation>("curseforge_translated");
 
         match collection.find_one(doc! { "_id": mod_id }).await? {
-            Some(doc) => Ok(doc.into()),
+            Some(doc) => {
+                if doc.translated.is_none() {
+                    return Err(ServiceError::NotFound {
+                        resource: String::from("CurseForge translation"),
+                        detail: Some(format!(
+                            "Translation for Mod ID {} is not available",
+                            mod_id
+                        )),
+                    });
+                }
+                Ok(doc.into())
+            }
             None => Err(ServiceError::NotFound {
                 resource: String::from("CurseForge translation"),
                 detail: Some(format!("Mod ID {}", mod_id)),
@@ -138,6 +164,9 @@ impl CurseForgeService {
         while let Some(doc) = cursor.next().await {
             match doc {
                 Ok(doc) => {
+                    if doc.translated.is_none() {
+                        continue; // Skip entries without translations
+                    }
                     results.push(doc.into());
                 }
                 Err(e) => {

@@ -15,7 +15,7 @@ pub struct Category {
     pub slug: Option<String>,
     pub url: Option<String>,
     #[serde(rename = "iconUrl")]
-    pub icon_url: String,
+    pub icon_url: Option<String>,
     #[serde(rename = "dateModified")]
     pub date_modified: DateTime<Utc>,
     #[serde(rename = "isClass")]

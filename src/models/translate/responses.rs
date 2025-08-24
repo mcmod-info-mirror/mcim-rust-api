@@ -16,8 +16,8 @@ impl From<ModrinthTranslation> for ModrinthTranslationResponse {
     fn from(translation: ModrinthTranslation) -> Self {
         Self {
             project_id: translation.project_id,
-            translated: translation.translated,
-            original: translation.original,
+            translated: translation.translated.unwrap_or_default(),
+            original: translation.original.unwrap_or_default(),
             translated_at: translation.translated_at,
         }
     }
@@ -35,8 +35,8 @@ impl From<CurseForgeTranslation> for CurseForgeTranslationResponse {
     fn from(translation: CurseForgeTranslation) -> Self {
         Self {
             modid: translation.mod_id,
-            translated: translation.translated,
-            original: translation.original,
+            translated: translation.translated.unwrap_or_default(),
+            original: translation.original.unwrap_or_default(),
             translated_at: translation.translated_at,
         }
     }
