@@ -18,7 +18,7 @@ impl From<ModrinthTranslation> for ModrinthTranslationResponse {
             project_id: translation.project_id,
             translated: translation.translated.unwrap_or_default(),
             original: translation.original.unwrap_or_default(),
-            translated_at: translation.translated_at,
+            translated_at: translation.translated_at.unwrap_or_else(Utc::now),
         }
     }
 }
@@ -37,7 +37,7 @@ impl From<CurseForgeTranslation> for CurseForgeTranslationResponse {
             modid: translation.mod_id,
             translated: translation.translated.unwrap_or_default(),
             original: translation.original.unwrap_or_default(),
-            translated_at: translation.translated_at,
+            translated_at: translation.translated_at.unwrap_or_else(Utc::now),
         }
     }
 }
