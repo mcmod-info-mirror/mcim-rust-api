@@ -28,8 +28,7 @@ impl CurseforgeService {
             return Ok(());
         }
         let mut conn = self.redis.as_ref().clone();
-        conn
-            .sadd::<&str, &Vec<i32>, ()>("curseforge_modids", &mod_ids)
+        conn.sadd::<&str, &Vec<i32>, ()>("curseforge_modids", &mod_ids)
             .await
             .map_err(|e| -> ServiceError {
                 ServiceError::ExternalServiceError {
@@ -46,8 +45,7 @@ impl CurseforgeService {
             return Ok(());
         }
         let mut conn = self.redis.as_ref().clone();
-        conn
-            .sadd::<&str, &Vec<i32>, ()>("curseforge_fileids", &file_ids)
+        conn.sadd::<&str, &Vec<i32>, ()>("curseforge_fileids", &file_ids)
             .await
             .map_err(|e| -> ServiceError {
                 ServiceError::ExternalServiceError {
@@ -68,8 +66,7 @@ impl CurseforgeService {
         }
 
         let mut conn = self.redis.as_ref().clone();
-        conn
-            .sadd::<&str, &Vec<i64>, ()>("curseforge_fingerprints", &fingerprints)
+        conn.sadd::<&str, &Vec<i64>, ()>("curseforge_fingerprints", &fingerprints)
             .await
             .map_err(|e| -> ServiceError {
                 ServiceError::ExternalServiceError {

@@ -139,8 +139,7 @@ impl ModrinthService {
         }
 
         let mut conn = self.redis.as_ref().clone();
-        conn
-            .sadd::<&str, &Vec<String>, ()>("modrinth_project_ids", &project_ids)
+        conn.sadd::<&str, &Vec<String>, ()>("modrinth_project_ids", &project_ids)
             .await
             .map_err(|e| -> ServiceError {
                 ServiceError::ExternalServiceError {
@@ -161,8 +160,7 @@ impl ModrinthService {
         }
 
         let mut conn = self.redis.as_ref().clone();
-        conn
-            .sadd::<&str, &Vec<String>, ()>("modrinth_version_ids", &version_ids)
+        conn.sadd::<&str, &Vec<String>, ()>("modrinth_version_ids", &version_ids)
             .await
             .map_err(|e| -> ServiceError {
                 ServiceError::ExternalServiceError {
@@ -185,18 +183,17 @@ impl ModrinthService {
 
         let mut conn = self.redis.as_ref().clone();
 
-        conn
-            .sadd::<&str, &Vec<String>, ()>(
-                format!("modrinth_hashes_{}", algorithm).as_str(),
-                &hashes,
-            )
-            .await
-            .map_err(|e| -> ServiceError {
-                ServiceError::ExternalServiceError {
-                    service: "Redis".into(),
-                    message: format!("Failed to add hash to Redis queue: {}", e),
-                }
-            })?;
+        conn.sadd::<&str, &Vec<String>, ()>(
+            format!("modrinth_hashes_{}", algorithm).as_str(),
+            &hashes,
+        )
+        .await
+        .map_err(|e| -> ServiceError {
+            ServiceError::ExternalServiceError {
+                service: "Redis".into(),
+                message: format!("Failed to add hash to Redis queue: {}", e),
+            }
+        })?;
         log::debug!("Added {}:{} to Redis queue", algorithm, hashes.join(","));
         Ok(())
     }
