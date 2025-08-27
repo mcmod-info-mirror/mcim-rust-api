@@ -943,9 +943,7 @@ mod tests {
             .expect("Failed to deserialize FingerprintResponse");
 
         assert!(fingerprint_response_json.data.is_cache_built);
-        assert!(
-            fingerprint_response_json.data.exact_matches.len() == 2
-        );
+        assert!(fingerprint_response_json.data.exact_matches.len() == 2);
         assert!(fingerprint_response_json
             .data
             .exact_fingerprints
@@ -960,9 +958,7 @@ mod tests {
             .data
             .unmatched_fingerprints
             .is_none());
-        assert!(
-            fingerprint_response_json.data.installed_fingerprints.len() == 3
-        );
+        assert!(fingerprint_response_json.data.installed_fingerprints.len() == 3);
     }
 
     #[tokio::test]
