@@ -28,7 +28,7 @@ impl CurseforgeService {
             return Ok(());
         }
         let mut conn = self.redis.as_ref().clone();
-        let _ = conn
+        conn
             .sadd::<&str, &Vec<i32>, ()>("curseforge_modids", &mod_ids)
             .await
             .map_err(|e| -> ServiceError {
@@ -46,7 +46,7 @@ impl CurseforgeService {
             return Ok(());
         }
         let mut conn = self.redis.as_ref().clone();
-        let _ = conn
+        conn
             .sadd::<&str, &Vec<i32>, ()>("curseforge_fileids", &file_ids)
             .await
             .map_err(|e| -> ServiceError {
@@ -68,7 +68,7 @@ impl CurseforgeService {
         }
 
         let mut conn = self.redis.as_ref().clone();
-        let _ = conn
+        conn
             .sadd::<&str, &Vec<i64>, ()>("curseforge_fingerprints", &fingerprints)
             .await
             .map_err(|e| -> ServiceError {
@@ -240,7 +240,7 @@ impl CurseforgeService {
             })?;
 
         // 检查有无未缓存的 Project
-        let _ = match self.check_search_result(&search_result).await {
+        match self.check_search_result(&search_result).await {
             Ok(_) => log::trace!("Curseforge check_search_result completed successfully"),
             Err(e) => log::error!("Curseforge check_search_result failed: {}", e),
         };
@@ -565,8 +565,8 @@ impl CurseforgeService {
         Ok(ModFilesResponse {
             data: files.into_iter().map(|f| f.into()).collect(),
             pagination: Pagination {
-                index: index as i32,
-                page_size: page_size as i32,
+                index,
+                page_size,
                 result_count,
                 total_count,
             },
@@ -735,9 +735,9 @@ impl CurseforgeService {
         let response = FingerprintResponse {
             data: FingerprintResult {
                 is_cache_built: true, // 默认值，没见过 false
-                exact_matches: exact_matches,
-                exact_fingerprints: exact_fingerprints,
-                installed_fingerprints: installed_fingerprints,
+                exact_matches,
+                exact_fingerprints,
+                installed_fingerprints,
                 unmatched_fingerprints: Some(unmatched_fingerprints),
                 partial_matches: Vec::new(), // 暂时不处理 partialMatches，不知道干嘛的
                 partial_match_fingerprints: HashMap::new(), // 暂时不处理 partialMatchFingerprints，不知道干嘛的

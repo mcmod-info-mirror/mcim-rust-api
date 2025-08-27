@@ -22,7 +22,7 @@ async fn get_collection_count(
                     "Failed to get collection count for {}: {}",
                     collection_name, e
                 ),
-                source: Some(e.into()),
+                source: Some(e),
             })?;
     Ok(count)
 }

@@ -739,7 +739,7 @@ mod tests {
         let api_key = get_x_api_key();
 
         let response = client
-            .get(&format!("{}/mods/238222", base_url)) // JEI mod
+            .get(format!("{}/mods/238222", base_url)) // JEI mod
             .header("x-api-key", api_key)
             .send()
             .await
@@ -762,7 +762,7 @@ mod tests {
         let api_key = get_x_api_key();
 
         let response = client
-            .get(&format!(
+            .get(format!(
                 "{}/mods/search?gameId=432&classId=6&pageSize=2",
                 base_url
             ))
@@ -791,7 +791,7 @@ mod tests {
         let payload = serde_json::json!({ "modIds": [946010, 594678] });
 
         let response = client
-            .post(&format!("{}/mods", base_url))
+            .post(format!("{}/mods", base_url))
             .header("x-api-key", api_key)
             .json(&payload)
             .send()
@@ -817,7 +817,7 @@ mod tests {
         let file_id = 3913840;
 
         let response = client
-            .get(&format!("{}/mods/{}/files/{}", base_url, mod_id, file_id))
+            .get(format!("{}/mods/{}/files/{}", base_url, mod_id, file_id))
             .header("x-api-key", api_key)
             .send()
             .await
@@ -843,7 +843,7 @@ mod tests {
         let payload = serde_json::json!({ "fileIds": [3913840, 5976953] }); // JEI files
 
         let response = client
-            .post(&format!("{}/mods/files", base_url))
+            .post(format!("{}/mods/files", base_url))
             .header("x-api-key", api_key)
             .json(&payload)
             .send()
@@ -869,7 +869,7 @@ mod tests {
         let page_size = 5;
 
         let response = client
-            .get(&format!(
+            .get(format!(
                 "{}/mods/{}/files?pageSize={}",
                 base_url, mod_id, page_size
             ))
@@ -898,7 +898,7 @@ mod tests {
         let file_id = 3913840;
 
         let response = client
-            .get(&format!(
+            .get(format!(
                 "{}/mods/{}/files/{}/download-url",
                 base_url, mod_id, file_id
             ))
@@ -928,7 +928,7 @@ mod tests {
         let payload = serde_json::json!({ "fingerprints": [2070800629, 1904165976, 9999] });
 
         let response = client
-            .post(&format!("{}/fingerprints", base_url))
+            .post(format!("{}/fingerprints", base_url))
             .header("x-api-key", api_key)
             .json(&payload)
             .send()
@@ -943,9 +943,8 @@ mod tests {
             .expect("Failed to deserialize FingerprintResponse");
 
         assert!(fingerprint_response_json.data.is_cache_built);
-        assert_eq!(
-            fingerprint_response_json.data.exact_matches.len() == 2,
-            true
+        assert!(
+            fingerprint_response_json.data.exact_matches.len() == 2
         );
         assert!(fingerprint_response_json
             .data
@@ -961,9 +960,8 @@ mod tests {
             .data
             .unmatched_fingerprints
             .is_none());
-        assert_eq!(
-            fingerprint_response_json.data.installed_fingerprints.len() == 3,
-            true
+        assert!(
+            fingerprint_response_json.data.installed_fingerprints.len() == 3
         );
     }
 
@@ -974,7 +972,7 @@ mod tests {
         let api_key = get_x_api_key();
 
         let response = client
-            .get(&format!("{}/categories?gameId=432", base_url)) // Minecraft
+            .get(format!("{}/categories?gameId=432", base_url)) // Minecraft
             .header("x-api-key", api_key)
             .send()
             .await

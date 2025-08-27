@@ -104,7 +104,7 @@ async fn main() -> std::io::Result<()> {
 
                 srv.call(req)
             })
-            .wrap(Etag::default())
+            .wrap(Etag)
             .wrap(Compress::default())
             .wrap(prometheus.clone())
             .wrap(logger)

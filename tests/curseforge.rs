@@ -205,7 +205,7 @@ async fn test_get_fingerprints_success() {
 
     let req = TestRequest::post()
         .uri("/curseforge/v1/fingerprints")
-        .set_json(&json!(payload))
+        .set_json(json!(payload))
         .to_request();
 
     let resp = app.call(req).await.unwrap();
@@ -225,7 +225,7 @@ async fn test_get_fingerprints_by_game_id_success() {
 
     let req = TestRequest::post()
         .uri(&format!("/curseforge/v1/fingerprints/{}", GAME_ID))
-        .set_json(&json!(payload))
+        .set_json(json!(payload))
         .to_request();
 
     let resp = app.call(req).await.unwrap();
@@ -245,7 +245,7 @@ async fn test_get_not_found_fingerprint() {
 
     let req = TestRequest::post()
         .uri("/curseforge/v1/fingerprints")
-        .set_json(&json!(payload))
+        .set_json(json!(payload))
         .to_request();
 
     let resp = app.call(req).await.unwrap();
@@ -278,7 +278,7 @@ async fn test_get_invalid_fingerprint() {
 
     let req = TestRequest::post()
         .uri("/curseforge/v1/fingerprints")
-        .set_json(&json!(payload))
+        .set_json(json!(payload))
         .to_request();
 
     let resp = app.call(req).await.unwrap();

@@ -139,7 +139,7 @@ impl ModrinthService {
         }
 
         let mut conn = self.redis.as_ref().clone();
-        let _ = conn
+        conn
             .sadd::<&str, &Vec<String>, ()>("modrinth_project_ids", &project_ids)
             .await
             .map_err(|e| -> ServiceError {
@@ -161,7 +161,7 @@ impl ModrinthService {
         }
 
         let mut conn = self.redis.as_ref().clone();
-        let _ = conn
+        conn
             .sadd::<&str, &Vec<String>, ()>("modrinth_version_ids", &version_ids)
             .await
             .map_err(|e| -> ServiceError {
@@ -185,7 +185,7 @@ impl ModrinthService {
 
         let mut conn = self.redis.as_ref().clone();
 
-        let _ = conn
+        conn
             .sadd::<&str, &Vec<String>, ()>(
                 format!("modrinth_hashes_{}", algorithm).as_str(),
                 &hashes,
@@ -348,13 +348,13 @@ impl ModrinthService {
 
         if status.is_success() {
             // 检查有无未缓存的 Project
-            let _ = match self.check_search_result(&search_result).await {
+            match self.check_search_result(&search_result).await {
                 Ok(_) => log::trace!("Search result check completed successfully"),
                 Err(e) => log::error!("Modrinth Search result check failed: {}", e),
             };
         }
 
-        return Ok(search_result);
+        Ok(search_result)
     }
 
     pub async fn get_project_by_id_or_slug(
@@ -397,13 +397,13 @@ impl ModrinthService {
             None => {
                 self.add_project_ids_into_queue(vec![project_id_or_slug.clone()])
                     .await?;
-                return Err(ServiceError::NotFound {
+                Err(ServiceError::NotFound {
                     resource: String::from("Modrinth Project"),
                     detail: Some(format!(
                         "Project with project_id or slug {} not found",
                         project_id_or_slug
                     )),
-                });
+                })
             }
         }
     }
@@ -654,10 +654,10 @@ impl ModrinthService {
             None => {
                 self.add_version_ids_into_queue(vec![version_id.clone()])
                     .await?;
-                return Err(ServiceError::NotFound {
+                Err(ServiceError::NotFound {
                     resource: String::from("Modrinth Version"),
                     detail: Some(format!("Version with ID {} not found", version_id)),
-                });
+                })
             }
         }
     }
@@ -779,10 +779,10 @@ impl ModrinthService {
             None => {
                 self.add_hashes_into_queue(algorithm.clone(), vec![hash.clone()])
                     .await?;
-                return Err(ServiceError::NotFound {
+                Err(ServiceError::NotFound {
                     resource: String::from("Modrinth files"),
                     detail: Some(format!("File with {} {} not found", algorithm, hash)),
-                });
+                })
             }
         }
     }
@@ -884,7 +884,7 @@ impl ModrinthService {
                     "sha512" => &first_file.hashes.sha512,
                     _ => continue,
                 };
-                result.insert(hash_value.clone(), version.into());
+                result.insert(hash_value.clone(), version);
             }
         }
 
@@ -998,10 +998,10 @@ impl ModrinthService {
         } else {
             self.add_hashes_into_queue(algorithm.clone(), vec![hash.clone()])
                 .await?;
-            return Err(ServiceError::NotFound {
+            Err(ServiceError::NotFound {
                 resource: String::from("Modrinth version file"),
                 detail: Some(format!("No matching version file found for hash {}", hash)),
-            });
+            })
         }
     }
 

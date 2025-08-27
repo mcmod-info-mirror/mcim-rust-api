@@ -32,7 +32,7 @@ async fn test_curseforge_translate_batch() {
     let app = init_service(create_test_app().await).await;
     let req = TestRequest::post()
         .uri("/translate/curseforge")
-        .set_json(&serde_json::json!({ "modids": MOD_IDS }))
+        .set_json(serde_json::json!({ "modids": MOD_IDS }))
         .to_request();
     let response = app.call(req).await.unwrap();
     assert!(
@@ -63,8 +63,8 @@ async fn test_modrinth_single_translate() {
 async fn test_modrinth_translate_batch() {
     let app = init_service(create_test_app().await).await;
     let req = TestRequest::post()
-        .uri(&format!("/translate/modrinth"))
-        .set_json(&serde_json::json!({ "project_ids": PROJECT_IDS }))
+        .uri(&"/translate/modrinth".to_string())
+        .set_json(serde_json::json!({ "project_ids": PROJECT_IDS }))
         .to_request();
     let response = app.call(req).await.unwrap();
     assert!(

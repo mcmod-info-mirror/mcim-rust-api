@@ -386,7 +386,7 @@ async fn test_modrinth_version_file_sha1_update() {
                 "/modrinth/v2/version_file/{}/update?algorithm=sha1",
                 sha1_hash
             ))
-            .set_json(&json!({
+            .set_json(json!({
                 "loaders": ["fabric"],
                 "game_versions": ["1.20.1"]
             }))
@@ -413,7 +413,7 @@ async fn test_modrinth_version_file_sha512_update() {
                 "/modrinth/v2/version_file/{}/update?algorithm=sha512",
                 sample.hash
             ))
-            .set_json(&json!({
+            .set_json(json!({
                 "loaders": sample.loaders,
                 "game_versions": sample.game_versions
             }))
@@ -437,7 +437,7 @@ async fn test_modrinth_version_file_update_empty() {
                 "/modrinth/v2/version_file/qeq/update?algorithm={}",
                 algorithm
             ))
-            .set_json(&json!({
+            .set_json(json!({
                 "loaders": [],
                 "game_versions": []
             }))
@@ -460,7 +460,7 @@ async fn test_modrinth_version_files_sha1() {
     let app = init_service(create_test_app().await).await;
     let req = TestRequest::post()
         .uri("/modrinth/v2/version_files")
-        .set_json(&json!({
+        .set_json(json!({
             "algorithm": "sha1",
             "hashes": SHA1_SAMPLE
         }))
@@ -478,7 +478,7 @@ async fn test_modrinth_version_files_sha512() {
     let app = init_service(create_test_app().await).await;
     let req = TestRequest::post()
         .uri("/modrinth/v2/version_files")
-        .set_json(&json!({
+        .set_json(json!({
             "algorithm": "sha512",
             "hashes": SHA512_SAMPLE
         }))
@@ -498,7 +498,7 @@ async fn test_modrinth_version_files_empty() {
     for algorithm in algorithm_list {
         let req = TestRequest::post()
             .uri("/modrinth/v2/version_files")
-            .set_json(&json!({
+            .set_json(json!({
                 "hashes": [],
                 "algorithm": algorithm
             }))
@@ -523,7 +523,7 @@ async fn test_modrinth_version_files_sha1_update() {
         }
         let req = TestRequest::post()
             .uri("/modrinth/v2/version_files/update")
-            .set_json(&json!({
+            .set_json(json!({
                 "hashes": [sample.hash],
                 "algorithm": sample.algorithm,
                 "loaders": sample.loaders,
@@ -548,7 +548,7 @@ async fn test_modrinth_version_files_sha512_update() {
         }
         let req = TestRequest::post()
             .uri("/modrinth/v2/version_files/update")
-            .set_json(&json!({
+            .set_json(json!({
                 "hashes": [sample.hash],
                 "algorithm": sample.algorithm,
                 "loaders": sample.loaders,
@@ -571,7 +571,7 @@ async fn test_modrinth_version_files_update_empty() {
     for algorithm in algorithm_list {
         let req = TestRequest::post()
             .uri("/modrinth/v2/version_files/update")
-            .set_json(&json!({
+            .set_json(json!({
                 "hashes": [],
                 "algorithm": algorithm,
                 "loaders": [],

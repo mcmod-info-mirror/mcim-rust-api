@@ -118,7 +118,7 @@ impl CurseForgeService {
 
         let collection = self
             .db
-            .database(&get_database_name().as_str())
+            .database(get_database_name().as_str())
             .collection::<CurseForgeTranslation>("curseforge_translated");
 
         match collection.find_one(doc! { "_id": mod_id }).await? {
@@ -154,7 +154,7 @@ impl CurseForgeService {
 
         let collection = self
             .db
-            .database(&get_database_name().as_str())
+            .database(get_database_name().as_str())
             .collection::<CurseForgeTranslation>("curseforge_translated");
 
         let filter = doc! { "_id": { "$in": mod_ids } };

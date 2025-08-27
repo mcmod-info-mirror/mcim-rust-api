@@ -140,13 +140,13 @@ impl From<db::Project> for Project {
             license: project.license.map(Into::into),
             versions: project
                 .versions
-                .map(|v| v.into_iter().map(String::from).collect()),
+                .map(|v| v.into_iter().collect()),
             game_versions: project
                 .game_versions
-                .map(|v| v.into_iter().map(String::from).collect()),
+                .map(|v| v.into_iter().collect()),
             loaders: project
                 .loaders
-                .map(|l| l.into_iter().map(String::from).collect()),
+                .map(|l| l.into_iter().collect()),
             gallery: project
                 .gallery
                 .map(|gallery_vec| gallery_vec.into_iter().map(Into::into).collect()),
@@ -249,11 +249,11 @@ impl From<db::Version> for Version {
                 .map(|deps| deps.into_iter().map(Into::into).collect()),
             game_versions: version
                 .game_versions
-                .map(|v| v.into_iter().map(String::from).collect()),
+                .map(|v| v.into_iter().collect()),
             version_type: version.version_type,
             loaders: version
                 .loaders
-                .map(|l| l.into_iter().map(String::from).collect()),
+                .map(|l| l.into_iter().collect()),
             featured: version.featured,
             status: version.status,
             requested_status: version.requested_status,
@@ -438,7 +438,7 @@ mod tests {
         let client = reqwest::Client::new();
 
         let response = client
-            .get(&format!("{}/v2/search?query=sodium", base_url))
+            .get(format!("{}/v2/search?query=sodium", base_url))
             .send()
             .await
             .expect("Failed to send request");
@@ -459,7 +459,7 @@ mod tests {
         let client = reqwest::Client::new();
 
         let response = client
-            .get(&format!("{}/v2/project/Wnxd13zP", base_url))
+            .get(format!("{}/v2/project/Wnxd13zP", base_url))
             .send()
             .await
             .expect("Failed to send request");
@@ -481,7 +481,7 @@ mod tests {
         let project_ids = vec!["Wnxd13zP", "Ua7DFN59"];
 
         let response = client
-            .get(&format!("{}/v2/projects?ids={:?}", base_url, project_ids))
+            .get(format!("{}/v2/projects?ids={:?}", base_url, project_ids))
             .send()
             .await
             .expect("Failed to send request");
@@ -502,7 +502,7 @@ mod tests {
         let client = reqwest::Client::new();
 
         let response = client
-            .get(&format!("{}/v2/version/dpSzBMP6", base_url))
+            .get(format!("{}/v2/version/dpSzBMP6", base_url))
             .send()
             .await
             .expect("Failed to send request");
@@ -524,7 +524,7 @@ mod tests {
         let version_ids = vec!["dpSzBMP6", "IOIGqCVr"];
 
         let response = client
-            .get(&format!("{}/v2/versions?ids={:?}", base_url, version_ids))
+            .get(format!("{}/v2/versions?ids={:?}", base_url, version_ids))
             .send()
             .await
             .expect("Failed to send request");
@@ -545,7 +545,7 @@ mod tests {
         let client = reqwest::Client::new();
 
         let response = client
-            .get(&format!("{}/v2/project/Wnxd13zP/version", base_url))
+            .get(format!("{}/v2/project/Wnxd13zP/version", base_url))
             .send()
             .await
             .expect("Failed to send request");
@@ -566,7 +566,7 @@ mod tests {
         let client = reqwest::Client::new();
 
         let response = client
-            .get(&format!(
+            .get(format!(
                 "{}/v2/version_file/f0cea90219f681c3183e0d37d021cb8902d2d085?algorithm=sha1",
                 base_url
             ))
@@ -595,7 +595,7 @@ mod tests {
         });
 
         let response = client
-            .post(&format!("{}/v2/version_files", base_url))
+            .post(format!("{}/v2/version_files", base_url))
             .json(&payload)
             .send()
             .await
@@ -621,7 +621,7 @@ mod tests {
         let client = reqwest::Client::new();
 
         let response = client
-            .get(&format!("{}/v2/tag/category", base_url))
+            .get(format!("{}/v2/tag/category", base_url))
             .send()
             .await
             .expect("Failed to send request");
@@ -642,7 +642,7 @@ mod tests {
         let client = reqwest::Client::new();
 
         let response = client
-            .get(&format!("{}/v2/tag/loader", base_url))
+            .get(format!("{}/v2/tag/loader", base_url))
             .send()
             .await
             .expect("Failed to send request");
@@ -663,7 +663,7 @@ mod tests {
         let client = reqwest::Client::new();
 
         let response = client
-            .get(&format!("{}/v2/tag/game_version", base_url))
+            .get(format!("{}/v2/tag/game_version", base_url))
             .send()
             .await
             .expect("Failed to send request");
