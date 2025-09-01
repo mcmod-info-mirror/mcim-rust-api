@@ -1,4 +1,4 @@
-name: Rust
+name: "Teat and build"
 
 on:
   push:
