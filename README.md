@@ -6,7 +6,7 @@
 
 为各平台的 Mod 的 API 缓存加速，由[鸣谢列表](#鸣谢)内的各位提供支持~
 
-**这是一项公益服务，请不要攻击我们，你的[赞助](#赞助)将帮助我们维持服务器运营**
+**这是一项公益服务，请不要攻击我们，你的[赞助](#赞助)将帮助我们维持服务器运营**  [![Stripe](https://img.shields.io/badge/Stripe-5469d4?style=for-the-badge&logo=stripe&logoColor=ffffff)](https://www.mcimirror.top/sponsor) 
 
 已缓存 **绝大多数** 的 Modrinth 和 Curseforge 上的 Minecraft Mod 信息。缓存统计信息见 [mcim-statistics](https://mod.mcimirror.top/statistics)。
 
