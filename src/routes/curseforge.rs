@@ -1,4 +1,4 @@
-use actix_web::{get, post, web, Responder};
+use actix_web::{Responder, get, post, web};
 
 use crate::errors::{ApiError, ServiceError};
 use crate::models::curseforge::requests::*;

@@ -1,12 +1,11 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use serde::Deserialize;
+use serde_with::serde_as;
 
-use bson::serde_helpers::{
-    chrono_datetime_as_bson_datetime, chrono_datetime_as_bson_datetime_optional,
-};
+use bson::serde_helpers::datetime::FromChrono04DateTime;
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Category {
     #[serde(alias = "_id")]
     pub id: i32,
@@ -17,10 +16,8 @@ pub struct Category {
     pub url: Option<String>,
     #[serde(rename = "iconUrl")]
     pub icon_url: Option<String>,
-    #[serde(
-        rename = "dateModified",
-        deserialize_with = "chrono_datetime_as_bson_datetime::deserialize"
-    )]
+    #[serde_as(as = "FromChrono04DateTime")]
+    #[serde(rename = "dateModified")]
     pub date_modified: DateTime<Utc>,
     #[serde(rename = "isClass")]
     pub is_class: Option<bool>,
@@ -31,11 +28,12 @@ pub struct Category {
     #[serde(rename = "displayIndex")]
     pub display_index: i32,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct CategoryInfo {
     pub id: Option<i32>,
     #[serde(rename = "gameId")]
@@ -45,10 +43,8 @@ pub struct CategoryInfo {
     pub url: Option<String>,
     #[serde(rename = "iconUrl")]
     pub icon_url: Option<String>,
-    #[serde(
-        rename = "dateModified",
-        deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize"
-    )]
+    #[serde(rename = "dateModified")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub date_modified: Option<DateTime<Utc>>,
     #[serde(rename = "isClass")]
     pub is_class: Option<bool>,
@@ -60,7 +56,8 @@ pub struct CategoryInfo {
     pub display_index: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct File {
     #[serde(alias = "_id")]
     pub id: i32,
@@ -79,10 +76,8 @@ pub struct File {
     #[serde(rename = "fileStatus")]
     pub file_status: Option<i32>,
     pub hashes: Option<Vec<Hash>>,
-    #[serde(
-        rename = "fileDate",
-        deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize"
-    )]
+    #[serde(rename = "fileDate")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub file_date: Option<DateTime<Utc>>,
     #[serde(rename = "fileLength")]
     pub file_length: Option<i64>,
@@ -109,20 +104,19 @@ pub struct File {
     pub server_pack_file_id: Option<i32>,
     #[serde(rename = "isEarlyAccessContent")]
     pub is_early_access_content: Option<bool>,
-    #[serde(
-        rename = "earlyAccessEndDate",
-        deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize"
-    )]
+    #[serde(rename = "earlyAccessEndDate")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub early_access_end_date: Option<DateTime<Utc>>,
     #[serde(rename = "fileFingerprint")]
     pub file_fingerprint: Option<i64>,
     pub modules: Option<Vec<Module>>,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct FileInfo {
     pub id: i32,
     #[serde(rename = "gameId")]
@@ -140,10 +134,8 @@ pub struct FileInfo {
     #[serde(rename = "fileStatus")]
     pub file_status: Option<i32>,
     pub hashes: Option<Vec<Hash>>,
-    #[serde(
-        rename = "fileDate",
-        deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize"
-    )]
+    #[serde(rename = "fileDate")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub file_date: Option<DateTime<Utc>>,
     #[serde(rename = "fileLength")]
     pub file_length: Option<i64>,
@@ -170,17 +162,16 @@ pub struct FileInfo {
     pub server_pack_file_id: Option<i32>,
     #[serde(rename = "isEarlyAccessContent")]
     pub is_early_access_content: Option<bool>,
-    #[serde(
-        rename = "earlyAccessEndDate",
-        deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize"
-    )]
+    #[serde(rename = "earlyAccessEndDate")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub early_access_end_date: Option<DateTime<Utc>>,
     #[serde(rename = "fileFingerprint")]
     pub file_fingerprint: Option<i64>,
     pub modules: Option<Vec<Module>>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Mod {
     #[serde(alias = "_id")]
     pub id: i32,
@@ -209,20 +200,14 @@ pub struct Mod {
     pub latest_files: Option<Vec<FileInfo>>,
     #[serde(rename = "latestFilesIndexes")]
     pub latest_files_indexes: Option<Vec<FileIndex>>,
-    #[serde(
-        rename = "dateCreated",
-        deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize"
-    )]
+    #[serde(rename = "dateCreated")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub date_created: Option<DateTime<Utc>>,
-    #[serde(
-        rename = "dateModified",
-        deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize"
-    )]
+    #[serde(rename = "dateModified")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub date_modified: Option<DateTime<Utc>>,
-    #[serde(
-        rename = "dateReleased",
-        deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize"
-    )]
+    #[serde(rename = "dateReleased")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub date_released: Option<DateTime<Utc>>,
     #[serde(rename = "allowModDistribution")]
     pub allow_mod_distribution: Option<bool>,
@@ -234,11 +219,12 @@ pub struct Mod {
     pub thumbs_up_count: Option<i32>,
     pub rating: Option<i32>,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub sync_at: DateTime<Utc>,
 }
 
-// #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+// #[serde_as]
+// #[derive(Debug, Deserialize, Clone)]
 // pub struct Fingerprint {
 //     #[serde(alias = "_id")]
 //     pub id: i64,
@@ -246,11 +232,12 @@ pub struct Mod {
 //     #[serde(rename = "latestFiles")]
 //     pub latest_files: Vec<FileInfo>,
 
-//     #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+//     #[serde_as(as = "FromChrono04DateTime")]
 //     pub sync_at: DateTime<Utc>,
 // }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct FileDependencies {
     #[serde(rename = "modId")]
     pub mod_id: i32,
@@ -258,7 +245,8 @@ pub struct FileDependencies {
     pub relation_type: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct FileSortableGameVersions {
     #[serde(rename = "gameVersionName")]
     pub game_version_name: Option<String>,
@@ -266,29 +254,30 @@ pub struct FileSortableGameVersions {
     pub game_version_padded: Option<String>,
     #[serde(rename = "gameVersion")]
     pub game_version: Option<String>,
-    #[serde(
-        rename = "gameVersionReleaseDate",
-        deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize"
-    )]
+    #[serde(rename = "gameVersionReleaseDate")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub game_version_release_date: Option<DateTime<Utc>>,
     #[serde(rename = "gameVersionTypeId")]
     pub game_version_type_id: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Hash {
     pub value: String,
     pub algo: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Author {
     pub id: i32,
     pub name: String,
     pub url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Logo {
     pub id: i32,
     #[serde(rename = "modId")]
@@ -300,7 +289,8 @@ pub struct Logo {
     pub url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Links {
     #[serde(rename = "websiteUrl")]
     pub website_url: Option<String>,
@@ -312,7 +302,8 @@ pub struct Links {
     pub source_url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct ScreenShot {
     pub id: i32,
     #[serde(rename = "modId")]
@@ -324,13 +315,15 @@ pub struct ScreenShot {
     pub url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Module {
     pub name: Option<String>,
     pub fingerprint: Option<i64>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct FileIndex {
     #[serde(rename = "gameVersion")]
     pub game_version: Option<String>,

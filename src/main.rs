@@ -8,7 +8,7 @@ pub mod utils;
 use actix_middleware_etag::Etag;
 use actix_web::dev::Service;
 use actix_web::middleware::{Compress, Logger};
-use actix_web::{dev::ServiceRequest, web, App, HttpServer};
+use actix_web::{App, HttpServer, dev::ServiceRequest, web};
 use actix_web_prom::PrometheusMetricsBuilder;
 use dotenvy::dotenv;
 use prometheus::{IntCounterVec, Opts};
@@ -104,7 +104,7 @@ async fn main() -> std::io::Result<()> {
 
                 srv.call(req)
             })
-            .wrap(Etag)
+            .wrap(Etag::default())
             .wrap(Compress::default())
             .wrap(prometheus.clone())
             .wrap(logger)

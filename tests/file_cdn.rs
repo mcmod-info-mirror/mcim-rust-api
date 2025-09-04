@@ -1,6 +1,6 @@
 use actix_web::{
     dev::Service,
-    test::{init_service, TestRequest},
+    test::{TestRequest, init_service},
 };
 use mcim_rust_api::test_utils::create_test_app;
 

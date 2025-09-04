@@ -914,9 +914,11 @@ mod tests {
             .await
             .expect("Failed to deserialize DownloadUrlResponse");
 
-        assert!(download_url_response
-            .data
-            .starts_with("https://edge.forgecdn.net/"));
+        assert!(
+            download_url_response
+                .data
+                .starts_with("https://edge.forgecdn.net/")
+        );
     }
 
     #[tokio::test]
@@ -943,26 +945,28 @@ mod tests {
             .expect("Failed to deserialize FingerprintResponse");
 
         assert!(fingerprint_response_json.data.is_cache_built);
+        assert!(fingerprint_response_json.data.exact_matches.len() == 2);
         assert!(
-            fingerprint_response_json.data.exact_matches.len() == 2
+            fingerprint_response_json
+                .data
+                .exact_fingerprints
+                .contains(&2070800629)
         );
-        assert!(fingerprint_response_json
-            .data
-            .exact_fingerprints
-            .contains(&2070800629));
-        assert!(fingerprint_response_json
-            .data
-            .exact_fingerprints
-            .contains(&1904165976));
+        assert!(
+            fingerprint_response_json
+                .data
+                .exact_fingerprints
+                .contains(&1904165976)
+        );
         // 这里即便有传 9999，unmatched_fingerprints 也一样是 Null，更不是列表
         // MCIM 会返回未匹配的指纹列表
-        assert!(fingerprint_response_json
-            .data
-            .unmatched_fingerprints
-            .is_none());
         assert!(
-            fingerprint_response_json.data.installed_fingerprints.len() == 3
+            fingerprint_response_json
+                .data
+                .unmatched_fingerprints
+                .is_none()
         );
+        assert!(fingerprint_response_json.data.installed_fingerprints.len() == 3);
     }
 
     #[tokio::test]

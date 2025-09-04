@@ -138,15 +138,9 @@ impl From<db::Project> for Project {
             queued: project.queued,
             followers: project.followers,
             license: project.license.map(Into::into),
-            versions: project
-                .versions
-                .map(|v| v.into_iter().collect()),
-            game_versions: project
-                .game_versions
-                .map(|v| v.into_iter().collect()),
-            loaders: project
-                .loaders
-                .map(|l| l.into_iter().collect()),
+            versions: project.versions.map(|v| v.into_iter().collect()),
+            game_versions: project.game_versions.map(|v| v.into_iter().collect()),
+            loaders: project.loaders.map(|l| l.into_iter().collect()),
             gallery: project
                 .gallery
                 .map(|gallery_vec| gallery_vec.into_iter().map(Into::into).collect()),
@@ -247,13 +241,9 @@ impl From<db::Version> for Version {
             dependencies: version
                 .dependencies
                 .map(|deps| deps.into_iter().map(Into::into).collect()),
-            game_versions: version
-                .game_versions
-                .map(|v| v.into_iter().collect()),
+            game_versions: version.game_versions.map(|v| v.into_iter().collect()),
             version_type: version.version_type,
-            loaders: version
-                .loaders
-                .map(|l| l.into_iter().collect()),
+            loaders: version.loaders.map(|l| l.into_iter().collect()),
             featured: version.featured,
             status: version.status,
             requested_status: version.requested_status,

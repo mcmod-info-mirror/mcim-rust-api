@@ -1,4 +1,4 @@
-use actix_web::{get, web, Responder};
+use actix_web::{Responder, get, web};
 use serde::Serialize;
 
 use crate::errors::ApiError;

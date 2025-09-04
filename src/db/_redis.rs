@@ -1,9 +1,9 @@
-use redis::{aio::MultiplexedConnection, Client};
+use redis::{Client, aio::MultiplexedConnection};
 use std::env;
 use std::sync::Arc;
 
-pub async fn connect(
-) -> Result<Arc<MultiplexedConnection>, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn connect()
+-> Result<Arc<MultiplexedConnection>, Box<dyn std::error::Error + Send + Sync>> {
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string());
 
     let client = Client::open(redis_url)?;

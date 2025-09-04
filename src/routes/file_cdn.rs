@@ -1,4 +1,4 @@
-use actix_web::{route, web, web::Redirect, Responder};
+use actix_web::{Responder, route, web, web::Redirect};
 
 use crate::utils::app::AppState;
 

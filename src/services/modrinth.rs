@@ -1,8 +1,8 @@
 use bson::doc;
 use futures::stream::TryStreamExt;
-use mongodb::{bson::Document, Client as Mongo_Client};
-use redis::aio::MultiplexedConnection;
+use mongodb::{Client as Mongo_Client, bson::Document};
 use redis::AsyncCommands;
+use redis::aio::MultiplexedConnection;
 use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -139,8 +139,7 @@ impl ModrinthService {
         }
 
         let mut conn = self.redis.as_ref().clone();
-        conn
-            .sadd::<&str, &Vec<String>, ()>("modrinth_project_ids", &project_ids)
+        conn.sadd::<&str, &Vec<String>, ()>("modrinth_project_ids", &project_ids)
             .await
             .map_err(|e| -> ServiceError {
                 ServiceError::ExternalServiceError {
@@ -161,8 +160,7 @@ impl ModrinthService {
         }
 
         let mut conn = self.redis.as_ref().clone();
-        conn
-            .sadd::<&str, &Vec<String>, ()>("modrinth_version_ids", &version_ids)
+        conn.sadd::<&str, &Vec<String>, ()>("modrinth_version_ids", &version_ids)
             .await
             .map_err(|e| -> ServiceError {
                 ServiceError::ExternalServiceError {
@@ -185,18 +183,17 @@ impl ModrinthService {
 
         let mut conn = self.redis.as_ref().clone();
 
-        conn
-            .sadd::<&str, &Vec<String>, ()>(
-                format!("modrinth_hashes_{}", algorithm).as_str(),
-                &hashes,
-            )
-            .await
-            .map_err(|e| -> ServiceError {
-                ServiceError::ExternalServiceError {
-                    service: "Redis".into(),
-                    message: format!("Failed to add hash to Redis queue: {}", e),
-                }
-            })?;
+        conn.sadd::<&str, &Vec<String>, ()>(
+            format!("modrinth_hashes_{}", algorithm).as_str(),
+            &hashes,
+        )
+        .await
+        .map_err(|e| -> ServiceError {
+            ServiceError::ExternalServiceError {
+                service: "Redis".into(),
+                message: format!("Failed to add hash to Redis queue: {}", e),
+            }
+        })?;
         log::debug!("Added {}:{} to Redis queue", algorithm, hashes.join(","));
         Ok(())
     }
@@ -988,7 +985,7 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            match bson::from_document::<db::Version>(doc) {
+            match bson::deserialize_from_document::<db::Version>(doc) {
                 Ok(version) => Ok(Some(version.into())),
                 Err(e) => Err(ServiceError::UnexpectedError(format!(
                     "Failed to deserialize Version: {}",
@@ -1084,7 +1081,7 @@ impl ModrinthService {
             if let (Some(bson::Bson::String(hash_value)), Some(bson::Bson::Document(detail_doc))) =
                 (doc.get("_id"), doc.get("detail"))
             {
-                match bson::from_document::<db::Version>(detail_doc.clone()) {
+                match bson::deserialize_from_document::<db::Version>(detail_doc.clone()) {
                     Ok(version) => {
                         result.insert(hash_value.clone(), version.into());
                     }

@@ -1,10 +1,11 @@
-use chrono::DateTime;
-use chrono::Utc;
-use serde::{Deserialize, Serialize};
+use chrono::{DateTime, Utc};
+use serde::Deserialize;
+use serde_with::serde_as;
 
-use bson::serde_helpers::chrono_datetime_as_bson_datetime_optional;
+use bson::serde_helpers::datetime::FromChrono04DateTime;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct ModrinthTranslation {
     #[serde(alias = "_id")]
     pub project_id: String,
@@ -13,11 +14,12 @@ pub struct ModrinthTranslation {
 
     pub need_to_update: bool,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub translated_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct CurseForgeTranslation {
     #[serde(rename = "modId", alias = "_id")]
     pub mod_id: i32,
@@ -26,6 +28,6 @@ pub struct CurseForgeTranslation {
 
     pub need_to_update: bool,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub translated_at: Option<DateTime<Utc>>,
 }

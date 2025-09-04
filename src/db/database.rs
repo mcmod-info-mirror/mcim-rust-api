@@ -1,4 +1,4 @@
-use mongodb::{options::ClientOptions, Client};
+use mongodb::{Client, options::ClientOptions};
 use std::env;
 
 pub async fn connect() -> Result<Client, Box<dyn std::error::Error>> {

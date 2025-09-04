@@ -2,8 +2,8 @@ use crate::errors::ApiError;
 
 use actix_web::HttpResponse;
 use futures::Future;
-use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
+use redis::aio::MultiplexedConnection;
 use serde::{Deserialize, Serialize};
 use std::pin::Pin;
 use std::sync::Arc;
