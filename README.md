@@ -88,7 +88,7 @@ URL 参数：`modId`
 
 ```json
 {
-  "modId": 238222,
+  "modid": 238222,
   "translated": "查看物品和配方",
   "original": "View Items and Recipes",
   "translated_at": "2025-02-02T10:01:52.805000"
