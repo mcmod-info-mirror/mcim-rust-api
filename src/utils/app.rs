@@ -62,18 +62,20 @@ pub fn build_app_state(
             .unwrap_or_else(|_| "https://cdn.modrinth.com".to_string()),
         curseforge_avatar_cdn_fallback_url: env::var("CURSEFORGE_AVATAR_CDN_FALLBACK_URL")
             .unwrap_or_else(|_| "https://cdn.modrinth.com".to_string()),
-        curseforge_avatar_cdn_primary_percentage: env::var("CURSEFORGE_AVATAR_CDN_PRIMARY_PERCENTAGE")
-                .unwrap_or_else(|_| "100".to_string())
-                .parse::<u8>()
-                .unwrap_or(100),
+        curseforge_avatar_cdn_primary_percentage: env::var(
+            "CURSEFORGE_AVATAR_CDN_PRIMARY_PERCENTAGE",
+        )
+        .unwrap_or_else(|_| "100".to_string())
+        .parse::<u8>()
+        .unwrap_or(100),
         modrinth_avatar_cdn_url: env::var("MODRINTH_AVATAR_CDN_URL")
             .unwrap_or_else(|_| "https://media.forgecdn.net".to_string()),
         modrinth_avatar_cdn_fallback_url: env::var("MODRINTH_AVATAR_CDN_FALLBACK_URL")
             .unwrap_or_else(|_| "https://media.forgecdn.net".to_string()),
         modrinth_avatar_cdn_primary_percentage: env::var("MODRINTH_AVATAR_CDN_PRIMARY_PERCENTAGE")
-                .unwrap_or_else(|_| "100".to_string())
-                .parse::<u8>()
-                .unwrap_or(100),
+            .unwrap_or_else(|_| "100".to_string())
+            .parse::<u8>()
+            .unwrap_or(100),
         http_client: Client::new(), // 创建一个共享的 HTTP 客户端
     }
 }
