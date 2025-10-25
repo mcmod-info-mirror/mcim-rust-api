@@ -1,36 +1,39 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde_with::serde_as;
 
-use bson::serde_helpers::{
-    chrono_datetime_as_bson_datetime, chrono_datetime_as_bson_datetime_optional,
-};
+use bson::serde_helpers::datetime::FromChrono04DateTime;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct DonationUrl {
     pub id: Option<String>,
     pub platform: Option<String>,
     pub url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct License {
     pub id: Option<String>,
     pub name: Option<String>,
     pub url: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct GalleryItem {
     pub url: String,
     pub featured: bool,
     pub title: Option<String>,
     pub description: Option<String>,
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub created: DateTime<Utc>,
     pub ordering: Option<i64>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Project {
     #[serde(alias = "_id")]
     pub id: String,
@@ -57,13 +60,13 @@ pub struct Project {
     pub monetization_status: Option<String>,
     pub team: String,
     pub body_url: Option<String>,
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub published: DateTime<Utc>,
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub updated: DateTime<Utc>,
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub approved: Option<DateTime<Utc>>,
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime_optional::deserialize")]
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
     pub queued: Option<DateTime<Utc>>,
     pub followers: u32,
     pub license: Option<License>,
@@ -72,11 +75,12 @@ pub struct Project {
     pub loaders: Option<Vec<String>>,
     pub gallery: Option<Vec<GalleryItem>>,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Dependencies {
     pub version_id: Option<String>,
     pub project_id: Option<String>,
@@ -84,13 +88,15 @@ pub struct Dependencies {
     pub dependency_type: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Hashes {
     pub sha512: String,
     pub sha1: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct File {
     #[serde(alias = "_id")]
     pub hashes: Hashes,
@@ -103,11 +109,12 @@ pub struct File {
     pub project_id: String,
     pub file_cdn_cached: Option<bool>,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct FileInfo {
     pub hashes: Hashes,
     pub url: String,
@@ -117,7 +124,8 @@ pub struct FileInfo {
     pub file_type: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Version {
     #[serde(alias = "_id")]
     pub id: String,
@@ -133,44 +141,47 @@ pub struct Version {
     pub status: Option<String>,
     pub requested_status: Option<String>,
     pub author_id: String,
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub date_published: DateTime<Utc>,
     pub downloads: i64,
     pub changelog_url: Option<String>,
     pub files: Vec<FileInfo>,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Category {
     pub icon: String,
     pub name: String,
     pub project_type: Option<String>,
     pub header: String,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Loader {
     pub icon: String,
     pub name: String,
     pub supported_project_types: Vec<String>,
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub sync_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde_as]
+#[derive(Debug, Deserialize, Clone)]
 pub struct GameVersion {
     pub version: String,
     pub version_type: String,
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub date: DateTime<Utc>,
     pub major: bool,
 
-    #[serde(deserialize_with = "chrono_datetime_as_bson_datetime::deserialize")]
+    #[serde_as(as = "FromChrono04DateTime")]
     pub sync_at: DateTime<Utc>,
 }

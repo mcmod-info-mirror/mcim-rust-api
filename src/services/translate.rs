@@ -87,7 +87,7 @@ impl ModrinthService {
                     return Err(ServiceError::DatabaseError {
                         message: e.to_string(),
                         source: Some(e),
-                    })
+                    });
                 }
             }
         }
@@ -173,7 +173,7 @@ impl CurseForgeService {
                     return Err(ServiceError::DatabaseError {
                         message: e.to_string(),
                         source: Some(e),
-                    })
+                    });
                 }
             }
         }

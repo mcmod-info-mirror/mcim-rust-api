@@ -914,9 +914,11 @@ mod tests {
             .await
             .expect("Failed to deserialize DownloadUrlResponse");
 
-        assert!(download_url_response
-            .data
-            .starts_with("https://edge.forgecdn.net/"));
+        assert!(
+            download_url_response
+                .data
+                .starts_with("https://edge.forgecdn.net/")
+        );
     }
 
     #[tokio::test]

@@ -1,7 +1,7 @@
 use actix_web::{
     body::to_bytes,
     dev::Service,
-    test::{init_service, TestRequest},
+    test::{TestRequest, init_service},
 };
 use serde_json::json;
 

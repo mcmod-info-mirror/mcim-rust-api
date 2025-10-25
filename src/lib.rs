@@ -8,9 +8,9 @@ pub mod utils;
 pub mod test_utils {
     use crate::routes::config;
     use crate::utils::app::build_app_state;
-    use actix_web::{web, App};
+    use actix_web::{App, web};
     use dotenvy::dotenv;
-    use mongodb::{options::ClientOptions, Client};
+    use mongodb::{Client, options::ClientOptions};
     use redis::aio::MultiplexedConnection;
     use std::sync::Arc;
 

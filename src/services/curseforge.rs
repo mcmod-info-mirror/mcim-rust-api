@@ -1,8 +1,8 @@
 use bson::doc;
 use futures::stream::TryStreamExt;
 use mongodb::Client as Mongo_Client;
-use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
+use redis::aio::MultiplexedConnection;
 use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -472,7 +472,7 @@ impl CurseforgeService {
                 _ => {
                     return Err(ServiceError::UnexpectedError(String::from(
                         "Invalid mod loader type",
-                    )))
+                    )));
                 }
             };
             game_version_filters.push(loader_type_str.into());
@@ -527,9 +527,13 @@ impl CurseforgeService {
             let mut files = Vec::new();
             for item in data_array {
                 if let Some(file_doc) = item.as_document() {
-                    let file_data: DBFile = bson::from_document(file_doc.clone()).map_err(|e| {
-                        ServiceError::UnexpectedError(format!("Failed to deserialize File: {}", e))
-                    })?;
+                    let file_data: DBFile = bson::deserialize_from_document(file_doc.clone())
+                        .map_err(|e| {
+                            ServiceError::UnexpectedError(format!(
+                                "Failed to deserialize File: {}",
+                                e
+                            ))
+                        })?;
                     files.push(file_data);
                 }
             }
@@ -677,9 +681,9 @@ impl CurseforgeService {
                             source: None,
                         })
                         .and_then(|file_doc| {
-                            bson::from_document::<crate::models::curseforge::entities::FileInfo>(
-                                file_doc.clone(),
-                            )
+                            bson::deserialize_from_document::<
+                                crate::models::curseforge::entities::FileInfo,
+                            >(file_doc.clone())
                             .map_err(|e| ServiceError::DatabaseError {
                                 message: format!(
                                     "Failed to parse FileInfo document for mod {}: {}",

@@ -1,4 +1,4 @@
-use mongodb::{options::ClientOptions, Client};
+use mongodb::{Client, options::ClientOptions};
 
 /// 初始化 MongoDB 客户端（每个测试都可以调用，不需要全局）
 pub async fn init_test_db() -> Client {

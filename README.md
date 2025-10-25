@@ -4,10 +4,9 @@
 
 **MCIM API rewritten in Rust**
 
-> [!TIP]
-> 已实装，重写难免有地方未能对齐，有问题麻烦请提 issue 会立刻处理。
-
 为各平台的 Mod 的 API 缓存加速，由[鸣谢列表](#鸣谢)内的各位提供支持~
+
+**这是一项公益服务，请不要攻击我们，你的[赞助](#赞助)将帮助我们维持服务器运营**  [![Stripe](https://img.shields.io/badge/Stripe-5469d4?style=for-the-badge&logo=stripe&logoColor=ffffff)](https://www.mcimirror.top/sponsor) 
 
 已缓存 **绝大多数** 的 Modrinth 和 Curseforge 上的 Minecraft Mod 信息。缓存统计信息见 [mcim-statistics](https://mod.mcimirror.top/statistics)。
 
@@ -89,7 +88,7 @@ URL 参数：`modId`
 
 ```json
 {
-  "modId": 238222,
+  "modid": 238222,
   "translated": "查看物品和配方",
   "original": "View Items and Recipes",
   "translated_at": "2025-02-02T10:01:52.805000"
@@ -104,16 +103,18 @@ URL 参数：`modId`
 
 关于 Mod 开发者收益问题，由于 API 下载量并不计入收益，因此无论从启动器官方源下载还是镜像源下载都是无法为 Mod 开发者提供收益的，不接受影响 Mod 开发者收益的指责。
 
-**本镜像可能会在滥用或遭到攻击的情况下暂时关闭。**
+## 赞助
 
-**这是一项公益服务，请不要攻击我们**
+MCIM 是一个免费开源的项目，你的赞助将帮助我们维持服务器运营，选择合适的金额来支持 MCIM 的日常运营开销
+
+赞助链接：<https://www.mcimirror.top/sponsor>
 
 ## 鸣谢
 
 - [Pysio](https://github.com/pysio2007) 提供 CDN 和域名，以及当前的文件下载镜像
 - [BangBang93](https://blog.bangbang93.com/) 提供服务器
 - [SaltWood_233](https://github.com/SALTWOOD) 提供 OpenMCIM 文件分发主控技术支持
-- [为 OpenMCIM 提供节点支持的各位](https://files.mcimirror.top/dashboard/rank)
+- 为 OpenMCIM 提供节点支持的各位
 
 ## 联系
 

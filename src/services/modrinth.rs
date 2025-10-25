@@ -1,8 +1,8 @@
 use bson::doc;
 use futures::stream::TryStreamExt;
-use mongodb::{bson::Document, Client as Mongo_Client};
-use redis::aio::MultiplexedConnection;
+use mongodb::{Client as Mongo_Client, bson::Document};
 use redis::AsyncCommands;
+use redis::aio::MultiplexedConnection;
 use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -985,7 +985,7 @@ impl ModrinthService {
                 source: Some(e),
             })?
         {
-            match bson::from_document::<db::Version>(doc) {
+            match bson::deserialize_from_document::<db::Version>(doc) {
                 Ok(version) => Ok(Some(version.into())),
                 Err(e) => Err(ServiceError::UnexpectedError(format!(
                     "Failed to deserialize Version: {}",
@@ -1081,7 +1081,7 @@ impl ModrinthService {
             if let (Some(bson::Bson::String(hash_value)), Some(bson::Bson::Document(detail_doc))) =
                 (doc.get("_id"), doc.get("detail"))
             {
-                match bson::from_document::<db::Version>(detail_doc.clone()) {
+                match bson::deserialize_from_document::<db::Version>(detail_doc.clone()) {
                     Ok(version) => {
                         result.insert(hash_value.clone(), version.into());
                     }
