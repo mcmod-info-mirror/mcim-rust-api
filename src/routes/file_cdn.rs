@@ -4,8 +4,7 @@ use crate::utils::app::AppState;
 use crate::utils::file_cdn_load_balance::select_cdn_endpoint;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg
-        .service(get_modrinth_file)
+    cfg.service(get_modrinth_file)
         .service(get_curseforge_file)
         .service(get_curseforge_avatar)
         .service(get_curseforge_avatar_thumbnail)
@@ -37,11 +36,14 @@ pub async fn get_curseforge_file(
     data: web::Data<AppState>,
 ) -> impl Responder {
     let (file_id1, file_id2, file_name) = path.into_inner();
-    
+
     if data.file_cdn_enabled == false {
         let url = format!(
             "{}/files/{}/{}/{}",
-            data.curseforge_file_cdn_fallback_url.clone(), file_id1, file_id2, file_name
+            data.curseforge_file_cdn_fallback_url.clone(),
+            file_id1,
+            file_id2,
+            file_name
         );
         return Redirect::to(url).temporary();
     }
@@ -89,7 +91,10 @@ pub async fn get_modrinth_file(
     if data.file_cdn_enabled == false {
         let url = format!(
             "{}/data/{}/versions/{}/{}",
-            data.modrinth_file_cdn_fallback_url.clone(), project_id, version_id, file_name
+            data.modrinth_file_cdn_fallback_url.clone(),
+            project_id,
+            version_id,
+            file_name
         );
         return Redirect::to(url).temporary();
     }
@@ -138,7 +143,8 @@ pub async fn get_curseforge_avatar(
     if data.file_cdn_enabled == false {
         let url = format!(
             "{}/avatars/{}",
-            data.curseforge_avatar_cdn_fallback_url.clone(), avatar_path
+            data.curseforge_avatar_cdn_fallback_url.clone(),
+            avatar_path
         );
         return Redirect::to(url).temporary();
     }
@@ -184,7 +190,8 @@ pub async fn get_curseforge_avatar_thumbnail(
     if data.file_cdn_enabled == false {
         let url = format!(
             "{}/avatars/{}",
-            data.curseforge_avatar_cdn_fallback_url.clone(), avatar_path
+            data.curseforge_avatar_cdn_fallback_url.clone(),
+            avatar_path
         );
         return Redirect::to(url).temporary();
     }
@@ -213,11 +220,7 @@ pub async fn get_curseforge_avatar_thumbnail(
     description = "Modrinth Icon CDN",
     tag = "File CDN"
 )]
-#[route(
-    "/data/{project_id}/{file_name}",
-    method = "GET",
-    method = "HEAD"
-)]
+#[route("/data/{project_id}/{file_name}", method = "GET", method = "HEAD")]
 pub async fn get_modrinth_avatar(
     path: web::Path<(String, String)>,
     data: web::Data<AppState>,
@@ -226,7 +229,9 @@ pub async fn get_modrinth_avatar(
     if data.file_cdn_enabled == false {
         let url = format!(
             "{}/data/{}/{}",
-            data.modrinth_avatar_cdn_fallback_url.clone(), project_id, file_name
+            data.modrinth_avatar_cdn_fallback_url.clone(),
+            project_id,
+            file_name
         );
         return Redirect::to(url).temporary();
     }
