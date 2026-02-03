@@ -378,7 +378,7 @@ async fn get_fingerprints_by_game_id(
     params(
         ("gameId" = i32, Query, description = "ID of the game to filter categories by"),
         ("classId" = Option<i32>, Query, description = "ID of the class to filter categories by (optional)"),
-        ("classOnly" = Option<bool>, Query, description = "Whether to return only classes (optional)")
+        ("classesOnly" = Option<bool>, Query, description = "Whether to return only classes (optional)")
     ),
     responses(
         (status = 200, description = "Categories found", body = CategoriesResponse),
@@ -395,7 +395,7 @@ async fn get_categories(
     let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
 
     match service
-        .get_categories(query.game_id, query.class_id, query.class_only)
+        .get_categories(query.game_id, query.class_id, query.classes_only)
         .await
     {
         Ok(categories) => Ok(web::Json(categories)),

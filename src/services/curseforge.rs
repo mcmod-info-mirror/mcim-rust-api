@@ -793,7 +793,7 @@ impl CurseforgeService {
             return Err(ServiceError::NotFound {
                 resource: String::from("Categories"),
                 detail: Some(format!(
-                    "No categories found for gameId {} and classId {:?} and classOnly {:?}",
+                    "No categories found for gameId {} and classId {:?} and classesOnly {:?}",
                     game_id,
                     class_id,
                     class_only.unwrap_or(false)

@@ -105,6 +105,6 @@ pub struct CategoriesQuery {
     #[serde(rename = "classId")]
     #[schema(default = 6)]
     pub class_id: Option<i32>,
-    #[serde(rename = "classOnly")]
-    pub class_only: Option<bool>,
+    #[serde(rename = "classesOnly")]
+    pub classes_only: Option<bool>,
 }

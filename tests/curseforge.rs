@@ -340,7 +340,7 @@ async fn test_get_categories_with_class_only_filters() {
 
     let req = TestRequest::get()
         .uri(&format!(
-            "/curseforge/v1/categories?gameId={}&classOnly=true",
+            "/curseforge/v1/categories?gameId={}&classesOnly=true",
             GAME_ID
         ))
         .to_request();
