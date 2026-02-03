@@ -12,7 +12,7 @@
 
 > [!Note]
 > 由于多种原因，OpenMCIM 已暂停运行，现在不再利用节点分发而是常规 CDN 分发，MCIM API 不受影响。
-> 文件下载已现在重定向到 [Pysio](https://github.com/pysio2007) 提供的 Cloudflare 镜像源上。见 [MCIM Download](https://mcim-files.pysio.online)
+> 文件下载已现在重定向到 [Pysio](https://github.com/pysio2007) 提供的 Cloudflare 镜像源上。
 > 现已投入运行
 
 API 支持 [Curseforge](https://curseforge.com/) 和 [Modrinth](https://modrinth.com/)。
