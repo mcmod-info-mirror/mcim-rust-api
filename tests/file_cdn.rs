@@ -72,9 +72,7 @@ async fn test_curseforge_avatar_cdn() {
 #[actix_web::test]
 async fn test_modrinth_avatar_cdn() {
     let app = init_service(create_test_app().await).await;
-    let sample_avatars = &[
-        "/data/AANobbMI/295862f4724dc3f78df3447ad6072b2dcd3ef0c9_96.webp"
-    ];
+    let sample_avatars = &["/data/AANobbMI/295862f4724dc3f78df3447ad6072b2dcd3ef0c9_96.webp"];
     for url in sample_avatars.iter() {
         let req = TestRequest::get().uri(url).to_request();
         let resp = app.call(req).await.unwrap();
