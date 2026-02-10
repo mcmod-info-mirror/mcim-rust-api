@@ -36,7 +36,7 @@ async fn get_translated_count(
         .database(get_database_name().as_str())
         .collection::<mongodb::bson::Document>(collection_name);
 
-    // 只计算 translated_at 不为 null 的文档
+    // Only count documents where translated_at is not null
     let filter = doc! { "translated_at": { "$ne": null } };
     let count =
         collection
