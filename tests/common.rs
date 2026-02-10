@@ -63,8 +63,7 @@ async fn test_translation_statistics_filters_null_translated_at() {
 
     // Verify that the counts are present
     if let Some(&modrinth_count) = translate_stats.get("modrinth") {
-        // With the test data, we have 2 entries with translated_at and 2 without
-        // The count should be 2 (only those with non-null translated_at)
+        // With the test data, we have 2 entries, both with non-null translated_at
         println!("Modrinth translation count: {}", modrinth_count);
         assert_eq!(
             modrinth_count, 2,
@@ -73,8 +72,7 @@ async fn test_translation_statistics_filters_null_translated_at() {
     }
 
     if let Some(&curseforge_count) = translate_stats.get("curseforge") {
-        // With the test data, we have 2 entries with translated_at and 1 without
-        // The count should be 2 (only those with non-null translated_at)
+        // With the test data, we have 2 entries, both with non-null translated_at
         println!("CurseForge translation count: {}", curseforge_count);
         assert_eq!(
             curseforge_count, 2,
