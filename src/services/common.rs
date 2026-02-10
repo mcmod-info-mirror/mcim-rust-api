@@ -38,16 +38,17 @@ async fn get_translated_count(
 
     // 只计算 translated_at 不为 null 的文档
     let filter = doc! { "translated_at": { "$ne": null } };
-    let count = collection
-        .count_documents(filter)
-        .await
-        .map_err(|e| ServiceError::DatabaseError {
-            message: format!(
-                "Failed to get translated count for {}: {}",
-                collection_name, e
-            ),
-            source: Some(e),
-        })?;
+    let count =
+        collection
+            .count_documents(filter)
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: format!(
+                    "Failed to get translated count for {}: {}",
+                    collection_name, e
+                ),
+                source: Some(e),
+            })?;
     Ok(count)
 }
 
