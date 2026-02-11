@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::db::database::get_database_name;
 use crate::errors::ServiceError;
 use crate::models::common::responses::StatisticsResponse;
+use mongodb::bson::doc;
 
 async fn get_collection_count(
     db: &mongodb::Client,
@@ -20,6 +21,30 @@ async fn get_collection_count(
             .map_err(|e| ServiceError::DatabaseError {
                 message: format!(
                     "Failed to get collection count for {}: {}",
+                    collection_name, e
+                ),
+                source: Some(e),
+            })?;
+    Ok(count)
+}
+
+async fn get_translated_count(
+    db: &mongodb::Client,
+    collection_name: &str,
+) -> Result<u64, ServiceError> {
+    let collection = db
+        .database(get_database_name().as_str())
+        .collection::<mongodb::bson::Document>(collection_name);
+
+    // Only count documents where translated_at is not null
+    let filter = doc! { "translated_at": { "$ne": null } };
+    let count =
+        collection
+            .count_documents(filter)
+            .await
+            .map_err(|e| ServiceError::DatabaseError {
+                message: format!(
+                    "Failed to get translated count for {}: {}",
                     collection_name, e
                 ),
                 source: Some(e),
@@ -60,10 +85,10 @@ pub async fn get_statistics_info(
 
     let mut translate_statistics = HashMap::new();
     if translate {
-        let curseforge_translate_count = get_collection_count(db, "curseforge_translated").await?;
+        let curseforge_translate_count = get_translated_count(db, "curseforge_translated").await?;
         translate_statistics.insert("curseforge".to_string(), curseforge_translate_count);
 
-        let modrinth_translate_count = get_collection_count(db, "modrinth_translated").await?;
+        let modrinth_translate_count = get_translated_count(db, "modrinth_translated").await?;
         translate_statistics.insert("modrinth".to_string(), modrinth_translate_count);
     }
 
