@@ -46,10 +46,10 @@ jobs:
       uses: extractions/setup-just@v2
       
     - name: Start MongoDB
-      uses: supercharge/mongodb-github-action@1.12.0
+      uses: supercharge/mongodb-github-action@1.12.1
 
     - name: Start Redis
-      uses: supercharge/redis-github-action@1.7.0
+      uses: supercharge/redis-github-action@1.8.1
 
     - name: Install MongoDB Database Tools
       run: |
