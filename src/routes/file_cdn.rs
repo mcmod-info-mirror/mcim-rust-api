@@ -1,4 +1,4 @@
-use actix_web::{Responder, route, web, web::Redirect};
+use actix_web::{Responder, route, web, web::Redirect, http::StatusCode};
 
 use crate::utils::app::AppState;
 use crate::utils::file_cdn_load_balance::select_cdn_endpoint;
@@ -45,7 +45,7 @@ pub async fn get_curseforge_file(
             file_id2,
             file_name
         );
-        return Redirect::to(url).temporary();
+        return Redirect::to(url).using_status_code(StatusCode::FOUND);
     }
 
     let mirror_url = select_cdn_endpoint(
@@ -60,7 +60,7 @@ pub async fn get_curseforge_file(
     );
 
     // Redirect to the constructed URL
-    Redirect::to(url).temporary()
+    Redirect::to(url).using_status_code(StatusCode::FOUND)
 }
 
 #[utoipa::path(
@@ -96,7 +96,7 @@ pub async fn get_modrinth_file(
             version_id,
             file_name
         );
-        return Redirect::to(url).temporary();
+        return Redirect::to(url).using_status_code(StatusCode::FOUND);
     }
 
     let mirror_url = select_cdn_endpoint(
@@ -111,7 +111,7 @@ pub async fn get_modrinth_file(
     );
 
     // Redirect to the constructed URL
-    Redirect::to(url).temporary()
+    Redirect::to(url).using_status_code(StatusCode::FOUND)
 }
 
 #[utoipa::path(
@@ -146,7 +146,7 @@ pub async fn get_curseforge_avatar(
             data.curseforge_avatar_cdn_fallback_url.clone(),
             avatar_path
         );
-        return Redirect::to(url).temporary();
+        return Redirect::to(url).using_status_code(StatusCode::FOUND);
     }
 
     let mirror_url = select_cdn_endpoint(
@@ -156,7 +156,7 @@ pub async fn get_curseforge_avatar(
     );
 
     let url = format!("{}/avatars/{}", mirror_url, avatar_path);
-    Redirect::to(url).temporary()
+    Redirect::to(url).using_status_code(StatusCode::FOUND)
 }
 
 #[utoipa::path(
@@ -193,7 +193,7 @@ pub async fn get_curseforge_avatar_thumbnail(
             data.curseforge_avatar_cdn_fallback_url.clone(),
             avatar_path
         );
-        return Redirect::to(url).temporary();
+        return Redirect::to(url).using_status_code(StatusCode::FOUND);
     }
 
     let mirror_url = select_cdn_endpoint(
@@ -203,7 +203,7 @@ pub async fn get_curseforge_avatar_thumbnail(
     );
 
     let url = format!("{}/avatars/{}", mirror_url, avatar_path);
-    Redirect::to(url).temporary()
+    Redirect::to(url).using_status_code(StatusCode::FOUND)
 }
 
 #[utoipa::path(
@@ -233,7 +233,7 @@ pub async fn get_modrinth_avatar(
             project_id,
             file_name
         );
-        return Redirect::to(url).temporary();
+        return Redirect::to(url).using_status_code(StatusCode::FOUND);
     }
 
     let mirror_url = select_cdn_endpoint(
@@ -243,5 +243,5 @@ pub async fn get_modrinth_avatar(
     );
 
     let url = format!("{}/data/{}/{}", mirror_url, project_id, file_name);
-    Redirect::to(url).temporary()
+    Redirect::to(url).using_status_code(StatusCode::FOUND)
 }
