@@ -1,4 +1,4 @@
-use actix_web::{Responder, get, post, web};
+use actix_web::{HttpRequest, Responder, get, post, web};
 
 use crate::errors::{ApiError, ServiceError};
 use crate::models::curseforge::requests::*;
@@ -73,11 +73,23 @@ pub async fn root() -> impl Responder {
 async fn search_mods_cached(
     query: web::Query<SearchQuery>,
     data: web::Data<AppState>,
+    req: HttpRequest,
 ) -> Result<impl Responder, ApiError> {
     let redis_pool = data.redis_pool.clone();
     let db = data.db.clone();
     let curseforge_api_url = data.curseforge_api_url.clone();
-    let curseforge_api_key = data.curseforge_api_key.clone();
+
+    // 优先使用传入的 x-api-key，如果请求头中没有，则使用默认的 x-api-key
+    // let curseforge_api_key = data.curseforge_api_key.clone();
+    let final_api_key_str = if let Some(key_from_req) = req.headers().get("x-api-key") {
+        key_from_req
+            .to_str()
+            .unwrap_or(&data.curseforge_api_key)
+            .to_string()
+    } else {
+        data.curseforge_api_key.clone()
+    };
+
     let http_client = data.http_client.clone();
 
     let key = create_key(
@@ -86,6 +98,8 @@ async fn search_mods_cached(
         query.to_string(),
     );
 
+    println!("CF key: {}", final_api_key_str);
+
     cacheable_json(
         redis_pool.clone(),
         key,
@@ -93,12 +107,15 @@ async fn search_mods_cached(
         move || {
             let service = CurseforgeService::new(db.clone(), redis_pool);
             Box::pin(async move {
+                let key_for_backend = final_api_key_str.clone();
+
                 service
                     .search_mods(
                         &http_client,
                         &query,
                         &curseforge_api_url,
-                        &curseforge_api_key,
+                        // &curseforge_api_key,
+                        &key_for_backend,
                     )
                     .await
                     .map_err(Into::into)
@@ -107,22 +124,6 @@ async fn search_mods_cached(
     )
     .await
 }
-
-// async fn search_mods(
-//     query: web::Query<SearchQuery>,
-//     data: web::Data<AppState>,
-// ) -> Result<impl Responder, ApiError> {
-//     let service = CurseforgeService::new(data.db.clone(), data.redis_pool.clone());
-
-//     match service.search_mods(
-//         &query,
-//         &data.curseforge_api_url,
-//         &data.curseforge_api_key,
-//     ).await {
-//         Ok(search_result) => Ok(web::Json(search_result)),
-//         Err(e) => Err(e.into()),
-//     }
-// }
 
 #[utoipa::path(
     get,

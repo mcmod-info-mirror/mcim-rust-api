@@ -1,4 +1,4 @@
-use actix_web::{Responder, route, web, web::Redirect, http::StatusCode};
+use actix_web::{Responder, route, web, web::Redirect, http::{StatusCode, header}, HttpRequest, HttpResponse};
 
 use crate::utils::app::AppState;
 use crate::utils::file_cdn_load_balance::select_cdn_endpoint;
@@ -20,7 +20,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         ("file_name" = String, Path, description = "Name of the file to be downloaded")
     ),
     responses(
-        (status = 301, description = "Curseforge File Redirect"),
+        (status = 302, description = "Curseforge File Redirect"),
         (status = 500, description = "Internal server error")
     ),
     description = "Curseforge File CDN endpoint",
@@ -34,33 +34,45 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 pub async fn get_curseforge_file(
     path: web::Path<(String, String, String)>,
     data: web::Data<AppState>,
+    req: HttpRequest
 ) -> impl Responder {
     let (file_id1, file_id2, file_name) = path.into_inner();
 
-    if data.file_cdn_enabled == false {
-        let url = format!(
+    let target_url = if !data.file_cdn_enabled {
+        format!(
             "{}/files/{}/{}/{}",
-            data.curseforge_file_cdn_fallback_url.clone(),
+            data.curseforge_file_cdn_fallback_url,
             file_id1,
             file_id2,
             file_name
+        )
+    } else {
+        let mirror_url = select_cdn_endpoint(
+            data.curseforge_file_cdn_url.clone(),
+            data.curseforge_file_cdn_fallback_url.clone(),
+            data.curseforge_cdn_primary_percentage,
         );
-        return Redirect::to(url).using_status_code(StatusCode::FOUND);
-    }
+        let encoded_file_name = urlencoding::encode(&file_name).to_string();
+        format!(
+            "{}/files/{}/{}/{}",
+            mirror_url, file_id1, file_id2, encoded_file_name
+        )
+    };
 
-    let mirror_url = select_cdn_endpoint(
-        data.curseforge_file_cdn_url.clone(),
-        data.curseforge_file_cdn_fallback_url.clone(),
-        data.curseforge_cdn_primary_percentage,
-    );
-    let encoded_file_name = urlencoding::encode(&file_name).to_string();
-    let url = format!(
-        "{}/files/{}/{}/{}",
-        mirror_url, file_id1, file_id2, encoded_file_name
-    );
+    // 优先使用传入的 x-api-key，如果请求头中没有，则使用默认的 x-api-key
+    let x_api_key_header_name = header::HeaderName::from_static("x-api-key");
+    let x_api_key_from_req = req.headers().get("x-api-key").cloned();
 
-    // Redirect to the constructed URL
-    Redirect::to(url).using_status_code(StatusCode::FOUND)
+    let final_api_key = if let Some(x_api_key) = x_api_key_from_req {
+        x_api_key
+    } else {
+        header::HeaderValue::from_str(&data.curseforge_api_key).unwrap()
+    };
+
+    HttpResponse::build(StatusCode::FOUND)
+        .append_header((header::LOCATION, target_url))
+        .append_header((x_api_key_header_name, final_api_key))
+        .finish()
 }
 
 #[utoipa::path(
@@ -72,7 +84,7 @@ pub async fn get_curseforge_file(
         ("file_name" = String, Path, description = "Name of the file to be downloaded")
     ),
     responses(
-        (status = 301, description = "Modrinth File Redirect"),
+        (status = 302, description = "Modrinth File Redirect"),
         (status = 500, description = "Internal server error")
     ),
     description = "Modrinth File CDN endpoint",
@@ -123,7 +135,7 @@ pub async fn get_modrinth_file(
         ("file_name" = String, Path, description = "Avatar file name")
     ),
     responses(
-        (status = 301, description = "Curseforge Avatar Redirect"),
+        (status = 302, description = "Curseforge Avatar Redirect"),
         (status = 500, description = "Internal server error")
     ),
     description = "Curseforge Avatar CDN endpoint (flat)",
@@ -170,7 +182,7 @@ pub async fn get_curseforge_avatar(
         ("file_name" = String, Path, description = "Thumbnail file name")
     ),
     responses(
-        (status = 301, description = "Curseforge Avatar Thumbnail Redirect"),
+        (status = 302, description = "Curseforge Avatar Thumbnail Redirect"),
         (status = 500, description = "Internal server error")
     ),
     description = "Curseforge Avatar CDN endpoint (thumbnails)",
@@ -214,7 +226,7 @@ pub async fn get_curseforge_avatar_thumbnail(
         ("file_name" = String, Path, description = "Icon file name")
     ),
     responses(
-        (status = 301, description = "Modrinth Icon Redirect"),
+        (status = 302, description = "Modrinth Icon Redirect"),
         (status = 500, description = "Internal server error")
     ),
     description = "Modrinth Icon CDN",
