@@ -134,6 +134,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
 
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -159,7 +163,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ vars.DOCKER_USERNAME }}/mcim-rust-api
+          # 同时配置 Docker Hub 和 GHCR 的镜像
+          images: |
+            ${{ vars.DOCKER_USERNAME }}/mcim-rust-api
+            ghcr.io/${{ github.repository }}
           tags: |
             type=sha,format=short,prefix=
             latest
@@ -169,6 +176,13 @@ jobs:
         with:
           username: ${{ vars.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
