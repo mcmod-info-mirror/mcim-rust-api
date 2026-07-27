@@ -143,6 +143,11 @@ impl ModrinthService {
             .filter(|id| id.len() == 8 && id.chars().all(|c| c.is_ascii_alphanumeric()))
             .collect::<Vec<String>>();
 
+        if filtered_project_ids.is_empty() {
+            log::debug!("No valid project IDs to add to Redis queue.");
+            return Ok(());
+        }
+
         let mut conn = self.redis.as_ref().clone();
         conn.sadd::<&str, &Vec<String>, ()>("modrinth_project_ids", &filtered_project_ids)
             .await
@@ -152,7 +157,10 @@ impl ModrinthService {
                     message: format!("Failed to add project ids to Redis queue: {}", e),
                 }
             })?;
-        log::debug!("Added project ids to Redis queue: {:?}", filtered_project_ids);
+        log::debug!(
+            "Added project ids to Redis queue: {:?}",
+            filtered_project_ids
+        );
         Ok(())
     }
 
@@ -163,11 +171,16 @@ impl ModrinthService {
         if version_ids.is_empty() {
             return Ok(());
         }
-        
+
         let filtered_version_ids = version_ids
             .into_iter()
             .filter(|id| id.len() == 8 && id.chars().all(|c| c.is_ascii_alphanumeric()))
             .collect::<Vec<String>>();
+
+        if filtered_version_ids.is_empty() {
+            log::debug!("No valid version IDs to add to Redis queue.");
+            return Ok(());
+        }
 
         let mut conn = self.redis.as_ref().clone();
         conn.sadd::<&str, &Vec<String>, ()>("modrinth_version_ids", &filtered_version_ids)
@@ -178,7 +191,10 @@ impl ModrinthService {
                     message: format!("Failed to add version ids to Redis queue: {}", e),
                 }
             })?;
-        log::debug!("Added version ids to Redis queue: {:?}", filtered_version_ids);
+        log::debug!(
+            "Added version ids to Redis queue: {:?}",
+            filtered_version_ids
+        );
         Ok(())
     }
 
@@ -195,7 +211,7 @@ impl ModrinthService {
 
         // 校验 algorithm 是否为支持的值
         if algo_lower != "sha1" && algo_lower != "sha512" {
-            return Ok(())
+            return Ok(());
         }
 
         // 确保所有 hash 都符合规范
@@ -204,6 +220,13 @@ impl ModrinthService {
             .filter(|hash| is_valid_hash(&algo_lower, hash))
             .collect::<Vec<String>>();
 
+        if filtered_hashes.is_empty() {
+            log::debug!(
+                "No valid hashes to add to Redis queue for algorithm {}.",
+                algo_lower
+            );
+            return Ok(());
+        }
 
         let mut conn = self.redis.as_ref().clone();
 
@@ -218,7 +241,11 @@ impl ModrinthService {
                 message: format!("Failed to add hash to Redis queue: {}", e),
             }
         })?;
-        log::debug!("Added {}:{} to Redis queue", algorithm, filtered_hashes.join(","));
+        log::debug!(
+            "Added {}:{} to Redis queue",
+            algorithm,
+            filtered_hashes.join(",")
+        );
         Ok(())
     }
 
