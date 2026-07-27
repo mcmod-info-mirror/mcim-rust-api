@@ -138,8 +138,13 @@ impl ModrinthService {
             return Ok(());
         }
 
+        let filtered_project_ids = project_ids
+            .into_iter()
+            .filter(|id| id.len() == 8 && id.chars().all(|c| c.is_ascii_alphanumeric()))
+            .collect::<Vec<String>>();
+
         let mut conn = self.redis.as_ref().clone();
-        conn.sadd::<&str, &Vec<String>, ()>("modrinth_project_ids", &project_ids)
+        conn.sadd::<&str, &Vec<String>, ()>("modrinth_project_ids", &filtered_project_ids)
             .await
             .map_err(|e| -> ServiceError {
                 ServiceError::ExternalServiceError {
@@ -147,7 +152,7 @@ impl ModrinthService {
                     message: format!("Failed to add project ids to Redis queue: {}", e),
                 }
             })?;
-        log::debug!("Added project ids to Redis queue: {:?}", project_ids);
+        log::debug!("Added project ids to Redis queue: {:?}", filtered_project_ids);
         Ok(())
     }
 
@@ -158,9 +163,14 @@ impl ModrinthService {
         if version_ids.is_empty() {
             return Ok(());
         }
+        
+        let filtered_version_ids = version_ids
+            .into_iter()
+            .filter(|id| id.len() == 8 && id.chars().all(|c| c.is_ascii_alphanumeric()))
+            .collect::<Vec<String>>();
 
         let mut conn = self.redis.as_ref().clone();
-        conn.sadd::<&str, &Vec<String>, ()>("modrinth_version_ids", &version_ids)
+        conn.sadd::<&str, &Vec<String>, ()>("modrinth_version_ids", &filtered_version_ids)
             .await
             .map_err(|e| -> ServiceError {
                 ServiceError::ExternalServiceError {
@@ -168,7 +178,7 @@ impl ModrinthService {
                     message: format!("Failed to add version ids to Redis queue: {}", e),
                 }
             })?;
-        log::debug!("Added version ids to Redis queue: {:?}", version_ids);
+        log::debug!("Added version ids to Redis queue: {:?}", filtered_version_ids);
         Ok(())
     }
 
@@ -181,11 +191,25 @@ impl ModrinthService {
             return Ok(()); // 如果 hash 为空，直接返回
         }
 
+        let algo_lower = algorithm.to_lowercase();
+
+        // 校验 algorithm 是否为支持的值
+        if algo_lower != "sha1" && algo_lower != "sha512" {
+            return Ok(())
+        }
+
+        // 确保所有 hash 都符合规范
+        let filtered_hashes = hashes
+            .into_iter()
+            .filter(|hash| is_valid_hash(&algo_lower, hash))
+            .collect::<Vec<String>>();
+
+
         let mut conn = self.redis.as_ref().clone();
 
         conn.sadd::<&str, &Vec<String>, ()>(
             format!("modrinth_hashes_{}", algorithm).as_str(),
-            &hashes,
+            &filtered_hashes,
         )
         .await
         .map_err(|e| -> ServiceError {
@@ -194,7 +218,7 @@ impl ModrinthService {
                 message: format!("Failed to add hash to Redis queue: {}", e),
             }
         })?;
-        log::debug!("Added {}:{} to Redis queue", algorithm, hashes.join(","));
+        log::debug!("Added {}:{} to Redis queue", algorithm, filtered_hashes.join(","));
         Ok(())
     }
 
@@ -1224,4 +1248,15 @@ pub fn default_algorithm_from_hashes(hashes: &[String]) -> String {
         return "sha512".into();
     }
     "sha1".into()
+}
+
+fn is_valid_hash(algorithm: &str, hash: &str) -> bool {
+    let expected_len = match algorithm.to_lowercase().as_str() {
+        "sha1" => 40,
+        "sha512" => 128,
+        _ => return false, // 不支持的算法直接判定无效
+    };
+
+    // 检查长度且全部字符为 Hex (0-9, a-f, A-F)
+    hash.len() == expected_len && hash.chars().all(|c| c.is_ascii_hexdigit())
 }
