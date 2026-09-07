@@ -59,6 +59,21 @@ async fn root() -> impl Responder {
 
 #[utoipa::path(
     get,
+    path = "/healthz",
+    responses(
+        (status = 200, description = "Health check message"),
+    ),
+    description = "Health check endpoint for the MCIM API",
+)]
+#[get("/healthz")]
+async fn healthz() -> impl Responder {
+    web::Json(serde_json::json!({
+        "status": "OK"
+    }))
+}
+
+#[utoipa::path(
+    get,
     path = "/statistics",
     params(
         ("curseforge" = Option<bool>, Query, description = "Include CurseForge statistics"),

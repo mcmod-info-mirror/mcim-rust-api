@@ -98,6 +98,12 @@ services:
     depends_on:
       - mongodb
       - redis
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     environment:
       PORT: 8080
       MONGODB_URI: "mongodb://root:example@mongodb:27017"
