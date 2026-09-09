@@ -210,6 +210,7 @@ pub struct Mod {
 
     #[serde(default = "Utc::now")]
     pub sync_at: DateTime<Utc>,
+    pub checked_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
@@ -700,6 +701,7 @@ impl From<db::Mod> for Mod {
             thumbs_up_count: db_model.thumbs_up_count,
             rating: db_model.rating,
             sync_at: db_model.sync_at,
+            checked_at: db_model.checked_at,
         }
     }
 }

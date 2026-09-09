@@ -77,6 +77,8 @@ pub struct Project {
 
     #[serde_as(as = "FromChrono04DateTime")]
     pub sync_at: DateTime<Utc>,
+    #[serde_as(as = "Option<FromChrono04DateTime>")]
+    pub checked_at: Option<DateTime<Utc>>,
 }
 
 #[serde_as]

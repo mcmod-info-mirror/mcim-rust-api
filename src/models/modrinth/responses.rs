@@ -101,6 +101,7 @@ pub struct Project {
 
     #[serde(default = "Utc::now")]
     pub sync_at: DateTime<Utc>,
+    pub checked_at: Option<DateTime<Utc>>,
 }
 
 impl From<db::Project> for Project {
@@ -146,6 +147,7 @@ impl From<db::Project> for Project {
                 .map(|gallery_vec| gallery_vec.into_iter().map(Into::into).collect()),
 
             sync_at: project.sync_at,
+            checked_at: project.checked_at,
         }
     }
 }
