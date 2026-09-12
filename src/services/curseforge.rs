@@ -306,21 +306,11 @@ impl CurseforgeService {
             mods.push(doc);
         }
 
-        // empty 则直接返回 { "data": [] }
-        if mods.is_empty() {
-            return Err(ServiceError::NotFound {
-                resource: String::from("Mods"),
-                detail: Some(format!(
-                    "No mods found for the provided modIds: {:?}",
-                    mod_ids
-                )),
-            });
-        }
-
         // 检查是否有未找到的 mod_id
         let found_mod_ids: Vec<i32> = mods.iter().map(|m| m.id).collect();
         let not_found_mod_ids: Vec<i32> = mod_ids
-            .into_iter()
+            .iter()
+            .copied()
             .filter(|id| !found_mod_ids.contains(id))
             .collect();
         if !not_found_mod_ids.is_empty() {
@@ -331,6 +321,38 @@ impl CurseforgeService {
             self.add_modids_into_queue(not_found_mod_ids).await?;
         } else {
             log::trace!("All Mods have been found in the database.");
+        }
+
+        /* 
+        curl -i -X 'POST' \
+          'https://api.curseforge.com/v1/mods' \
+          -H 'accept: application/json' \
+          -H 'Content-Type: application/json' \
+          -H 'x-api-key: $API_KEY' \
+          -d '{
+          "filterPcOnly": true,
+          "modIds": [
+            238222112
+          ]
+        }'
+        HTTP/2 404
+        content-length: 0
+        date: Sat, 12 Sep 2026 07:06:03 GMT
+        x-cache: Error from cloudfront
+        via: 1.1 715cc2fe99ad4f311de46e74c166c5a2.cloudfront.net (CloudFront)
+        x-amz-cf-pop: LOS50-P4
+        x-amz-cf-id: EGanUHlrFZiDD8YG6hWQpedqhiWQ30pKnB7DX8CBBNyTsyixGDDjNQ==
+        */ 
+        // 不会返回 Body，可以任意填写
+        // 但是必须返回 404，不能返回 200
+        if mods.is_empty() {
+            return Err(ServiceError::NotFound {
+                resource: String::from("Mods"),
+                detail: Some(format!(
+                    "No mods found for the provided modIds: {:?}",
+                    mod_ids
+                )),
+            });
         }
 
         let response_mods = mods.into_iter().map(|m| m.into()).collect();
