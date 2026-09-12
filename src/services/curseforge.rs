@@ -27,11 +27,10 @@ impl CurseforgeService {
     // 用于同步的 ID 必须大于 0，否则会 400
     
     async fn add_modids_into_queue(&self, mod_ids: Vec<i32>) -> Result<(), ServiceError> {
-        if mod_ids.is_empty() {
+        let filtered_mod_ids = mod_ids.iter().filter(|id| *id >= & 30000).cloned().collect::<Vec<i32>>();
+        if filtered_mod_ids.is_empty() {
             return Ok(());
         }
-
-        let filtered_mod_ids = mod_ids.iter().filter(|id| *id >= & 30000).cloned().collect::<Vec<i32>>();
 
         let mut conn = self.redis.as_ref().clone();
         conn.sadd::<&str, &Vec<i32>, ()>("curseforge_modids", &filtered_mod_ids)
@@ -47,12 +46,11 @@ impl CurseforgeService {
     }
 
     async fn add_fileids_into_queue(&self, file_ids: Vec<i32>) -> Result<(), ServiceError> {
-        if file_ids.is_empty() {
+        let filtered_file_ids = file_ids.iter().filter(|id| *id >= & 0).cloned().collect::<Vec<i32>>();
+        if filtered_file_ids.is_empty() {
             return Ok(());
         }
 
-        let filtered_file_ids = file_ids.iter().filter(|id| *id >= & 0).cloned().collect::<Vec<i32>>();
-        
         let mut conn = self.redis.as_ref().clone();
         conn.sadd::<&str, &Vec<i32>, ()>("curseforge_fileids", &filtered_file_ids)
             .await
@@ -70,7 +68,12 @@ impl CurseforgeService {
         &self,
         fingerprints: Vec<i64>,
     ) -> Result<(), ServiceError> {
-        if fingerprints.is_empty() {
+        let filtered_fingerprints = fingerprints
+            .iter()
+            .filter(|f| *f >= &0)
+            .cloned()
+            .collect::<Vec<i64>>();
+        if filtered_fingerprints.is_empty() {
             return Ok(());
         }
 
