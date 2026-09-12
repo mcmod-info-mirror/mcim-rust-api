@@ -10,7 +10,7 @@ use crate::utils::app::AppState;
 include!(concat!(env!("OUT_DIR"), "/build_info.rs"));
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(root).service(get_statistics);
+    cfg.service(root).service(get_statistics).service(healthz);
 }
 
 #[derive(Serialize)]
