@@ -383,6 +383,15 @@ impl ModrinthService {
                 service: String::from("Modrinth API"),
                 message: format!("Upstream HTTP error: {}", e),
             })?;
+        
+        // 在此处要打断 4xx/5xx 错误，返回 ServiceError::ExternalServiceError，以免被缓存
+        if let Err(e) = response.error_for_status_ref() {
+            let error_body = response.text().await.unwrap_or_else(|_| String::from("<failed to read body>"));
+            return Err(ServiceError::ExternalServiceError {
+                service: String::from("Modrinth API"),
+                message: format!("Upstream HTTP error: {}, body: {}", e, error_body),
+            });
+        }
 
         let status: reqwest::StatusCode = response.status();
         let bytes = response
@@ -392,6 +401,7 @@ impl ModrinthService {
                 service: String::from("Modrinth API"),
                 message: format!("Failed to read response body: {}", e),
             })?;
+
         let search_result = serde_json::from_slice(&bytes).map_err(|e| {
             ServiceError::UnexpectedError(format!(
                 "Failed to parse JSON: {}, text: {}",
