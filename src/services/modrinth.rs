@@ -368,6 +368,7 @@ impl ModrinthService {
             params.push(("index", i.to_string()));
         }
 
+        // 在此处要打断 4xx/5xx 错误，返回 ServiceError::ExternalServiceError，以免被缓存
         let response = client
             .get(api_url)
             .query(&params)
@@ -376,9 +377,14 @@ impl ModrinthService {
             .map_err(|e| ServiceError::ExternalServiceError {
                 service: String::from("Modrinth API"),
                 message: format!("Failed to send request: {}", e),
+            })?
+            .error_for_status()
+            .map_err(|e| ServiceError::ExternalServiceError {
+                service: String::from("Modrinth API"),
+                message: format!("Upstream HTTP error: {}", e),
             })?;
 
-        let status = response.status();
+        let status: reqwest::StatusCode = response.status();
         let bytes = response
             .bytes()
             .await
