@@ -944,14 +944,31 @@ impl ModrinthService {
         // 创建哈希值到版本的映射
         let mut result: HashMap<String, Version> = HashMap::new();
 
+        // 用 HashSet 来优化查找速度，避免 Vec contains O(n) 查找
+        let requested_hashes_set: std::collections::HashSet<&str> = hashes.iter().map(|s| s.as_str()).collect();
+        
         for version in versions {
-            if let Some(first_file) = version.files.first() {
+            // 此处导致只有是第一个文件的哈希值会被映射到版本，其他文件的哈希值不会被映射
+            // if let Some(first_file) = version.files.first() {
+            //     let hash_value = match algorithm.as_str() {
+            //         "sha1" => &first_file.hashes.sha1,
+            //         "sha512" => &first_file.hashes.sha512,
+            //         _ => continue,
+            //     };
+            //     result.insert(hash_value.clone(), version);
+            // }
+
+            // 遍历版本的所有文件，找到匹配的哈希值
+            for file in &version.files {
                 let hash_value = match algorithm.as_str() {
-                    "sha1" => &first_file.hashes.sha1,
-                    "sha512" => &first_file.hashes.sha512,
+                    "sha1" => &file.hashes.sha1,
+                    "sha512" => &file.hashes.sha512,
                     _ => continue,
                 };
-                result.insert(hash_value.clone(), version);
+                // 只有客户端查询列表中包含的 hash，才插入到结果中
+                if requested_hashes_set.contains(hash_value.as_str()) {
+                    result.insert(hash_value.clone(), version.clone());
+                }
             }
         }
 
