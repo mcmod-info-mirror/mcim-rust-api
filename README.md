@@ -114,6 +114,7 @@ MCIM 是一个免费开源的项目，你的赞助将帮助我们维持服务器
 - [Pysio](https://github.com/pysio2007) 提供 CDN 和域名，以及当前的文件下载镜像
 - [BangBang93](https://blog.bangbang93.com/) 提供服务器
 - [SaltWood_233](https://github.com/SALTWOOD) 提供 OpenMCIM 文件分发主控技术支持
+- [HaruHyacinth](https://github.com/HyacinthHaru) 构建新的主页网站和 [mcim-rust-sync](https://github.com/mcmod-info-mirror/mcim-rust-sync)
 - 为 OpenMCIM 提供节点支持的各位
 
 ## 联系
