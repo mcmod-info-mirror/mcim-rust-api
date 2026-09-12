@@ -323,7 +323,7 @@ impl CurseforgeService {
             log::trace!("All Mods have been found in the database.");
         }
 
-        /* 
+        /*
         curl -i -X 'POST' \
           'https://api.curseforge.com/v1/mods' \
           -H 'accept: application/json' \
@@ -342,7 +342,7 @@ impl CurseforgeService {
         via: 1.1 715cc2fe99ad4f311de46e74c166c5a2.cloudfront.net (CloudFront)
         x-amz-cf-pop: LOS50-P4
         x-amz-cf-id: EGanUHlrFZiDD8YG6hWQpedqhiWQ30pKnB7DX8CBBNyTsyixGDDjNQ==
-        */ 
+        */
         // 不会返回 Body，可以任意填写
         // 但是必须返回 404，不能返回 200
         if mods.is_empty() {

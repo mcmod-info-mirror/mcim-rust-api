@@ -945,8 +945,9 @@ impl ModrinthService {
         let mut result: HashMap<String, Version> = HashMap::new();
 
         // 用 HashSet 来优化查找速度，避免 Vec contains O(n) 查找
-        let requested_hashes_set: std::collections::HashSet<&str> = hashes.iter().map(|s| s.as_str()).collect();
-        
+        let requested_hashes_set: std::collections::HashSet<&str> =
+            hashes.iter().map(|s| s.as_str()).collect();
+
         for version in versions {
             // 此处导致只有是第一个文件的哈希值会被映射到版本，其他文件的哈希值不会被映射
             // if let Some(first_file) = version.files.first() {
