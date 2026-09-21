@@ -18,7 +18,7 @@ pub mod deprecated_routes {
         get,
         path = "/translate/modrinth",
         params(
-            ("project_id" = String, Query, description = "Project ID of the Modrinth project")
+            ("project_id" = String, Query, description = "Project ID of the Modrinth project", example = "P7dR8mSH")
         ),
         responses(
             (status = 200, description = "Translation found", body = ModrinthTranslationResponse),
@@ -48,7 +48,7 @@ pub mod deprecated_routes {
         get,
         path = "/translate/curseforge",
         params(
-            ("modId" = i32, Query, description = "Mod ID of the CurseForge mod")
+            ("modId" = i32, Query, description = "Mod ID of the CurseForge mod", example = 238222)
         ),
         responses(
             (status = 200, description = "Translation found", body = CurseForgeTranslationResponse),
@@ -93,7 +93,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     get,
     path = "/translate/modrinth/{project_id}",
     params(
-        ("project_id" = String, Path, description = "Project ID of the Modrinth project")
+        ("project_id" = String, Path, description = "Project ID of the Modrinth project", example = "P7dR8mSH")
     ),
     responses(
         (status = 200, description = "Translation found", body = ModrinthTranslationResponse),
@@ -122,7 +122,7 @@ async fn get_modrinth_translation(
     get,
     path = "/translate/curseforge/{mod_id}",
     params(
-        ("mod_id" = i32, Path, description = "Mod ID of the CurseForge mod")
+        ("mod_id" = i32, Path, description = "Mod ID of the CurseForge mod", example = 238222)
     ),
     responses(
         (status = 200, description = "Translation found", body = CurseForgeTranslationResponse),

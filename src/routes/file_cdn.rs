@@ -15,9 +15,9 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     get,
     path = "/files/{file_id1}/{file_id2}/{file_name}",
     params(
-        ("file_id1" = i32, Path, description = "First part of the Curseforge file ID"),
-        ("file_id2" = i32, Path, description = "Second part of the Curseforge file ID"),
-        ("file_name" = String, Path, description = "Name of the file to be downloaded")
+        ("file_id1" = i32, Path, description = "First part of the Curseforge file ID", example = 8937),
+        ("file_id2" = i32, Path, description = "Second part of the Curseforge file ID", example = 628),
+        ("file_name" = String, Path, description = "Name of the file to be downloaded", example = "jei-26.1.2-neoforge-29.40.0.101.jar")
     ),
     responses(
         (status = 302, description = "Curseforge File Redirect"),
@@ -79,9 +79,9 @@ pub async fn get_curseforge_file(
     get,
     path = "/data/{project_id}/versions/{version_id}/{file_name}",
     params(
-        ("project_id" = String, Path, description = "Project ID of the Modrinth project"),
-        ("version_id" = String, Path, description = "Version ID of the Modrinth project"),
-        ("file_name" = String, Path, description = "Name of the file to be downloaded")
+        ("project_id" = String, Path, description = "Project ID of the Modrinth project", example = "AANobbMI"),
+        ("version_id" = String, Path, description = "Version ID of the Modrinth project", example = "ygf8cVZg"),
+        ("file_name" = String, Path, description = "Name of the file to be downloaded", example = "sodium-fabric-0.5.11+mc1.20.1.jar")
     ),
     responses(
         (status = 302, description = "Modrinth File Redirect"),
@@ -130,9 +130,9 @@ pub async fn get_modrinth_file(
     get,
     path = "/avatars/{modid1}/{modid2}/{file_name}",
     params(
-        ("modid1" = String, Path, description = "ModId segment 1 of avatar path"),
-        ("modid2" = String, Path, description = "ModId segment 2 of avatar path"),
-        ("file_name" = String, Path, description = "Avatar file name")
+        ("modid1" = String, Path, description = "ModId segment 1 of avatar path", example = "29"),
+        ("modid2" = String, Path, description = "ModId segment 2 of avatar path", example = "69"),
+        ("file_name" = String, Path, description = "Avatar file name", example = "635838945588716414.jpeg")
     ),
     responses(
         (status = 302, description = "Curseforge Avatar Redirect"),
@@ -175,11 +175,11 @@ pub async fn get_curseforge_avatar(
     get,
     path = "/avatars/thumbnails/{modid1}/{modid2}/{w}/{h}/{file_name}",
     params(
-        ("modid1" = String, Path, description = "ModId segment 1"),
-        ("modid2" = String, Path, description = "ModId segment 2"),
-        ("w" = String, Path, description = "Thumbnail width"),
-        ("h" = String, Path, description = "Thumbnail height"),
-        ("file_name" = String, Path, description = "Thumbnail file name")
+        ("modid1" = String, Path, description = "ModId segment 1", example = "29"),
+        ("modid2" = String, Path, description = "ModId segment 2", example = "69"),
+        ("w" = String, Path, description = "Thumbnail width", example = "256"),
+        ("h" = String, Path, description = "Thumbnail height", example = "256"),
+        ("file_name" = String, Path, description = "Thumbnail file name", example = "635838945588716414.jpeg")
     ),
     responses(
         (status = 302, description = "Curseforge Avatar Thumbnail Redirect"),
@@ -222,8 +222,8 @@ pub async fn get_curseforge_avatar_thumbnail(
     get,
     path = "/data/{project_id}/{file_name}",
     params(
-        ("project_id" = String, Path, description = "Project ID of the Modrinth project"),
-        ("file_name" = String, Path, description = "Icon file name")
+        ("project_id" = String, Path, description = "Project ID of the Modrinth project", example = "AANobbMI"),
+        ("file_name" = String, Path, description = "Icon file name", example = "295862f4724dc3f78df3447ad6072b2dcd3ef0c9_96.webp")
     ),
     responses(
         (status = 302, description = "Modrinth Icon Redirect"),
