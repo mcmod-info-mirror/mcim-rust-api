@@ -5,6 +5,7 @@ pub mod routes;
 pub mod services;
 pub mod utils;
 
+use actix_cors::Cors;
 use actix_middleware_etag::Etag;
 use actix_web::dev::Service;
 use actix_web::middleware::{Compress, Logger};
@@ -75,6 +76,13 @@ async fn main() -> std::io::Result<()> {
         });
 
         App::new()
+            .wrap(
+                Cors::default()
+                    .allow_any_origin()
+                    .send_wildcard()
+                    .allow_any_method()
+                    .allow_any_header(),
+            )
             .app_data(app_data.clone())
             .app_data(
                 web::JsonConfig::default()
