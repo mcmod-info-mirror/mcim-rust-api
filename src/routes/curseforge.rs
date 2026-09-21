@@ -44,7 +44,7 @@ pub async fn root() -> impl Responder {
     get,
     path = "/curseforge/v1/mods/search",
     params(
-        ("gameId" = i32, Query, description = "ID of the game to filter mods by (optional)"),
+        ("gameId" = i32, Query, description = "ID of the game to filter mods by (optional)", example = 432),
         ("classId" = Option<i32>, Query, description = "ID of the class to filter mods by (optional)"),
         ("categoryId" = Option<i32>, Query, description = "ID of the category to filter mods by (optional)"),
         ("categoryIds" = Option<String>, Query, description = "Comma-separated list of category IDs to filter mods by (optional)"),
@@ -230,8 +230,8 @@ async fn get_mod_files(
     get,
     path = "/curseforge/v1/mods/{mod_id}/files/{file_id}/download-url",
     params(
-        ("mod_id" = i32, Path, description = "ID of the mod"),
-        ("file_id" = i32, Path, description = "ID of the file to retrieve download URL for")
+        ("mod_id" = i32, Path, description = "ID of the mod", example = 238222),
+        ("file_id" = i32, Path, description = "ID of the file to retrieve download URL for", example = 8937628)
     ),
     responses(
         (status = 200, description = "Download URL found", body = DownloadUrlResponse),
@@ -260,8 +260,8 @@ async fn get_file_download_url(
     get,
     path = "/curseforge/v1/mods/{mod_id}/files/{file_id}",
     params(
-        ("mod_id" = i32, Path, description = "ID of the mod to which the file belongs"),
-        ("file_id" = i32, Path, description = "ID of the file to retrieve")
+        ("mod_id" = i32, Path, description = "ID of the mod to which the file belongs", example = 238222),
+        ("file_id" = i32, Path, description = "ID of the file to retrieve", example = 8937628)
     ),
     responses(
         (status = 200, description = "File found", body = FileResponse),
@@ -343,7 +343,7 @@ async fn get_fingerprints(
     post,
     path = "/curseforge/v1/fingerprints/{game_id}",
     params(
-        ("game_id" = i32, Path, description = "ID of the game to filter fingerprints by")
+        ("game_id" = i32, Path, description = "ID of the game to filter fingerprints by", example = 432)
     ),
     request_body = FingerprintsBody,
     responses(
@@ -377,7 +377,7 @@ async fn get_fingerprints_by_game_id(
     get,
     path = "/curseforge/v1/categories",
     params(
-        ("gameId" = i32, Query, description = "ID of the game to filter categories by"),
+        ("gameId" = i32, Query, description = "ID of the game to filter categories by", example = 432),
         ("classId" = Option<i32>, Query, description = "ID of the class to filter categories by (optional)"),
         ("classesOnly" = Option<bool>, Query, description = "Whether to return only classes (optional)")
     ),

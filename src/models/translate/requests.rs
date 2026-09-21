@@ -14,10 +14,12 @@ pub struct ModrinthQuery {
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct ModrinthTranslationRequest {
+    #[schema(default = "[\"P7dR8mSH\"]")]
     pub project_ids: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct CurseForgeTranslationRequest {
+    #[schema(default = "[238222]")]
     pub modids: Vec<i32>,
 }
