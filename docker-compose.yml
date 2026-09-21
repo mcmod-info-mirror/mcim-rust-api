@@ -1,53 +1,3 @@
-x-mcim-rust-api-logging: &mcim-rust-api-loki-logging
-  driver: loki
-  options:
-    loki-url: "http://localhost:3100/loki/api/v1/push"
-    max-size: "20m"
-    max-file: "3"
-    keep-file: "true"
-    loki-pipeline-stages: |
-      - regex:
-          expression: '^\[(?P<time>[^ ]+) (?P<level>[A-Z]+)[^\]]*\] (?P<message>.*)'
-
-      - labels:
-          level:
-      - match:
-          selector: '{level="INFO"}'
-          stages:
-            - regex:
-                source: "message"
-                expression: '^(?P<ip>\S+) "(?P<method>\S+) (?P<path>\S+) (?P<protocol>[^"]+)" "(?P<url_template>[^"]+)" (?P<status>\d+) "(?P<referer>[^"]*)" "(?P<user_agent>[^"]+)" (?P<duration_ms>[\d.]+) ms'
-            - labels:
-                method:
-                status:
-                referer:
-                user_agent:
-                url_template:
-                ip:
-
-x-mongo-logging: &mongo-loki-logging
-  driver: loki
-  options:
-    loki-url: "http://localhost:3100/loki/api/v1/push"
-    max-size: "20m"
-    max-file: "3"
-    keep-file: "true"
-    loki-pipeline-stages: |
-      - json:
-          expressions:
-            level: record.level.name
-
-      - labels:
-          level: level
-
-x-redis-logging: &redis-loki-logging
-  driver: loki
-  options:
-    loki-url: "http://localhost:3100/loki/api/v1/push"
-    max-size: "20m"
-    max-file: "3"
-    keep-file: "true"
-
 services:
   mongodb:
     container_name: mongo
@@ -64,7 +14,6 @@ services:
 
     command:
       - "--bind_ip_all"
-    logging: *mongo-loki-logging
     deploy:
       resources:
         limits:
@@ -78,7 +27,6 @@ services:
     ports:
       - 6379:6379
     restart: always
-    logging: *redis-loki-logging
     volumes: 
       - ./config/redis.conf:/etc/redis/redis.conf
     command: redis-server /etc/redis/redis.conf
@@ -111,7 +59,6 @@ services:
       CURSEFORGE_API_URL: "https://api.curseforge.com"
       MODRINTH_API_URL: "https://api.modrinth.com"
       CURSEFORGE_API_KEY: "your_curseforge_api_key"
-    logging: *mcim-rust-api-loki-logging
     deploy:
       resources:
         limits:
