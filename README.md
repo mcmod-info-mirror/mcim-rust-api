@@ -17,7 +17,7 @@
 
 API 支持 [Curseforge](https://curseforge.com/) 和 [Modrinth](https://modrinth.com/)
 
-详情见 <https://www.mcimirror.top>
+启动器接入相关见 <https://www.mcimirror.top>，此处不再赘述
 
 ## 如何部署
 
