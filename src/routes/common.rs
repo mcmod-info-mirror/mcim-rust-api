@@ -39,8 +39,10 @@ async fn root() -> impl Responder {
         build_time: BUILD_TIME,
     };
     web::Json(serde_json::json!({
-        "Status": "https://status.mcimirror.top",
+        "Home": "https://www.mcimirror.top",
+        "Status": "https://www.mcimirror.top/status",
         "Docs": [
+            "https://www.mcimirror.top/docs",
             "https://mod.mcimirror.top/docs"
         ],
         "Github": "https://github.com/mcmod-info-mirror",
