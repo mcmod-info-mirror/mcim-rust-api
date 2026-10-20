@@ -11,6 +11,10 @@
 已缓存 **绝大多数** 的 Modrinth 和 Curseforge 上的 Minecraft Mod 信息。
 
 > [!Warning]
+> MCIM 暂时暂停服务，恢复日期暂不确定  
+> 当前 mod.mcimirror.top 所有请求返回 503 状态码
+
+> [!Warning]
 > 由于多种原因，OpenMCIM 已暂停运行，~~现在不再利用节点分发而是常规 CDN 分发~~，MCIM API 不受影响。  
 > ~~文件下载已现在重定向到 [Pysio](https://github.com/pysio2007) 提供的 Cloudflare 镜像源上，现已投入运行~~  
 > 文件下载暂时不提供
