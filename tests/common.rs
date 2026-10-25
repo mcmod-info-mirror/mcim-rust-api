@@ -104,7 +104,10 @@ async fn test_statistics_files_lists_only_files_above_threshold() {
         (at_threshold.as_str(), 10_000),
     ];
     for (member, score) in members {
-        let _: () = redis.zadd(&key, member, score).await.unwrap();
+        redis
+            .zadd::<_, _, _, ()>(&key, member, score)
+            .await
+            .unwrap();
     }
 
     let app = init_service(create_test_app().await).await;
@@ -118,8 +121,8 @@ async fn test_statistics_files_lists_only_files_above_threshold() {
     let body = to_bytes(response.into_body()).await.unwrap();
     let stats: FileStatisticsResponse = serde_json::from_slice(&body).unwrap();
 
-    let _: () = redis
-        .zrem(&key, members.map(|(member, _)| member).to_vec())
+    redis
+        .zrem::<_, _, ()>(&key, members.map(|(member, _)| member).to_vec())
         .await
         .unwrap();
 
