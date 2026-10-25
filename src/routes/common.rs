@@ -2,15 +2,19 @@ use actix_web::{Responder, get, web};
 use serde::Serialize;
 
 use crate::errors::ApiError;
-use crate::models::common::requests::StatisticsQuery;
-use crate::models::common::responses::StatisticsResponse;
+use crate::models::common::requests::{FileStatisticsQuery, StatisticsQuery};
+use crate::models::common::responses::{FileStatisticsResponse, StatisticsResponse};
 use crate::services::common::get_statistics_info;
+use crate::services::file_stats::get_hot_files;
 use crate::utils::app::AppState;
 
 include!(concat!(env!("OUT_DIR"), "/build_info.rs"));
 
 pub fn config(cfg: &mut web::ServiceConfig) {
-    cfg.service(root).service(get_statistics).service(healthz);
+    cfg.service(root)
+        .service(get_statistics)
+        .service(get_file_statistics)
+        .service(healthz);
 }
 
 #[derive(Serialize)]
@@ -105,4 +109,27 @@ async fn get_statistics(
         Ok(stats) => Ok(web::Json(stats)),
         Err(e) => Err(e.into()),
     }
+}
+
+#[utoipa::path(
+    get,
+    path = "/statistics_files",
+    params(
+        ("date" = Option<String>, Query, description = "Statistics day in YYYY-MM-DD (UTC+8); only today and yesterday are retained. Defaults to today", example = "2026-10-25")
+    ),
+    responses(
+        (status = 200, description = "Files requested more than 10000 times on that day", body = FileStatisticsResponse),
+        (status = 400, description = "Date is not retained"),
+        (status = 500, description = "Internal server error")
+    ),
+    description = "Get files whose daily request count through the file CDN endpoints exceeds 10000, with original download URL and size",
+    tag = "Common"
+)]
+#[get("/statistics_files")]
+async fn get_file_statistics(
+    query: web::Query<FileStatisticsQuery>,
+    data: web::Data<AppState>,
+) -> Result<impl Responder, ApiError> {
+    let stats = get_hot_files(&data.db, &data.redis_pool, query.date).await?;
+    Ok(web::Json(stats))
 }

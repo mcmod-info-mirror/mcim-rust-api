@@ -1,5 +1,6 @@
-use actix_web::{Responder, route, web, web::Redirect, http::{StatusCode, header}, HttpRequest, HttpResponse};
+use actix_web::{Responder, route, web, web::Redirect, http::{Method, StatusCode, header}, HttpRequest, HttpResponse};
 
+use crate::services::file_stats::{curseforge_member, modrinth_member, record_file_request};
 use crate::utils::app::AppState;
 use crate::utils::file_cdn_load_balance::select_cdn_endpoint;
 
@@ -37,6 +38,12 @@ pub async fn get_curseforge_file(
     req: HttpRequest
 ) -> impl Responder {
     let (file_id1, file_id2, file_name) = path.into_inner();
+
+    if req.method() == Method::GET {
+        if let Some(member) = curseforge_member(&file_id1, &file_id2, &file_name) {
+            record_file_request(&data.redis_pool, member);
+        }
+    }
 
     let target_url = if !data.file_cdn_enabled {
         format!(
@@ -98,8 +105,16 @@ pub async fn get_curseforge_file(
 pub async fn get_modrinth_file(
     path: web::Path<(String, String, String)>,
     data: web::Data<AppState>,
+    req: HttpRequest,
 ) -> impl Responder {
     let (project_id, version_id, file_name) = path.into_inner();
+
+    if req.method() == Method::GET {
+        if let Some(member) = modrinth_member(&project_id, &version_id, &file_name) {
+            record_file_request(&data.redis_pool, member);
+        }
+    }
+
     if data.file_cdn_enabled == false {
         let url = format!(
             "{}/data/{}/versions/{}/{}",
