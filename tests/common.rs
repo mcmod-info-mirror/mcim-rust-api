@@ -90,7 +90,8 @@ async fn test_translation_statistics_filters_null_translated_at() {
 #[actix_web::test]
 async fn test_statistics_files_lists_only_files_above_threshold() {
     let cf_hot = curseforge_member("3913", "840", "hats-and-cosmetics-1.2.2-1.19.1.jar").unwrap();
-    let mr_hot = modrinth_member("Wnxd13zP", "BBnb9L4J", "Clumps-neoforge-1.21-18.0.0.1.jar").unwrap();
+    let mr_hot =
+        modrinth_member("Wnxd13zP", "BBnb9L4J", "Clumps-neoforge-1.21-18.0.0.1.jar").unwrap();
     let cf_unknown = curseforge_member("9999", "1", "not in db+1.jar").unwrap();
     let at_threshold = curseforge_member("1234", "567", "at-threshold.jar").unwrap();
 
@@ -109,7 +110,11 @@ async fn test_statistics_files_lists_only_files_above_threshold() {
     let app = init_service(create_test_app().await).await;
     let req = TestRequest::get().uri("/statistics_files").to_request();
     let response = app.call(req).await.unwrap();
-    assert!(response.status().is_success(), "status: {}", response.status());
+    assert!(
+        response.status().is_success(),
+        "status: {}",
+        response.status()
+    );
     let body = to_bytes(response.into_body()).await.unwrap();
     let stats: FileStatisticsResponse = serde_json::from_slice(&body).unwrap();
 

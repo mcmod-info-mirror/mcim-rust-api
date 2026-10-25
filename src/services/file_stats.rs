@@ -57,7 +57,9 @@ fn valid_file_name(file_name: &str) -> bool {
 }
 
 fn valid_modrinth_id(id: &str) -> bool {
-    !id.is_empty() && id.len() <= MAX_MODRINTH_ID_LEN && id.bytes().all(|b| b.is_ascii_alphanumeric())
+    !id.is_empty()
+        && id.len() <= MAX_MODRINTH_ID_LEN
+        && id.bytes().all(|b| b.is_ascii_alphanumeric())
 }
 
 /// `/files/{id1}/{id2}/{file_name}` 的计数 member：`c:{file_id}:{file_name}`。
@@ -75,7 +77,9 @@ pub fn curseforge_member(id1: &str, id2: &str, file_name: &str) -> Option<String
 /// `/data/{project_id}/versions/{version_id}/{file_name}` 的计数 member：
 /// `m:{project_id}:{version_id}:{file_name}`。非法路径返回 None（不计数）。
 pub fn modrinth_member(project_id: &str, version_id: &str, file_name: &str) -> Option<String> {
-    if !valid_modrinth_id(project_id) || !valid_modrinth_id(version_id) || !valid_file_name(file_name)
+    if !valid_modrinth_id(project_id)
+        || !valid_modrinth_id(version_id)
+        || !valid_file_name(file_name)
     {
         return None;
     }
@@ -241,11 +245,7 @@ pub async fn get_hot_files(
 
     let mut conn = redis.as_ref().clone();
     let entries: Vec<(String, f64)> = conn
-        .zrevrangebyscore_withscores(
-            daily_key(date),
-            "+inf",
-            format!("({}", HOT_FILE_THRESHOLD),
-        )
+        .zrevrangebyscore_withscores(daily_key(date), "+inf", format!("({}", HOT_FILE_THRESHOLD))
         .await
         .map_err(|e| ServiceError::ExternalServiceError {
             service: String::from("Redis"),

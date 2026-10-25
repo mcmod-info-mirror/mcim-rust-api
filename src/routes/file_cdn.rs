@@ -1,4 +1,9 @@
-use actix_web::{Responder, route, web, web::Redirect, http::{Method, StatusCode, header}, HttpRequest, HttpResponse};
+use actix_web::{
+    HttpRequest, HttpResponse, Responder,
+    http::{Method, StatusCode, header},
+    route, web,
+    web::Redirect,
+};
 
 use crate::services::file_stats::{curseforge_member, modrinth_member, record_file_request};
 use crate::utils::app::AppState;
@@ -35,7 +40,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 pub async fn get_curseforge_file(
     path: web::Path<(String, String, String)>,
     data: web::Data<AppState>,
-    req: HttpRequest
+    req: HttpRequest,
 ) -> impl Responder {
     let (file_id1, file_id2, file_name) = path.into_inner();
 
@@ -48,10 +53,7 @@ pub async fn get_curseforge_file(
     let target_url = if !data.file_cdn_enabled {
         format!(
             "{}/files/{}/{}/{}",
-            data.curseforge_file_cdn_fallback_url,
-            file_id1,
-            file_id2,
-            file_name
+            data.curseforge_file_cdn_fallback_url, file_id1, file_id2, file_name
         )
     } else {
         let mirror_url = select_cdn_endpoint(
