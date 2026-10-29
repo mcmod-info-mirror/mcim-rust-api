@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: mongodb::Client,
+    pub db: sqlx::PgPool,
     pub redis_pool: Arc<MultiplexedConnection>,
     pub curseforge_api_url: String,
     pub modrinth_api_url: String,
@@ -27,11 +27,11 @@ pub struct AppState {
 }
 
 pub fn build_app_state(
-    mongo_client: mongodb::Client,
+    db: sqlx::PgPool,
     redis_pool: std::sync::Arc<redis::aio::MultiplexedConnection>,
 ) -> AppState {
     AppState {
-        db: mongo_client,
+        db,
         redis_pool,
         curseforge_api_url: env::var("CURSEFORGE_API_URL")
             .unwrap_or_else(|_| "https://api.curseforge.com".to_string()),

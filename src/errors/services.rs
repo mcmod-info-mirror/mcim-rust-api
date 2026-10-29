@@ -1,4 +1,4 @@
-use mongodb::error::Error as MongoError;
+use sqlx::Error as DbError;
 use std::error::Error as StdError;
 use std::fmt::{Display, Formatter};
 
@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 pub enum ServiceError {
     DatabaseError {
         message: String,
-        source: Option<MongoError>,
+        source: Option<DbError>,
     },
     NotFound {
         resource: String,
@@ -63,8 +63,8 @@ impl StdError for ServiceError {
     }
 }
 
-impl From<MongoError> for ServiceError {
-    fn from(err: MongoError) -> Self {
+impl From<DbError> for ServiceError {
+    fn from(err: DbError) -> Self {
         ServiceError::DatabaseError {
             message: err.to_string(),
             source: Some(err),

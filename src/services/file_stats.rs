@@ -8,13 +8,11 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use chrono::{Days, FixedOffset, NaiveDate, NaiveTime, Utc};
-use futures::TryStreamExt;
-use mongodb::bson::doc;
 use redis::AsyncCommands;
 use redis::aio::MultiplexedConnection;
-use serde::Deserialize;
+use sqlx::PgPool;
 
-use crate::db::database::get_database_name;
+use crate::db::{curseforge, modrinth};
 use crate::errors::ServiceError;
 use crate::models::common::responses::{FilePlatform, FileStatisticsResponse, HotFile};
 
@@ -139,97 +137,40 @@ fn parse_member(member: &str) -> Option<ParsedMember<'_>> {
     }
 }
 
-#[derive(Deserialize)]
-struct CurseforgeFileSize {
-    #[serde(rename = "_id")]
-    id: i64,
-    #[serde(rename = "fileLength")]
-    file_length: Option<i64>,
-}
-
-#[derive(Deserialize)]
-struct ModrinthVersionFiles {
-    #[serde(rename = "_id")]
-    id: String,
-    #[serde(default)]
-    files: Vec<ModrinthFileSize>,
-}
-
-#[derive(Deserialize)]
-struct ModrinthFileSize {
-    filename: String,
-    size: i64,
-}
-
 async fn curseforge_file_sizes(
-    db: &mongodb::Client,
+    db: &PgPool,
     file_ids: &[i64],
 ) -> Result<HashMap<i64, i64>, ServiceError> {
     if file_ids.is_empty() {
         return Ok(HashMap::new());
     }
-    let collection = db
-        .database(get_database_name().as_str())
-        .collection::<CurseforgeFileSize>("curseforge_files");
-    let files: Vec<CurseforgeFileSize> = collection
-        .find(doc! { "_id": { "$in": file_ids } })
-        .projection(doc! { "fileLength": 1 })
+    curseforge::get_file_lengths(db, file_ids)
         .await
         .map_err(|e| ServiceError::DatabaseError {
             message: String::from("Failed to fetch curseforge file sizes"),
             source: Some(e),
-        })?
-        .try_collect()
-        .await
-        .map_err(|e| ServiceError::DatabaseError {
-            message: String::from("Failed to fetch curseforge file sizes"),
-            source: Some(e),
-        })?;
-    Ok(files
-        .into_iter()
-        .filter_map(|f| Some((f.id, f.file_length?)))
-        .collect())
+        })
 }
 
 /// 返回 (version_id, filename) -> size
 async fn modrinth_file_sizes(
-    db: &mongodb::Client,
+    db: &PgPool,
     version_ids: &[&str],
 ) -> Result<HashMap<(String, String), i64>, ServiceError> {
     if version_ids.is_empty() {
         return Ok(HashMap::new());
     }
-    let collection = db
-        .database(get_database_name().as_str())
-        .collection::<ModrinthVersionFiles>("modrinth_versions");
-    let versions: Vec<ModrinthVersionFiles> = collection
-        .find(doc! { "_id": { "$in": version_ids } })
-        .projection(doc! { "files.filename": 1, "files.size": 1 })
+    modrinth::get_version_file_sizes(db, version_ids)
         .await
         .map_err(|e| ServiceError::DatabaseError {
             message: String::from("Failed to fetch modrinth file sizes"),
             source: Some(e),
-        })?
-        .try_collect()
-        .await
-        .map_err(|e| ServiceError::DatabaseError {
-            message: String::from("Failed to fetch modrinth file sizes"),
-            source: Some(e),
-        })?;
-    Ok(versions
-        .into_iter()
-        .flat_map(|v| {
-            let version_id = v.id;
-            v.files
-                .into_iter()
-                .map(move |f| ((version_id.clone(), f.filename), f.size))
         })
-        .collect())
 }
 
 /// 查询某统计日（默认今天）请求次数超过 HOT_FILE_THRESHOLD 的文件，按次数降序。
 pub async fn get_hot_files(
-    db: &mongodb::Client,
+    db: &PgPool,
     redis: &Arc<MultiplexedConnection>,
     date: Option<NaiveDate>,
 ) -> Result<FileStatisticsResponse, ServiceError> {

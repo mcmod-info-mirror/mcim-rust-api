@@ -1,24 +1,21 @@
-use bson::doc;
-use futures::stream::TryStreamExt;
-use mongodb::{Client as Mongo_Client, bson::Document};
 use redis::AsyncCommands;
 use redis::aio::MultiplexedConnection;
 use reqwest::Client;
+use sqlx::PgPool;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::db::database::get_database_name;
+use crate::db::modrinth::{self as repo, HashAlgorithm};
 use crate::errors::ServiceError;
-use crate::models::modrinth::entities as db;
 use crate::models::modrinth::responses::*;
 
 pub struct ModrinthService {
-    db: Mongo_Client,
+    db: PgPool,
     redis: Arc<MultiplexedConnection>,
 }
 
 impl ModrinthService {
-    pub fn new(db: Mongo_Client, redis: Arc<MultiplexedConnection>) -> Self {
+    pub fn new(db: PgPool, redis: Arc<MultiplexedConnection>) -> Self {
         Self { db, redis }
     }
 
@@ -284,34 +281,12 @@ impl ModrinthService {
             log::debug!("Search result is empty, no project IDs found");
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<bson::Document>("modrinth_projects");
-
-        let mut cursor = collection
-            .find(doc! { "_id": { "$in": &project_ids } })
-            .projection(doc! { "_id": 1 })
+        let found_project_ids = repo::existing_project_ids(&self.db, &project_ids)
             .await
             .map_err(|e| ServiceError::DatabaseError {
                 message: format!("Failed to fetch project documents: {}", e),
                 source: Some(e),
             })?;
-
-        let mut found_project_ids = Vec::new();
-
-        while let Some(doc) = cursor
-            .try_next()
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: format!("Failed to fetch project documents: {}", e),
-                source: Some(e),
-            })?
-        {
-            if let Ok(id) = doc.get_str("_id") {
-                found_project_ids.push(id.to_string());
-            }
-        }
 
         let not_found_project_ids: Vec<String> = project_ids
             .iter()
@@ -435,18 +410,7 @@ impl ModrinthService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<db::Project>("modrinth_projects");
-
-        match collection
-            .find_one(doc! { "$or": [
-                { "_id": &project_id_or_slug },
-                { "slug": &project_id_or_slug }
-            ] })
-            .await?
-        {
+        match repo::get_project_by_id_or_slug(&self.db, &project_id_or_slug).await? {
             Some(doc) => {
                 // 缓存项目映射关系以供未来使用
                 if let Err(e) = self.cache_project_mapping(&doc.id, &doc.slug).await {
@@ -516,41 +480,19 @@ impl ModrinthService {
         }
 
         // 否则还需要查询数据库
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<db::Project>("modrinth_projects");
-
         // 构建查询条件：包含已解析的project_id和剩余的待查询项
         let mut all_items_to_query = resolved_project_ids;
         all_items_to_query.extend(remaining_items.clone());
 
-        let filter = doc! {
-            "$or": [
-                { "_id": { "$in": &all_items_to_query.clone() } },
-                { "slug": { "$in": &all_items_to_query } }
-            ]
-        };
-
-        let mut cursor =
-            collection
-                .find(filter)
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: format!("Failed to fetch project documents: {}", e),
-                    source: Some(e),
-                })?;
-
-        let mut projects: Vec<Project> = Vec::new();
-
-        while let Some(doc) = cursor
-            .try_next()
+        let db_projects = repo::get_projects(&self.db, &all_items_to_query)
             .await
             .map_err(|e| ServiceError::DatabaseError {
                 message: format!("Failed to fetch project documents: {}", e),
                 source: Some(e),
-            })?
-        {
+            })?;
+
+        let mut projects: Vec<Project> = Vec::with_capacity(db_projects.len());
+        for doc in db_projects {
             // 缓存新发现的项目映射关系
             if let Err(e) = self.cache_project_mapping(&doc.id, &doc.slug).await {
                 log::warn!("Failed to cache project mapping for {}: {}", doc.id, e);
@@ -653,42 +595,21 @@ impl ModrinthService {
             }
         };
 
-        let version_collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<db::Version>("modrinth_versions");
-
-        let mut filter = doc! { "project_id": &project_id };
-
-        if let Some(featured) = featured {
-            filter.insert("featured", featured);
-        }
-
-        if let Some(game_versions) = game_versions {
-            filter.insert(
-                "game_versions",
-                doc! { "$elemMatch": { "$in": game_versions } },
-            );
-        }
-
-        if let Some(loaders) = loaders {
-            filter.insert("loaders", doc! { "$elemMatch": { "$in": loaders } });
-        }
-
-        let mut cursor = version_collection.find(filter).await?;
-
-        let mut versions = Vec::new();
-
-        while let Some(doc) = cursor
-            .try_next()
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: format!("Failed to fetch version documents: {}", e),
-                source: Some(e),
-            })?
-        {
-            versions.push(doc.into());
-        }
+        let versions: Vec<Version> = repo::get_project_versions(
+            &self.db,
+            &project_id,
+            featured,
+            game_versions.as_deref(),
+            loaders.as_deref(),
+        )
+        .await
+        .map_err(|e| ServiceError::DatabaseError {
+            message: format!("Failed to fetch version documents: {}", e),
+            source: Some(e),
+        })?
+        .into_iter()
+        .map(Into::into)
+        .collect();
 
         if versions.is_empty() {
             return Err(ServiceError::NotFound {
@@ -711,12 +632,10 @@ impl ModrinthService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<db::Version>("modrinth_versions");
-
-        match collection.find_one(doc! { "_id": &version_id }).await? {
+        match repo::get_versions(&self.db, std::slice::from_ref(&version_id))
+            .await?
+            .pop()
+        {
             Some(doc) => Ok(Some(doc.into())),
             None => {
                 self.add_version_ids_into_queue(vec![version_id.clone()])
@@ -741,27 +660,15 @@ impl ModrinthService {
             return Ok(Vec::new()); // 官方返回的是 []
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<db::Version>("modrinth_versions");
-
-        let filter = doc! { "_id": { "$in": &version_ids } };
-
-        let mut cursor = collection.find(filter).await?;
-
-        let mut versions: Vec<Version> = Vec::new();
-
-        while let Some(doc) = cursor
-            .try_next()
+        let versions: Vec<Version> = repo::get_versions(&self.db, &version_ids)
             .await
             .map_err(|e| ServiceError::DatabaseError {
                 message: format!("Failed to fetch version documents: {}", e),
                 source: Some(e),
             })?
-        {
-            versions.push(doc.into());
-        }
+            .into_iter()
+            .map(Into::into)
+            .collect();
 
         if versions.is_empty() {
             self.add_version_ids_into_queue(version_ids.clone()).await?;
@@ -813,14 +720,14 @@ impl ModrinthService {
             return self.get_version(cached_version_id).await;
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<db::File>("modrinth_files");
+        let file = match HashAlgorithm::from_name(&algorithm) {
+            Some(algo) => repo::get_files_by_hashes(&self.db, algo, std::slice::from_ref(&hash))
+                .await?
+                .pop(),
+            None => None,
+        };
 
-        let filter = doc! { format!("_id.{}", algorithm): &hash };
-
-        match collection.find_one(filter).await? {
+        match file {
             Some(doc) => {
                 // 缓存 hash -> version_id 映射
                 if let Err(e) = self
@@ -868,28 +775,15 @@ impl ModrinthService {
         }
 
         // 查找文件
-        let files_collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<db::File>("modrinth_files");
-
-        let hash_field = format!("_id.{}", &algorithm);
-        let files_filter = doc! { &hash_field: { "$in": &hashes } };
-
-        let mut files_cursor = files_collection.find(files_filter).await?;
-        let mut files = Vec::new();
-
-        while let Some(doc) =
-            files_cursor
-                .try_next()
+        let files = match HashAlgorithm::from_name(&algorithm) {
+            Some(algo) => repo::get_files_by_hashes(&self.db, algo, &hashes)
                 .await
                 .map_err(|e| ServiceError::DatabaseError {
                     message: format!("Failed to fetch file documents: {}", e),
                     source: Some(e),
-                })?
-        {
-            files.push(doc);
-        }
+                })?,
+            None => Vec::new(),
+        };
 
         if files.is_empty() {
             self.add_hashes_into_queue(algorithm.clone(), hashes.clone())
@@ -905,28 +799,6 @@ impl ModrinthService {
 
         // 提取版本 ID
         let version_ids: Vec<String> = files.iter().map(|file| file.version_id.clone()).collect();
-
-        // // 查找版本
-        // let versions_collection = self
-        //     .db
-        //     .database(get_database_name().as_str())
-        //     .collection::<Version>("modrinth_versions");
-
-        // let versions_filter = doc! { "_id": { "$in": &version_ids } };
-        // let mut versions_cursor = versions_collection.find(versions_filter, None).await?;
-        // let mut versions = Vec::new();
-
-        // while let Some(doc) =
-        //     versions_cursor
-        //         .try_next()
-        //         .await
-        //         .map_err(|e| ServiceError::DatabaseError {
-        //             message: format!("Failed to fetch version documents: {}", e),
-        //             source: Some(e),
-        //         })?
-        // {
-        //     versions.push(doc);
-        // }
 
         let versions: Vec<Version> = self.get_versions(version_ids.clone()).await?;
 
@@ -1018,68 +890,26 @@ impl ModrinthService {
             }); // 单个 hash 请求直接返回 404
         }
 
-        // 使用聚合查询从 modrinth_files 集合开始
-        let files_collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_files");
+        let version_id = match HashAlgorithm::from_name(&algorithm) {
+            Some(algo) => repo::get_latest_version_ids_for_hashes(
+                &self.db,
+                algo,
+                std::slice::from_ref(&hash),
+                &loaders,
+                &game_versions,
+            )
+            .await?
+            .pop()
+            .map(|(_, version_id)| version_id),
+            None => None,
+        };
+        let version = match version_id {
+            Some(version_id) => repo::get_versions(&self.db, &[version_id]).await?.pop(),
+            None => None,
+        };
 
-        // 构建聚合管道
-        let hash_field = format!("_id.{}", algorithm);
-        let mut pipeline = vec![
-            doc! { "$match": { &hash_field: &hash } },
-            doc! { "$project": {
-                format!("_id.{}", algorithm): 1,
-                "project_id": 1
-            }},
-            doc! { "$lookup": {
-                "from": "modrinth_versions",
-                "localField": "project_id",
-                "foreignField": "project_id",
-                "as": "versions_fields"
-            }},
-            doc! { "$unwind": "$versions_fields" },
-        ];
-
-        // 添加版本过滤条件
-        let mut version_match = doc! {};
-        if !game_versions.is_empty() {
-            version_match.insert(
-                "versions_fields.game_versions",
-                doc! { "$in": game_versions },
-            );
-        }
-        if !loaders.is_empty() {
-            version_match.insert("versions_fields.loaders", doc! { "$in": loaders });
-        }
-
-        if !version_match.is_empty() {
-            pipeline.push(doc! { "$match": version_match });
-        }
-
-        pipeline.extend([
-            doc! { "$sort": { "versions_fields.date_published": -1 } },
-            doc! { "$replaceRoot": { "newRoot": "$versions_fields" } },
-            doc! { "$limit": 1 },
-        ]);
-
-        let mut cursor = files_collection.aggregate(pipeline).await?;
-
-        if let Some(doc) = cursor
-            .try_next()
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: format!("Failed to fetch version document: {}", e),
-                source: Some(e),
-            })?
-        {
-            match bson::deserialize_from_document::<db::Version>(doc) {
-                Ok(version) => Ok(Some(version.into())),
-                Err(e) => Err(ServiceError::UnexpectedError(format!(
-                    "Failed to deserialize Version: {}",
-                    e
-                ))),
-            }
+        if let Some(version) = version {
+            Ok(Some(version.into()))
         } else {
             self.add_hashes_into_queue(algorithm.clone(), vec![hash.clone()])
                 .await?;
@@ -1105,81 +935,35 @@ impl ModrinthService {
             return Ok(MutilFilesResponse { entries: None }); // 官方返回的是 {}
         }
 
-        // 使用聚合查询从 modrinth_files 集合开始
-        let files_collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<Document>("modrinth_files");
-
-        // 构建聚合管道
-        let hash_field = format!("_id.{}", algorithm);
-
-        let mut pipeline = vec![
-            doc! { "$match": { &hash_field: { "$in": &hashes } } },
-            doc! { "$project": {
-                format!("_id.{}", algorithm): 1,
-                "project_id": 1
-            }},
-            doc! { "$lookup": {
-                "from": "modrinth_versions",
-                "localField": "project_id",
-                "foreignField": "project_id",
-                "as": "versions_fields"
-            }},
-            doc! { "$unwind": "$versions_fields" },
-        ];
-
-        // 添加版本过滤条件
-        let mut version_match = doc! {};
-        if !game_versions.is_empty() {
-            version_match.insert(
-                "versions_fields.game_versions",
-                doc! { "$in": game_versions },
-            );
-        }
-
-        if !loaders.is_empty() {
-            version_match.insert("versions_fields.loaders", doc! { "$in": loaders });
-        }
-
-        if !version_match.is_empty() {
-            pipeline.push(doc! { "$match": version_match });
-        }
-
-        pipeline.extend([
-            doc! { "$sort": { "versions_fields.date_published": -1 } },
-            doc! { "$group": {
-                "_id": format!("$_id.{}", algorithm),
-                "latest_date": { "$first": "$versions_fields.date_published" },
-                "detail": { "$first": "$versions_fields" }
-            }},
-        ]);
-
-        let mut cursor = files_collection.aggregate(pipeline).await?;
-        let mut result: HashMap<String, Version> = HashMap::new();
-
-        while let Some(doc) = cursor
-            .try_next()
+        // 每个哈希 -> 同一 Project 中满足过滤条件的最新 Version
+        let latest = match HashAlgorithm::from_name(&algorithm) {
+            Some(algo) => {
+                repo::get_latest_version_ids_for_hashes(
+                    &self.db,
+                    algo,
+                    &hashes,
+                    &loaders,
+                    &game_versions,
+                )
+                .await?
+            }
+            None => Vec::new(),
+        };
+        let version_ids: Vec<String> = latest.iter().map(|(_, id)| id.clone()).collect();
+        let versions: HashMap<String, Version> = repo::get_versions(&self.db, &version_ids)
             .await
             .map_err(|e| ServiceError::DatabaseError {
                 message: format!("Failed to fetch version documents: {}", e),
                 source: Some(e),
             })?
-        {
-            if let (Some(bson::Bson::String(hash_value)), Some(bson::Bson::Document(detail_doc))) =
-                (doc.get("_id"), doc.get("detail"))
-            {
-                match bson::deserialize_from_document::<db::Version>(detail_doc.clone()) {
-                    Ok(version) => {
-                        result.insert(hash_value.clone(), version.into());
-                    }
-                    Err(e) => {
-                        return Err(ServiceError::UnexpectedError(format!(
-                            "Failed to deserialize Version: {}",
-                            e
-                        )));
-                    }
-                }
+            .into_iter()
+            .map(|v| (v.id.clone(), v.into()))
+            .collect();
+
+        let mut result: HashMap<String, Version> = HashMap::new();
+        for (hash_value, version_id) in latest {
+            if let Some(version) = versions.get(&version_id) {
+                result.insert(hash_value, version.clone());
             }
         }
 
@@ -1215,27 +999,7 @@ impl ModrinthService {
     }
 
     pub async fn get_categories(&self) -> Result<Vec<Category>, ServiceError> {
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<db::Category>("modrinth_categories");
-
-        let cursor = collection
-            .find(doc! {})
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: e.to_string(),
-                source: Some(e),
-            })?;
-
-        let db_categories: Vec<db::Category> =
-            cursor
-                .try_collect()
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: e.to_string(),
-                    source: Some(e),
-                })?;
+        let db_categories = repo::get_categories(&self.db).await?;
 
         let categories: Vec<Category> = db_categories.into_iter().map(Into::into).collect();
 
@@ -1243,27 +1007,7 @@ impl ModrinthService {
     }
 
     pub async fn get_loaders(&self) -> Result<Vec<Loader>, ServiceError> {
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<db::Loader>("modrinth_loaders");
-
-        let cursor = collection
-            .find(doc! {})
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: e.to_string(),
-                source: Some(e),
-            })?;
-
-        let db_loaders: Vec<db::Loader> =
-            cursor
-                .try_collect()
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: e.to_string(),
-                    source: Some(e),
-                })?;
+        let db_loaders = repo::get_loaders(&self.db).await?;
 
         let loaders: Vec<Loader> = db_loaders.into_iter().map(Into::into).collect();
 
@@ -1271,27 +1015,7 @@ impl ModrinthService {
     }
 
     pub async fn get_game_versions(&self) -> Result<Vec<GameVersion>, ServiceError> {
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<db::GameVersion>("modrinth_game_versions");
-
-        let cursor = collection
-            .find(doc! {})
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: e.to_string(),
-                source: Some(e),
-            })?;
-
-        let db_game_versions: Vec<db::GameVersion> =
-            cursor
-                .try_collect()
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: e.to_string(),
-                    source: Some(e),
-                })?;
+        let db_game_versions = repo::get_game_versions(&self.db).await?;
 
         let game_versions: Vec<GameVersion> =
             db_game_versions.into_iter().map(Into::into).collect();
