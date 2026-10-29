@@ -102,7 +102,6 @@
             redisStart
             redisStop
             redisReset
-            mongodb-tools
           ];
 
           RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
@@ -113,7 +112,10 @@
           PGHOST = "${pgRoot}/run";
           PGUSER = "postgres";
           PGDATABASE = "mcim_backend";
-          DATABASE_URL = "postgresql://postgres@/mcim_backend?host=${pgRoot}/run";
+          # unix socket 目录以 URL 编码写在 host 位置（sqlx 与 libpq 均支持）
+          DATABASE_URL = "postgresql://postgres@${
+            builtins.replaceStrings [ "/" ] [ "%2F" ] "${pgRoot}/run"
+          }/mcim_backend";
           # psql 命令历史默认写 ~/.psql_history，改到 /tmp
           PSQL_HISTORY = "${pgRoot}/psql_history";
 
