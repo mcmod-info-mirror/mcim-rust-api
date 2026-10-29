@@ -22,9 +22,13 @@ impl CurseforgeService {
 
     // error=[POST] 400 https://api.curseforge.com/v1/mods/files {"value":"one or more ids are not valid"}
     // 用于同步的 ID 必须大于 0，否则会 400
-    
+
     async fn add_modids_into_queue(&self, mod_ids: Vec<i32>) -> Result<(), ServiceError> {
-        let filtered_mod_ids = mod_ids.iter().filter(|id| *id >= & 30000).cloned().collect::<Vec<i32>>();
+        let filtered_mod_ids = mod_ids
+            .iter()
+            .filter(|id| *id >= &30000)
+            .cloned()
+            .collect::<Vec<i32>>();
         if filtered_mod_ids.is_empty() {
             return Ok(());
         }
@@ -43,7 +47,11 @@ impl CurseforgeService {
     }
 
     async fn add_fileids_into_queue(&self, file_ids: Vec<i32>) -> Result<(), ServiceError> {
-        let filtered_file_ids = file_ids.iter().filter(|id| *id >= & 0).cloned().collect::<Vec<i32>>();
+        let filtered_file_ids = file_ids
+            .iter()
+            .filter(|id| *id >= &0)
+            .cloned()
+            .collect::<Vec<i32>>();
         if filtered_file_ids.is_empty() {
             return Ok(());
         }
@@ -89,7 +97,10 @@ impl CurseforgeService {
                     message: format!("Failed to add fingerprints to Redis queue: {}", e),
                 }
             })?;
-        log::debug!("Added fingerprints to Redis queue: {:?}", filtered_fingerprints);
+        log::debug!(
+            "Added fingerprints to Redis queue: {:?}",
+            filtered_fingerprints
+        );
         Ok(())
     }
 
