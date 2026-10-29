@@ -6,9 +6,14 @@ redis-tool-install:
     sudo apt-get update
     sudo apt install redis-tools # for redis-cli
 
-# 将 data/ 下的测试数据导入 DATABASE_URL 指向的 PostgreSQL
+# 用 data/seed.sql（表结构 + 测试数据）重建 DATABASE_URL 指向的数据库（会清空 public schema）
 import-data:
-    cargo run -p migrate-mongo -- --from-json data --truncate
+    PGOPTIONS='-c client_min_messages=warning' psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -c 'DROP SCHEMA public CASCADE' -c 'CREATE SCHEMA public'
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -o /dev/null -f data/seed.sql
+
+# 将 DATABASE_URL 中的当前数据导出为 data/seed.sql
+dump-seed:
+    pg_dump --no-owner --no-privileges "$DATABASE_URL" > data/seed.sql
 
 # 将 MONGODB_URI / MONGODB_DATABASE 中的全部数据迁移到 DATABASE_URL 指向的 PostgreSQL
 migrate-from-mongodb:

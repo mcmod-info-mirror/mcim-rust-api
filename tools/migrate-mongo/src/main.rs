@@ -1,7 +1,7 @@
 //! 将 MCIM 的 MongoDB 数据迁移到 PostgreSQL。
 //!
 //! 数据来源：运行中的 MongoDB（`--mongodb-uri`），或 mongoexport `--jsonArray` 导出的
-//! `<集合名>.json` 目录（`--from-json`，如仓库中的 `data/` 测试数据）。
+//! `<集合名>.json` 目录（`--from-json`）。
 //!
 //! 逐个集合读取文档 -> 转成 JSON（日期转 RFC 3339，ObjectId 转十六进制）->
 //! 反序列化为 `mcim_rust_api` 的数据库模型 -> 批量写入关系表。

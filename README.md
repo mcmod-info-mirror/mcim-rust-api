@@ -39,7 +39,7 @@ cargo run --release -p migrate-mongo -- --truncate
 - `--truncate`：迁移前清空 PostgreSQL 中的全部数据表
 - `--collections modrinth_projects,modrinth_versions`：只迁移指定集合
 - `--batch-size 1000`：每批写入的文档数
-- `--from-json <DIR>`：改为读取 `mongoexport --jsonArray` 导出的 `<集合名>.json`（如 `data/`），不连接 MongoDB
+- `--from-json <DIR>`：改为读取 `mongoexport --jsonArray` 导出的 `<集合名>.json`，不连接 MongoDB
 
 ### 🐳 使用 `docker run`
 
