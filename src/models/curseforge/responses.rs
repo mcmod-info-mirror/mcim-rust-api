@@ -580,41 +580,34 @@ impl From<db::CategoryInfo> for CategoryInfo {
 
 impl From<db::File> for File {
     fn from(db_model: db::File) -> Self {
+        let info = FileInfo::from(db_model.info);
         Self {
-            id: db_model.id,
-            game_id: db_model.game_id,
-            mod_id: db_model.mod_id,
-            is_available: db_model.is_available,
-            display_name: db_model.display_name,
-            file_name: db_model.file_name,
-            release_type: db_model.release_type,
-            file_status: db_model.file_status,
-            hashes: db_model
-                .hashes
-                .map(|v| v.into_iter().map(Into::into).collect()),
-            file_date: db_model.file_date,
-            file_length: db_model.file_length,
-            download_count: db_model.download_count,
-            file_size_on_disk: db_model.file_size_on_disk,
-            download_url: db_model.download_url,
-            game_versions: db_model.game_versions,
-            sortable_game_versions: db_model
-                .sortable_game_versions
-                .map(|v| v.into_iter().map(Into::into).collect()),
-            dependencies: db_model
-                .dependencies
-                .map(|v| v.into_iter().map(Into::into).collect()),
-            expose_as_alternative: db_model.expose_as_alternative,
-            parent_project_file_id: db_model.parent_project_file_id,
-            alternate_file_id: db_model.alternate_file_id,
-            is_server_pack: db_model.is_server_pack,
-            server_pack_file_id: db_model.server_pack_file_id,
-            is_early_access_content: db_model.is_early_access_content,
-            early_access_end_date: db_model.early_access_end_date,
-            file_fingerprint: db_model.file_fingerprint,
-            modules: db_model
-                .modules
-                .map(|v| v.into_iter().map(Into::into).collect()),
+            id: info.id,
+            game_id: info.game_id,
+            mod_id: info.mod_id,
+            is_available: info.is_available,
+            display_name: info.display_name,
+            file_name: info.file_name,
+            release_type: info.release_type,
+            file_status: info.file_status,
+            hashes: info.hashes,
+            file_date: info.file_date,
+            file_length: info.file_length,
+            download_count: info.download_count,
+            file_size_on_disk: info.file_size_on_disk,
+            download_url: info.download_url,
+            game_versions: info.game_versions,
+            sortable_game_versions: info.sortable_game_versions,
+            dependencies: info.dependencies,
+            expose_as_alternative: info.expose_as_alternative,
+            parent_project_file_id: info.parent_project_file_id,
+            alternate_file_id: info.alternate_file_id,
+            is_server_pack: info.is_server_pack,
+            server_pack_file_id: info.server_pack_file_id,
+            is_early_access_content: info.is_early_access_content,
+            early_access_end_date: info.early_access_end_date,
+            file_fingerprint: info.file_fingerprint,
+            modules: info.modules,
             sync_at: db_model.sync_at,
         }
     }

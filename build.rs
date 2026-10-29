@@ -47,4 +47,6 @@ fn main() {
     // 当 git 变化时重新构建
     println!("cargo:rerun-if-changed=.git/HEAD");
     println!("cargo:rerun-if-changed=.git/index");
+    // sqlx::migrate! 在编译期嵌入 migrations/，迁移文件变化时需重新编译
+    println!("cargo:rerun-if-changed=migrations");
 }
