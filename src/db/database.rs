@@ -1,22 +1,21 @@
-use mongodb::{Client, options::ClientOptions};
+use sqlx::PgPool;
+use sqlx::migrate::Migrator;
+use sqlx::postgres::PgPoolOptions;
 use std::env;
 
-pub async fn connect() -> Result<Client, Box<dyn std::error::Error>> {
-    let uri = env::var("MONGODB_URI").unwrap_or_else(|_| "mongodb://localhost:27017".to_string());
+/// 仓库根目录 `migrations/` 下的表结构迁移，编译期嵌入二进制
+pub static MIGRATOR: Migrator = sqlx::migrate!("./migrations");
 
-    let client_options = ClientOptions::parse(&uri).await?;
-    let client = Client::with_options(client_options)?;
-
-    // 测试连接
-    client
-        .database("admin")
-        .run_command(mongodb::bson::doc! {"ping": 1})
-        .await?;
-
-    log::info!("Connected to MongoDB successfully!");
-    Ok(client)
+pub fn get_database_url() -> String {
+    env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgresql://postgres@localhost:5432/mcim_backend".to_string())
 }
 
-pub fn get_database_name() -> String {
-    env::var("DATABASE_NAME").unwrap_or_else(|_| "mcim_backend".to_string())
+/// 连接 PostgreSQL 并应用未执行的表结构迁移
+pub async fn connect() -> Result<PgPool, sqlx::Error> {
+    let pool = PgPoolOptions::new().connect(&get_database_url()).await?;
+    MIGRATOR.run(&pool).await?;
+
+    log::info!("Connected to PostgreSQL successfully!");
+    Ok(pool)
 }

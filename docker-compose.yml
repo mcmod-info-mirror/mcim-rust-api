@@ -1,19 +1,16 @@
 services:
-  mongodb:
-    container_name: mongo
-    image: mongo:latest
+  postgres:
+    container_name: postgres
+    image: postgres:18
     restart: always
     ports:
-      - 27017:27017
+      - 5432:5432
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+      POSTGRES_USER: mcim
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: mcim_backend
     volumes:
-      - /data/db:/data/db
-      - ./config/mongod.conf:/etc/mongod.conf
-
-    command:
-      - "--bind_ip_all"
+      - /data/postgres:/var/lib/postgresql
     deploy:
       resources:
         limits:
@@ -44,7 +41,7 @@ services:
       - 8080:8080
     restart: always
     depends_on:
-      - mongodb
+      - postgres
       - redis
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:8080/healthz"]
@@ -54,7 +51,7 @@ services:
       start_period: 10s
     environment:
       PORT: 8080
-      MONGODB_URI: "mongodb://root:example@mongodb:27017"
+      DATABASE_URL: "postgresql://mcim:example@postgres:5432/mcim_backend"
       REDIS_URL: "redis://redis:6379"
       CURSEFORGE_API_URL: "https://api.curseforge.com"
       MODRINTH_API_URL: "https://api.modrinth.com"

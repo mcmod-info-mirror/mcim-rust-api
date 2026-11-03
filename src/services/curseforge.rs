@@ -1,33 +1,34 @@
-use bson::doc;
-use futures::stream::TryStreamExt;
-use mongodb::Client as Mongo_Client;
 use redis::AsyncCommands;
 use redis::aio::MultiplexedConnection;
 use reqwest::Client;
+use sqlx::PgPool;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::db::database::get_database_name;
+use crate::db::curseforge as repo;
 use crate::errors::ServiceError;
-use crate::models::curseforge::entities::{Category as DBCategory, File as DBFile, Mod as DBMod};
 use crate::models::curseforge::requests::SearchQuery;
 use crate::models::curseforge::responses::*;
 
 pub struct CurseforgeService {
-    db: Mongo_Client,
+    db: PgPool,
     redis: Arc<MultiplexedConnection>,
 }
 
 impl CurseforgeService {
-    pub fn new(db: Mongo_Client, redis: Arc<MultiplexedConnection>) -> Self {
+    pub fn new(db: PgPool, redis: Arc<MultiplexedConnection>) -> Self {
         Self { db, redis }
     }
 
     // error=[POST] 400 https://api.curseforge.com/v1/mods/files {"value":"one or more ids are not valid"}
     // 用于同步的 ID 必须大于 0，否则会 400
-    
+
     async fn add_modids_into_queue(&self, mod_ids: Vec<i32>) -> Result<(), ServiceError> {
-        let filtered_mod_ids = mod_ids.iter().filter(|id| *id >= & 30000).cloned().collect::<Vec<i32>>();
+        let filtered_mod_ids = mod_ids
+            .iter()
+            .filter(|id| *id >= &30000)
+            .cloned()
+            .collect::<Vec<i32>>();
         if filtered_mod_ids.is_empty() {
             return Ok(());
         }
@@ -46,7 +47,11 @@ impl CurseforgeService {
     }
 
     async fn add_fileids_into_queue(&self, file_ids: Vec<i32>) -> Result<(), ServiceError> {
-        let filtered_file_ids = file_ids.iter().filter(|id| *id >= & 0).cloned().collect::<Vec<i32>>();
+        let filtered_file_ids = file_ids
+            .iter()
+            .filter(|id| *id >= &0)
+            .cloned()
+            .collect::<Vec<i32>>();
         if filtered_file_ids.is_empty() {
             return Ok(());
         }
@@ -92,7 +97,10 @@ impl CurseforgeService {
                     message: format!("Failed to add fingerprints to Redis queue: {}", e),
                 }
             })?;
-        log::debug!("Added fingerprints to Redis queue: {:?}", filtered_fingerprints);
+        log::debug!(
+            "Added fingerprints to Redis queue: {:?}",
+            filtered_fingerprints
+        );
         Ok(())
     }
 
@@ -122,34 +130,12 @@ impl CurseforgeService {
             return Ok(());
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<bson::Document>("curseforge_mods");
-
-        let mut cursor = collection
-            .find(doc! { "_id": { "$in": &mod_ids } })
-            .projection(doc! { "_id": 1 })
+        let found_mod_ids = repo::existing_mod_ids(&self.db, &mod_ids)
             .await
             .map_err(|e| ServiceError::DatabaseError {
                 message: "Failed to fetch mods from database".to_string(),
                 source: Some(e),
             })?;
-
-        let mut found_mod_ids = Vec::new();
-
-        while let Some(doc) = cursor
-            .try_next()
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: "Failed to fetch mods from database".to_string(),
-                source: Some(e),
-            })?
-        {
-            if let Ok(id) = doc.get_i32("_id") {
-                found_mod_ids.push(id);
-            }
-        }
 
         let not_found_mod_ids: Vec<i32> = mod_ids
             .iter()
@@ -271,12 +257,7 @@ impl CurseforgeService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<DBMod>("curseforge_mods");
-
-        match collection.find_one(doc! { "_id": mod_id }).await? {
+        match repo::get_mods(&self.db, &[mod_id]).await?.pop() {
             Some(mod_data) => {
                 // let response = ModResponse { data: mod_data };
                 let response = ModResponse {
@@ -304,25 +285,13 @@ impl CurseforgeService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<DBMod>("curseforge_mods");
-
-        let mut cursor = collection.find(doc! { "_id": { "$in": &mod_ids } }).await?;
-
-        let mut mods = Vec::new();
-
-        while let Some(doc) = cursor
-            .try_next()
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: "Failed to fetch mods from database".to_string(),
-                source: Some(e),
-            })?
-        {
-            mods.push(doc);
-        }
+        let mods =
+            repo::get_mods(&self.db, &mod_ids)
+                .await
+                .map_err(|e| ServiceError::DatabaseError {
+                    message: "Failed to fetch mods from database".to_string(),
+                    source: Some(e),
+                })?;
 
         // 检查是否有未找到的 mod_id
         let found_mod_ids: Vec<i32> = mods.iter().map(|m| m.id).collect();
@@ -387,18 +356,14 @@ impl CurseforgeService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<DBFile>("curseforge_files");
-
-        match collection
-            .find_one(doc! { "_id": file_id })
+        match repo::get_files(&self.db, &[file_id])
             .await
             .map_err(|e| ServiceError::DatabaseError {
                 message: "Failed to fetch file by ID".to_string(),
                 source: Some(e),
-            })? {
+            })?
+            .pop()
+        {
             Some(file_data) => {
                 let response = FileResponse {
                     data: file_data.into(),
@@ -423,29 +388,15 @@ impl CurseforgeService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<DBFile>("curseforge_files");
-
-        let mut cursor = collection
-            .find(doc! { "_id": { "$in": &file_ids } })
-            .await?;
-
-        let mut files = Vec::new();
-        while let Ok(Some(doc)) = cursor
-            .try_next()
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
+        let files = repo::get_files(&self.db, &file_ids).await.map_err(|e| {
+            ServiceError::DatabaseError {
                 message: String::from("Failed to fetch files from database"),
                 source: Some(e),
-            })
-        {
-            files.push(doc);
-        }
+            }
+        })?;
 
         // 检查是否有未找到的 file_id
-        let found_file_ids: Vec<i32> = files.iter().map(|f| f.id).collect();
+        let found_file_ids: Vec<i32> = files.iter().map(|f| f.info.id).collect();
         let not_found_file_ids: Vec<i32> = file_ids
             .iter()
             .filter(|id| !found_file_ids.contains(id))
@@ -489,12 +440,6 @@ impl CurseforgeService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<DBFile>("curseforge_files");
-
-        let mut filter = doc! { "modId": mod_id };
         let mut game_version_filters = Vec::new();
 
         if let Some(version) = game_version {
@@ -518,84 +463,22 @@ impl CurseforgeService {
             game_version_filters.push(loader_type_str.into());
         }
 
-        if !game_version_filters.is_empty() {
-            filter.insert("gameVersions", doc! { "$all": game_version_filters });
-        }
-
         let index = index.unwrap_or(0);
         let page_size = page_size.unwrap_or(50);
 
-        let pipeline = vec![
-            doc! { "$match": filter },
-            doc! {
-                "$facet": {
-                    "data": [
-                        doc! { "$sort": { "fileDate": -1 } },
-                        doc! { "$skip": index },
-                        doc! { "$limit": page_size }
-                    ],
-                    "count": [
-                        doc! { "$count": "total" }
-                    ]
-                }
-            },
-        ];
-
-        let mut cursor =
-            collection
-                .aggregate(pipeline)
-                .await
-                .map_err(|e| ServiceError::DatabaseError {
-                    message: String::from("Failed to aggregate mod files"),
-                    source: Some(e),
-                })?;
-
-        let result = cursor
-            .try_next()
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: String::from("Failed to fetch mod files"),
-                source: Some(e),
-            });
-
-        let (files, total_count) = if let Ok(Some(doc)) = result {
-            // 获取数据
-            let data_array: &Vec<bson::Bson> = doc.get_array("data").map_err(|_| {
-                ServiceError::UnexpectedError("Failed to get data array".to_string())
-            })?;
-
-            let mut files = Vec::new();
-            for item in data_array {
-                if let Some(file_doc) = item.as_document() {
-                    let file_data: DBFile = bson::deserialize_from_document(file_doc.clone())
-                        .map_err(|e| {
-                            ServiceError::UnexpectedError(format!(
-                                "Failed to deserialize File: {}",
-                                e
-                            ))
-                        })?;
-                    files.push(file_data);
-                }
-            }
-
-            // 获取总数
-            let count_array = doc.get_array("count").map_err(|_| {
-                ServiceError::UnexpectedError("Failed to get count array".to_string())
-            })?;
-
-            let total_count = if let Some(count_item) = count_array.first() {
-                count_item
-                    .as_document()
-                    .and_then(|d| d.get_i32("total").ok())
-                    .unwrap_or(0)
-            } else {
-                0
-            };
-
-            (files, total_count)
-        } else {
-            (Vec::new(), 0)
-        };
+        let (files, total_count) = repo::get_mod_files(
+            &self.db,
+            mod_id,
+            &game_version_filters,
+            i64::from(index),
+            i64::from(page_size),
+        )
+        .await
+        .map_err(|e| ServiceError::DatabaseError {
+            message: String::from("Failed to fetch mod files"),
+            source: Some(e),
+        })?;
+        let total_count = i32::try_from(total_count).unwrap_or(i32::MAX);
 
         // 有筛选条件很容易为空，不能当作 Mod 不存在
         // if total_count == 0 {
@@ -648,30 +531,16 @@ impl CurseforgeService {
 
         let installed_fingerprints = fingerprints.clone();
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<DBFile>("curseforge_files");
-
-        // 可选 game_id 参数用于过滤
-        let mut filter = doc! { "fileFingerprint": { "$in": &fingerprints } };
-        if let Some(game_id) = game_id {
-            filter.insert("gameId", game_id);
-        }
-
-        let mut cursor = collection.find(filter).await?;
-        let mut file_results: Vec<File> = Vec::new();
-
-        while let Ok(Some(doc)) = cursor
-            .try_next()
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: String::from("Failed to fetch fingerprints from database"),
-                source: Some(e),
-            })
-        {
-            file_results.push(doc.into());
-        }
+        let file_results: Vec<File> =
+            repo::get_files_by_fingerprints(&self.db, &fingerprints, game_id)
+                .await
+                .map_err(|e| ServiceError::DatabaseError {
+                    message: String::from("Failed to fetch fingerprints from database"),
+                    source: Some(e),
+                })?
+                .into_iter()
+                .map(Into::into)
+                .collect();
 
         let exact_fingerprints = file_results
             .iter()
@@ -680,64 +549,16 @@ impl CurseforgeService {
 
         // 查询 Mod，获取 latestFiles
         let mod_ids = file_results.iter().map(|f| f.mod_id).collect::<Vec<_>>();
-        let mut mod_latest_files_results: HashMap<i32, Vec<FileInfo>> = HashMap::new();
-
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<bson::Document>("curseforge_mods");
-
-        let mut cursor = collection
-            .find(doc! { "_id": { "$in": &mod_ids } })
-            .projection(doc! { "_id": 1, "latestFiles": 1 })
-            .await?;
-
-        while let Ok(Some(doc)) = cursor
-            .try_next()
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: String::from("Failed to fetch mods from database"),
-                source: Some(e),
-            })
-        {
-            let mod_id = doc
-                .get_i32("_id")
-                .map_err(|_| ServiceError::DatabaseError {
-                    message: format!("Mod document missing _id field: {:?}", doc),
-                    source: None,
-                })?;
-
-            let latest_files: Vec<FileInfo> = doc
-                .get_array("latestFiles")
+        let mod_latest_files_results: HashMap<i32, Vec<FileInfo>> =
+            repo::get_latest_files(&self.db, &mod_ids)
+                .await
                 .map_err(|e| ServiceError::DatabaseError {
-                    message: format!("Failed to get latestFiles array for mod {}: {}", mod_id, e),
-                    source: None,
+                    message: String::from("Failed to fetch mods from database"),
+                    source: Some(e),
                 })?
-                .iter()
-                .map(|file| {
-                    file.as_document()
-                        .ok_or_else(|| ServiceError::DatabaseError {
-                            message: format!("Invalid document in latestFiles for mod {}", mod_id),
-                            source: None,
-                        })
-                        .and_then(|file_doc| {
-                            bson::deserialize_from_document::<
-                                crate::models::curseforge::entities::FileInfo,
-                            >(file_doc.clone())
-                            .map_err(|e| ServiceError::DatabaseError {
-                                message: format!(
-                                    "Failed to parse FileInfo document for mod {}: {}",
-                                    mod_id, e
-                                ),
-                                source: Some(e.into()),
-                            })
-                        })
-                        .map(|file_info| file_info.into())
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-
-            mod_latest_files_results.insert(mod_id, latest_files);
-        }
+                .into_iter()
+                .map(|(mod_id, files)| (mod_id, files.into_iter().map(Into::into).collect()))
+                .collect();
 
         let unmatched_fingerprints: Vec<i64> = fingerprints
             .into_iter()
@@ -794,40 +615,13 @@ impl CurseforgeService {
         class_id: Option<i32>,
         class_only: Option<bool>,
     ) -> Result<CategoriesResponse, ServiceError> {
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<DBCategory>("curseforge_categories");
-
-        // 构建查询过滤器
-        let mut filter = doc! { "gameId": game_id };
-
-        if class_id.is_some() {
-            filter.insert("classId", class_id);
-        } else if class_only.unwrap_or(false) {
-            filter.insert("isClass", true);
-        }
-
-        let mut cursor =
-            collection
-                .find(filter)
+        let categories =
+            repo::get_categories(&self.db, game_id, class_id, class_only.unwrap_or(false))
                 .await
                 .map_err(|e| ServiceError::DatabaseError {
                     message: String::from("Failed to fetch categories from database"),
                     source: Some(e),
                 })?;
-
-        let mut categories = Vec::new();
-        while let Ok(Some(doc)) = cursor
-            .try_next()
-            .await
-            .map_err(|e| ServiceError::DatabaseError {
-                message: String::from("Failed to fetch categories from database"),
-                source: Some(e),
-            })
-        {
-            categories.push(doc);
-        }
 
         if categories.is_empty() {
             return Err(ServiceError::NotFound {

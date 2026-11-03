@@ -128,7 +128,7 @@ impl From<db::Project> for Project {
             project_type: project.project_type,
             downloads: project.downloads,
             icon_url: project.icon_url,
-            color: project.color,
+            color: project.color.and_then(|c| u32::try_from(c).ok()),
             thread_id: project.thread_id,
             monetization_status: project.monetization_status,
             team: project.team,

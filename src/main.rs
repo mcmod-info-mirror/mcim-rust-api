@@ -16,7 +16,7 @@ use prometheus::{IntCounterVec, Opts};
 use std::env;
 
 use crate::db::_redis::connect as connect_redis;
-use crate::db::database::connect as connect_mongo;
+use crate::db::database::connect as connect_postgres;
 use crate::errors::ApiError;
 use crate::routes::config as routes_config;
 use crate::utils::app::build_app_state;
@@ -29,15 +29,17 @@ async fn main() -> std::io::Result<()> {
     // 初始化日志记录
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
-    // 配置MongoDB连接
-    let mongo_client = connect_mongo().await.expect("Failed to connect to MongoDB");
+    // 配置 PostgreSQL 连接（启动时自动应用表结构迁移）
+    let db_pool = connect_postgres()
+        .await
+        .expect("Failed to connect to PostgreSQL");
     let redis_pool = connect_redis().await.expect("Failed to connect to Redis");
 
     // 获取服务器端口，默认为 8080
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let bind_address = format!("0.0.0.0:{}", port);
 
-    let app_state = build_app_state(mongo_client, redis_pool);
+    let app_state = build_app_state(db_pool, redis_pool);
     let app_data = web::Data::new(app_state);
 
     // Prometheus Metrics 初始化

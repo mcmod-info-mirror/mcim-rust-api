@@ -1,20 +1,17 @@
-use bson::doc;
-use futures::stream::StreamExt;
-use mongodb::Client;
+use sqlx::PgPool;
 
-use crate::db::database::get_database_name;
+use crate::db::translate::{get_curseforge_translations, get_modrinth_translations};
 use crate::errors::ServiceError;
-use crate::models::translate::entities::{CurseForgeTranslation, ModrinthTranslation};
 use crate::models::translate::responses::{
     CurseForgeTranslationResponse, ModrinthTranslationResponse,
 };
 
 pub struct ModrinthService {
-    pub db: Client,
+    pub db: PgPool,
 }
 
 impl ModrinthService {
-    pub fn new(db: Client) -> Self {
+    pub fn new(db: PgPool) -> Self {
         Self { db }
     }
 
@@ -29,12 +26,10 @@ impl ModrinthService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<ModrinthTranslation>("modrinth_translated");
-
-        match collection.find_one(doc! { "_id": project_id }).await? {
+        let translation = get_modrinth_translations(&self.db, &[project_id.to_string()])
+            .await?
+            .pop();
+        match translation {
             Some(doc) => {
                 // translated is null
                 if doc.translated.is_none() {
@@ -66,42 +61,21 @@ impl ModrinthService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<ModrinthTranslation>("modrinth_translated");
-
-        let filter = doc! { "_id": { "$in": project_ids } };
-        let mut cursor = collection.find(filter).await?;
-        let mut results = Vec::new();
-
-        while let Some(doc) = cursor.next().await {
-            match doc {
-                Ok(doc) => {
-                    if doc.translated.is_none() {
-                        continue; // Skip entries without translations
-                    }
-                    results.push(doc.into());
-                }
-                Err(e) => {
-                    return Err(ServiceError::DatabaseError {
-                        message: e.to_string(),
-                        source: Some(e),
-                    });
-                }
-            }
-        }
-
-        Ok(results)
+        Ok(get_modrinth_translations(&self.db, &project_ids)
+            .await?
+            .into_iter()
+            .filter(|doc| doc.translated.is_some()) // Skip entries without translations
+            .map(Into::into)
+            .collect())
     }
 }
 
 pub struct CurseForgeService {
-    pub db: Client,
+    pub db: PgPool,
 }
 
 impl CurseForgeService {
-    pub fn new(db: Client) -> Self {
+    pub fn new(db: PgPool) -> Self {
         Self { db }
     }
 
@@ -116,12 +90,10 @@ impl CurseForgeService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<CurseForgeTranslation>("curseforge_translated");
-
-        match collection.find_one(doc! { "_id": mod_id }).await? {
+        let translation = get_curseforge_translations(&self.db, &[mod_id])
+            .await?
+            .pop();
+        match translation {
             Some(doc) => {
                 if doc.translated.is_none() {
                     return Err(ServiceError::NotFound {
@@ -152,32 +124,11 @@ impl CurseForgeService {
             });
         }
 
-        let collection = self
-            .db
-            .database(get_database_name().as_str())
-            .collection::<CurseForgeTranslation>("curseforge_translated");
-
-        let filter = doc! { "_id": { "$in": mod_ids } };
-        let mut cursor = collection.find(filter).await?;
-        let mut results = Vec::new();
-
-        while let Some(doc) = cursor.next().await {
-            match doc {
-                Ok(doc) => {
-                    if doc.translated.is_none() {
-                        continue; // Skip entries without translations
-                    }
-                    results.push(doc.into());
-                }
-                Err(e) => {
-                    return Err(ServiceError::DatabaseError {
-                        message: e.to_string(),
-                        source: Some(e),
-                    });
-                }
-            }
-        }
-
-        Ok(results)
+        Ok(get_curseforge_translations(&self.db, &mod_ids)
+            .await?
+            .into_iter()
+            .filter(|doc| doc.translated.is_some()) // Skip entries without translations
+            .map(Into::into)
+            .collect())
     }
 }
