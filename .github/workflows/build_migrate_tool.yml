@@ -1,0 +1,47 @@
+name: "Build migrate-mongo"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/migrate-mongo/**'
+      - 'src/**'
+      - 'migrations/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/build_migrate_tool.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target-bookworm
+          key: migrate-mongo-${{ hashFiles('Cargo.lock') }}
+          restore-keys: migrate-mongo-
+
+      # 在 Debian 12 (glibc 2.36) 容器内构建，产物可在 glibc >= 2.36 的服务器上运行
+      - name: Build migrate-mongo
+        run: |
+          docker run --rm \
+            -v "$PWD":/app -w /app \
+            -v "$HOME/.cargo/registry":/usr/local/cargo/registry \
+            -v "$HOME/.cargo/git":/usr/local/cargo/git \
+            -e CARGO_TARGET_DIR=/app/target-bookworm \
+            rust:1.89.0-bookworm \
+            cargo build --release --verbose -p migrate-mongo
+          mkdir -p build_output
+          cp target-bookworm/release/migrate-mongo build_output/migrate-mongo
+
+      - name: Upload migrate-mongo
+        uses: actions/upload-artifact@v4
+        with:
+          name: migrate-mongo
+          path: build_output/migrate-mongo

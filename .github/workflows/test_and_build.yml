@@ -163,15 +163,6 @@ jobs:
           cp target/release/mcim-rust-api build_output/mcim-rust-api
           cp target/debug/mcim-rust-api build_output/mcim-rust-api-debug
 
-      - name: Build migrate-mongo (Debian 12 / glibc 2.36)
-        # 在 bookworm 容器内构建，使产物可在 glibc >= 2.36 的服务器上运行
-        run: |
-          docker run --rm -v "$PWD":/app -w /app \
-            -e CARGO_TARGET_DIR=/app/target-bookworm \
-            rust:1.89.0-bookworm \
-            cargo build --release --verbose -p migrate-mongo
-          cp target-bookworm/release/migrate-mongo build_output/migrate-mongo
-
       - name: Upload Rust Binary Artifact
         uses: actions/upload-artifact@v4
         with:
